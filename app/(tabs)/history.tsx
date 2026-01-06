@@ -2,7 +2,7 @@ import { StyleSheet, FlatList, Pressable, RefreshControl, Alert, ActionSheetIOS,
 import { useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { router } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { ArrowsClockwise, DownloadSimple } from 'phosphor-react-native';
 
 import { Text, View } from '@/components/Themed';
 import { useWorkoutHistory, type WorkoutWithDetails, getWorkoutDetails } from '@/src/hooks/useWorkoutHistory';
@@ -26,12 +26,12 @@ function formatVolume(volume: number): string {
   return `${volume.toLocaleString()} lbs`;
 }
 
-function WorkoutCard({ workout }: { workout: WorkoutWithDetails }) {
+function WorkoutCard({ workout, onRepeat }: { workout: WorkoutWithDetails; onRepeat: () => void }) {
   const dateStr = format(workout.startedAt, 'EEEE, MMM d');
   const timeAgo = formatDistanceToNow(workout.startedAt, { addSuffix: true });
 
   return (
-    <Pressable style={styles.workoutCard}>
+    <View style={styles.workoutCard}>
       <View style={styles.cardHeader}>
         <Text style={styles.workoutName}>{workout.name || 'Workout'}</Text>
         <Text style={styles.timeAgo}>{timeAgo}</Text>
@@ -57,13 +57,40 @@ function WorkoutCard({ workout }: { workout: WorkoutWithDetails }) {
           <Text style={styles.statLabel}>Volume</Text>
         </View>
       </View>
-    </Pressable>
+
+      <Pressable style={styles.repeatButton} onPress={onRepeat}>
+        <ArrowsClockwise size={14} color="#007AFF" weight="bold" />
+        <Text style={styles.repeatButtonText}>Repeat Workout</Text>
+      </Pressable>
+    </View>
   );
 }
 
 export default function HistoryScreen() {
   const { workouts, isLoading, refresh } = useWorkoutHistory();
   const [isExporting, setIsExporting] = useState(false);
+  const { startWorkoutFromTemplate } = useWorkoutStore();
+
+  const handleRepeatWorkout = async (workoutId: string) => {
+    const details = await getWorkoutDetails(workoutId);
+    if (!details) {
+      Alert.alert('Error', 'Could not load workout details');
+      return;
+    }
+
+    // Convert to template format
+    const exercisesForTemplate = details.exercises.map((ex) => ({
+      exercise: ex.exercise,
+      sets: ex.sets.map((s) => ({
+        weight: s.weight,
+        reps: s.reps,
+        isWarmup: s.isWarmup,
+      })),
+    }));
+
+    startWorkoutFromTemplate(exercisesForTemplate, details.name || 'Workout');
+    router.push('/workout/new');
+  };
 
   const handleExport = () => {
     if (workouts.length === 0) {
@@ -131,7 +158,9 @@ export default function HistoryScreen() {
       <FlatList
         data={workouts}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <WorkoutCard workout={item} />}
+        renderItem={({ item }) => (
+          <WorkoutCard workout={item} onRepeat={() => handleRepeatWorkout(item.id)} />
+        )}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={refresh} />
@@ -145,7 +174,7 @@ export default function HistoryScreen() {
               style={[styles.exportButton, isExporting && styles.exportButtonDisabled]}
               onPress={handleExport}
               disabled={isExporting}>
-              <FontAwesome name="download" size={14} color="#007AFF" />
+              <DownloadSimple size={14} color="#007AFF" weight="bold" />
               <Text style={styles.exportButtonText}>
                 {isExporting ? 'Exporting...' : 'Export'}
               </Text>
@@ -251,5 +280,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#888',
     textTransform: 'uppercase',
+  },
+  repeatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    backgroundColor: 'transparent',
+  },
+  repeatButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
   },
 });

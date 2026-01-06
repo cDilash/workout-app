@@ -6,8 +6,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { LineChart } from 'react-native-gifted-charts';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { CartesianChart, Line } from 'victory-native';
+import { ArrowLeft } from 'phosphor-react-native';
 
 import { Text, View } from '@/components/Themed';
 import { db } from '@/src/db/client';
@@ -47,7 +47,7 @@ export default function ExerciseDetailScreen() {
   const [history, setHistory] = useState<ExerciseHistory[]>([]);
   const [prs, setPRs] = useState<PRRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [chartData, setChartData] = useState<{ value: number; label: string }[]>([]);
+  const [chartData, setChartData] = useState<{ x: number; y: number; label: string }[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -197,13 +197,14 @@ export default function ExerciseDetailScreen() {
       }
       setPRs(prRecords);
 
-      // Create chart data (weight progression over time)
+      // Create chart data (weight progression over time) - Victory Native format
       const chartPoints = historyData
         .slice()
         .reverse()
         .slice(-12) // Last 12 workouts
-        .map((h) => ({
-          value: h.maxWeight,
+        .map((h, index) => ({
+          x: index,
+          y: h.maxWeight,
           label: format(h.date, 'M/d'),
         }));
       setChartData(chartPoints);
@@ -235,7 +236,7 @@ export default function ExerciseDetailScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <FontAwesome name="arrow-left" size={20} color="#007AFF" />
+          <ArrowLeft size={20} color="#007AFF" />
         </Pressable>
         <View style={styles.headerContent}>
           <Text style={styles.exerciseName}>{exercise.name}</Text>
@@ -272,24 +273,29 @@ export default function ExerciseDetailScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Weight Progression</Text>
             <View style={styles.chartContainer}>
-              <LineChart
-                data={chartData}
-                width={screenWidth - 64}
-                height={180}
-                spacing={(screenWidth - 80) / Math.max(chartData.length - 1, 1)}
-                color="#007AFF"
-                thickness={2}
-                dataPointsColor="#007AFF"
-                dataPointsRadius={4}
-                startFillColor="rgba(0, 122, 255, 0.2)"
-                endFillColor="rgba(0, 122, 255, 0.0)"
-                areaChart
-                hideRules
-                yAxisTextStyle={{ color: '#888', fontSize: 10 }}
-                xAxisLabelTextStyle={{ color: '#888', fontSize: 10 }}
-                noOfSections={4}
-                curved
-              />
+              <View style={{ height: 180 }}>
+                <CartesianChart
+                  data={chartData}
+                  xKey="x"
+                  yKeys={["y"]}
+                  axisOptions={{
+                    formatXLabel: (value) => chartData[value]?.label || '',
+                    labelColor: '#888',
+                    lineColor: '#e0e0e0',
+                  }}
+                  domainPadding={{ left: 20, right: 20, top: 20 }}
+                >
+                  {({ points }) => (
+                    <Line
+                      points={points.y}
+                      color="#007AFF"
+                      strokeWidth={2}
+                      curveType="natural"
+                      animate={{ type: "timing", duration: 500 }}
+                    />
+                  )}
+                </CartesianChart>
+              </View>
             </View>
           </View>
         )}

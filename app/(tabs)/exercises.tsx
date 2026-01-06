@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useState, useMemo } from 'react';
 import { router } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { CaretRight, Plus } from 'phosphor-react-native';
 
 import { Text, View } from '@/components/Themed';
 import { useExercises } from '@/src/hooks/useExercises';
@@ -64,7 +64,7 @@ function ExerciseRow({ exercise }: { exercise: Exercise }) {
           {exercise.equipment}
         </Text>
       </View>
-      <FontAwesome name="chevron-right" size={14} color="#ccc" />
+      <CaretRight size={14} color="#ccc" />
     </Pressable>
   );
 }
@@ -259,7 +259,7 @@ export default function ExercisesScreen() {
         <Pressable
           style={styles.addButton}
           onPress={() => setShowCreateModal(true)}>
-          <FontAwesome name="plus" size={18} color="#fff" />
+          <Plus size={18} color="#fff" weight="bold" />
         </Pressable>
       </View>
 

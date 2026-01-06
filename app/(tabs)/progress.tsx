@@ -1,6 +1,8 @@
 import { StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
 import { useState } from 'react';
-import { LineChart, BarChart, PieChart } from 'react-native-gifted-charts';
+import { CartesianChart, Line, Bar, useChartPressState } from 'victory-native';
+import { PieChart } from 'react-native-gifted-charts';
+import { Circle, useFont } from '@shopify/react-native-skia';
 import { format, subDays, eachDayOfInterval, startOfWeek, isSameDay } from 'date-fns';
 
 import { Text, View } from '@/components/Themed';
@@ -145,20 +147,18 @@ export default function ProgressScreen() {
     selectedExerciseId || (stats.length > 0 ? stats[0].exerciseId : null)
   );
 
-  // Prepare line chart data for strength progression
+  // Prepare line chart data for strength progression (Victory Native format)
   const lineChartData = progressData.map((point, index) => ({
-    value: point.value,
-    label: index === 0 || index === progressData.length - 1
-      ? format(point.date, 'M/d')
-      : '',
-    dataPointText: index === progressData.length - 1 ? `${point.value}` : '',
+    x: index,
+    y: point.value,
+    label: format(point.date, 'M/d'),
   }));
 
-  // Prepare bar chart data for weekly volume
-  const barChartData = weeklyData.map((week) => ({
-    value: week.volume / 1000,
+  // Prepare bar chart data for weekly volume (Victory Native format)
+  const barChartData = weeklyData.map((week, index) => ({
+    x: index,
+    y: week.volume / 1000,
     label: format(new Date(week.week), 'M/d'),
-    frontColor: '#007AFF',
   }));
 
   // Prepare pie chart data for muscle groups
@@ -271,29 +271,29 @@ export default function ProgressScreen() {
           </View>
         ) : (
           <View style={styles.chartContainer}>
-            <LineChart
-              data={lineChartData}
-              width={screenWidth - 64}
-              height={180}
-              spacing={(screenWidth - 100) / Math.max(lineChartData.length - 1, 1)}
-              color="#007AFF"
-              thickness={3}
-              startFillColor="rgba(0,122,255,0.3)"
-              endFillColor="rgba(0,122,255,0.01)"
-              startOpacity={0.9}
-              endOpacity={0.1}
-              initialSpacing={10}
-              noOfSections={4}
-              yAxisColor="transparent"
-              xAxisColor="#e0e0e0"
-              yAxisTextStyle={{ color: '#888', fontSize: 11 }}
-              xAxisLabelTextStyle={{ color: '#888', fontSize: 10 }}
-              hideDataPoints={false}
-              dataPointsColor="#007AFF"
-              dataPointsRadius={4}
-              curved
-              areaChart
-            />
+            <View style={{ height: 200 }}>
+              <CartesianChart
+                data={lineChartData}
+                xKey="x"
+                yKeys={["y"]}
+                axisOptions={{
+                  formatXLabel: (value) => lineChartData[value]?.label || '',
+                  labelColor: '#888',
+                  lineColor: '#e0e0e0',
+                }}
+                domainPadding={{ left: 20, right: 20, top: 20 }}
+              >
+                {({ points }) => (
+                  <Line
+                    points={points.y}
+                    color="#007AFF"
+                    strokeWidth={3}
+                    curveType="natural"
+                    animate={{ type: "timing", duration: 500 }}
+                  />
+                )}
+              </CartesianChart>
+            </View>
             <Text style={styles.chartLabel}>Weight (lbs) over time</Text>
           </View>
         )}
@@ -313,22 +313,29 @@ export default function ProgressScreen() {
           </View>
         ) : (
           <View style={styles.chartContainer}>
-            <BarChart
-              data={barChartData}
-              width={screenWidth - 64}
-              height={180}
-              barWidth={32}
-              spacing={20}
-              noOfSections={4}
-              yAxisColor="transparent"
-              xAxisColor="#e0e0e0"
-              yAxisTextStyle={{ color: '#888', fontSize: 11 }}
-              xAxisLabelTextStyle={{ color: '#888', fontSize: 10 }}
-              hideRules
-              barBorderRadius={6}
-              frontColor="#007AFF"
-              isAnimated
-            />
+            <View style={{ height: 200 }}>
+              <CartesianChart
+                data={barChartData}
+                xKey="x"
+                yKeys={["y"]}
+                axisOptions={{
+                  formatXLabel: (value) => barChartData[value]?.label || '',
+                  labelColor: '#888',
+                  lineColor: '#e0e0e0',
+                }}
+                domainPadding={{ left: 30, right: 30, top: 20 }}
+              >
+                {({ points, chartBounds }) => (
+                  <Bar
+                    points={points.y}
+                    chartBounds={chartBounds}
+                    color="#007AFF"
+                    roundedCorners={{ topLeft: 6, topRight: 6 }}
+                    animate={{ type: "timing", duration: 500 }}
+                  />
+                )}
+              </CartesianChart>
+            </View>
             <Text style={styles.chartLabel}>Total volume (thousands of lbs) per week</Text>
           </View>
         )}

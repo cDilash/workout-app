@@ -217,3 +217,58 @@ export async function saveWorkout(activeWorkout: ActiveWorkout): Promise<string>
 export async function deleteWorkout(workoutId: string): Promise<void> {
   await db.delete(workouts).where(eq(workouts.id, workoutId));
 }
+
+// Get workout details (for duplicating)
+export async function getWorkoutDetails(workoutId: string): Promise<FullWorkoutDetails | null> {
+  try {
+    // Get the workout
+    const workoutResult = await db
+      .select()
+      .from(workouts)
+      .where(eq(workouts.id, workoutId))
+      .limit(1);
+
+    if (workoutResult.length === 0) {
+      return null;
+    }
+
+    // Get workout exercises with exercise details
+    const exerciseResults = await db
+      .select()
+      .from(workoutExercises)
+      .where(eq(workoutExercises.workoutId, workoutId))
+      .orderBy(workoutExercises.order);
+
+    const exercisesWithDetails: WorkoutExerciseWithDetails[] = await Promise.all(
+      exerciseResults.map(async (we) => {
+        // Get exercise info
+        const exerciseInfo = await db
+          .select()
+          .from(exercises)
+          .where(eq(exercises.id, we.exerciseId))
+          .limit(1);
+
+        // Get sets
+        const setsResult = await db
+          .select()
+          .from(sets)
+          .where(eq(sets.workoutExerciseId, we.id))
+          .orderBy(sets.setNumber);
+
+        return {
+          ...we,
+          exercise: exerciseInfo[0],
+          sets: setsResult,
+        };
+      })
+    );
+
+    return {
+      ...workoutResult[0],
+      exercises: exercisesWithDetails,
+    };
+  } catch (error) {
+    console.error('Error fetching workout details:', error);
+    return null;
+  }
+}

@@ -9,12 +9,15 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect } from 'react';
+import { Link, LinkBreak, BookmarkSimple } from 'phosphor-react-native';
 
 import { Text, View } from '@/components/Themed';
 import { useWorkoutStore, type ActiveExercise, type ActiveSet } from '@/src/stores/workoutStore';
 import { useExercises } from '@/src/hooks/useExercises';
 import { saveWorkout } from '@/src/hooks/useWorkoutHistory';
+import { saveAsTemplate } from '@/src/hooks/useTemplates';
 import { RestTimer, RestTimerCompact } from '@/src/components/workout/RestTimer';
+import { SaveTemplateModal } from '@/src/components/workout/TemplatesModal';
 import { useTimerStore } from '@/src/stores/timerStore';
 import type { Exercise } from '@/src/db/schema';
 
@@ -89,6 +92,8 @@ function ExerciseCard({
   onRemoveSet,
   onRemoveExercise,
   onUpdateNotes,
+  supersetLabel,
+  onLinkSuperset,
 }: {
   activeExercise: ActiveExercise;
   onAddSet: () => void;
@@ -98,6 +103,8 @@ function ExerciseCard({
   onRemoveSet: (setId: string) => void;
   onRemoveExercise: () => void;
   onUpdateNotes: (notes: string) => void;
+  supersetLabel?: string;
+  onLinkSuperset: () => void;
 }) {
   const [showNotes, setShowNotes] = useState(false);
 
@@ -113,15 +120,29 @@ function ExerciseCard({
   });
 
   return (
-    <View style={styles.exerciseCard}>
+    <View style={[styles.exerciseCard, supersetLabel && styles.exerciseCardSuperset]}>
+      {supersetLabel && (
+        <View style={styles.supersetBadge}>
+          <Text style={styles.supersetBadgeText}>{supersetLabel}</Text>
+        </View>
+      )}
       <View style={styles.exerciseHeader}>
         <Pressable style={styles.exerciseNameContainer} onPress={() => setShowNotes(!showNotes)}>
           <Text style={styles.exerciseName}>{activeExercise.exercise.name}</Text>
           <Text style={styles.exerciseMuscle}>{activeExercise.exercise.muscleGroup}</Text>
         </Pressable>
-        <Pressable onPress={onRemoveExercise}>
-          <Text style={styles.removeButton}>✕</Text>
-        </Pressable>
+        <View style={styles.exerciseActions}>
+          <Pressable onPress={onLinkSuperset} style={styles.linkButton}>
+            {activeExercise.supersetId ? (
+              <LinkBreak size={14} color="#FF9500" />
+            ) : (
+              <Link size={14} color="#888" />
+            )}
+          </Pressable>
+          <Pressable onPress={onRemoveExercise}>
+            <Text style={styles.removeButton}>✕</Text>
+          </Pressable>
+        </View>
       </View>
 
       {showNotes && (
@@ -228,6 +249,7 @@ export default function ActiveWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
 
   const {
     activeWorkout,
@@ -242,7 +264,11 @@ export default function ActiveWorkoutScreen() {
     removeSet,
     updateExerciseNotes,
     updateWorkoutNotes,
+    createSuperset,
+    removeFromSuperset,
   } = useWorkoutStore();
+
+  const [selectedForSuperset, setSelectedForSuperset] = useState<string | null>(null);
 
   // Must be called unconditionally (before any early returns)
   const { startTimer, lastPresetSeconds } = useTimerStore();
@@ -317,6 +343,65 @@ export default function ActiveWorkoutScreen() {
     startTimer(lastPresetSeconds);
   };
 
+  const handleSaveAsTemplate = async (templateName: string) => {
+    if (!activeWorkout || activeWorkout.exercises.length === 0) {
+      Alert.alert('Error', 'Add some exercises before saving as template');
+      return;
+    }
+    try {
+      await saveAsTemplate(activeWorkout, templateName);
+      Alert.alert('Success', `Template "${templateName}" saved!`);
+    } catch (error) {
+      console.error('Error saving template:', error);
+      Alert.alert('Error', 'Failed to save template');
+    }
+  };
+
+  const handleLinkSuperset = (exerciseId: string, currentSupersetId: string | null) => {
+    // If already in a superset, remove it
+    if (currentSupersetId) {
+      removeFromSuperset(exerciseId);
+      if (selectedForSuperset === exerciseId) {
+        setSelectedForSuperset(null);
+      }
+      return;
+    }
+
+    // If nothing selected, select this exercise
+    if (!selectedForSuperset) {
+      setSelectedForSuperset(exerciseId);
+      Alert.alert(
+        'Create Superset',
+        'Now tap the link icon on another exercise to group them together',
+        [
+          { text: 'Cancel', onPress: () => setSelectedForSuperset(null), style: 'cancel' },
+          { text: 'OK' },
+        ]
+      );
+      return;
+    }
+
+    // If same exercise, cancel selection
+    if (selectedForSuperset === exerciseId) {
+      setSelectedForSuperset(null);
+      return;
+    }
+
+    // Create superset with both exercises
+    createSuperset([selectedForSuperset, exerciseId]);
+    setSelectedForSuperset(null);
+  };
+
+  // Calculate superset labels
+  const getSupersetLabel = (supersetId: string | null): string | undefined => {
+    if (!supersetId || !activeWorkout) return undefined;
+    const supersetExercises = activeWorkout.exercises.filter(
+      (e) => e.supersetId === supersetId
+    );
+    if (supersetExercises.length < 2) return undefined;
+    return `Superset (${supersetExercises.length})`;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -341,6 +426,8 @@ export default function ActiveWorkoutScreen() {
             onRemoveSet={(setId) => removeSet(ex.id, setId)}
             onRemoveExercise={() => removeExercise(ex.id)}
             onUpdateNotes={(notes) => updateExerciseNotes(ex.id, notes)}
+            supersetLabel={getSupersetLabel(ex.supersetId)}
+            onLinkSuperset={() => handleLinkSuperset(ex.id, ex.supersetId)}
           />
         ))}
 
@@ -361,6 +448,11 @@ export default function ActiveWorkoutScreen() {
         <Pressable style={styles.cancelButton} onPress={handleCancel}>
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </Pressable>
+        <Pressable
+          style={styles.saveTemplateButton}
+          onPress={() => setShowSaveTemplate(true)}>
+          <BookmarkSimple size={18} color="#007AFF" />
+        </Pressable>
         <Pressable style={styles.finishButton} onPress={handleFinish}>
           <Text style={styles.finishButtonText}>Finish</Text>
         </Pressable>
@@ -370,6 +462,13 @@ export default function ActiveWorkoutScreen() {
         visible={showExercisePicker}
         onClose={() => setShowExercisePicker(false)}
         onSelect={addExercise}
+      />
+
+      <SaveTemplateModal
+        visible={showSaveTemplate}
+        onClose={() => setShowSaveTemplate(false)}
+        onSave={handleSaveAsTemplate}
+        defaultName={activeWorkout.name}
       />
     </View>
   );
@@ -414,12 +513,38 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
   },
+  exerciseCardSuperset: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9500',
+  },
+  supersetBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFF3E0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  supersetBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FF9500',
+  },
   exerciseHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
     backgroundColor: 'transparent',
+  },
+  exerciseActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'transparent',
+  },
+  linkButton: {
+    padding: 4,
   },
   exerciseNameContainer: {
     flex: 1,
@@ -582,6 +707,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#666',
+  },
+  saveTemplateButton: {
+    width: 50,
+    paddingVertical: 14,
+    borderRadius: 10,
+    backgroundColor: '#f0f7ff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   finishButton: {
     flex: 1,
