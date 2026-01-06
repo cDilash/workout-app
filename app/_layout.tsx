@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { DatabaseProvider } from '@/src/db/provider';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -42,7 +43,11 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <DatabaseProvider>
+      <RootLayoutNav />
+    </DatabaseProvider>
+  );
 }
 
 function RootLayoutNav() {
@@ -52,6 +57,14 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="workout/[id]"
+          options={{
+            title: 'Workout',
+            presentation: 'fullScreenModal',
+            headerShown: true,
+          }}
+        />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>

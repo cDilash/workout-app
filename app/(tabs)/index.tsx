@@ -1,14 +1,23 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Pressable } from 'react-native';
+import { Link } from 'expo-router';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
 
-export default function TabOneScreen() {
+export default function HomeScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+      <Text style={styles.title}>Ready to Train?</Text>
+
+      <Link href="/workout/new" asChild>
+        <Pressable style={styles.startButton}>
+          <Text style={styles.startButtonText}>Start Workout</Text>
+        </Pressable>
+      </Link>
+
+      <View style={styles.recentSection}>
+        <Text style={styles.sectionTitle}>Recent Workouts</Text>
+        <Text style={styles.emptyText}>No workouts yet. Start your first one!</Text>
+      </View>
     </View>
   );
 }
@@ -16,16 +25,36 @@ export default function TabOneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: 'bold',
+    marginBottom: 24,
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
+  startButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  startButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  recentSection: {
+    flex: 1,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  emptyText: {
+    color: '#888',
+    fontSize: 16,
   },
 });
