@@ -445,3 +445,160 @@ export async function getWorkoutDetails(workoutId: string): Promise<FullWorkoutD
     return null;
   }
 }
+
+// ============================================
+// APPEND-ONLY UPDATE OPERATIONS
+// Per DATA_HANDLING.md: Never mutate. Mark old as deleted, append new.
+// ============================================
+
+/**
+ * Update a set using append-only pattern.
+ *
+ * Per DATA_HANDLING.md:
+ * - Mark old set as isDeleted = true
+ * - Create new set with updated values
+ * - Link new set to old via previousVersionId
+ * - Update workout snapshot
+ *
+ * @param workoutId - Parent workout ID
+ * @param setId - ID of set to update
+ * @param updates - Partial set data to update
+ * @returns New set ID
+ */
+export async function updateSet(
+  workoutId: string,
+  setId: string,
+  updates: Partial<{
+    weightKg: number | null;
+    reps: number | null;
+    rpe: number | null;
+    rir: number | null;
+    restSeconds: number | null;
+    tempo: string | null;
+    isWarmup: boolean;
+    isFailure: boolean;
+    isDropset: boolean;
+  }>
+): Promise<string> {
+  const now = new Date();
+  const newSetId = uuid();
+
+  // 1. Get the old set
+  const oldSetResult = await db
+    .select()
+    .from(sets)
+    .where(eq(sets.id, setId))
+    .limit(1);
+
+  if (oldSetResult.length === 0) {
+    throw new Error(`Set ${setId} not found`);
+  }
+
+  const oldSet = oldSetResult[0];
+
+  // 2. Mark old set as deleted (preserve history)
+  await db
+    .update(sets)
+    .set({ isDeleted: true })
+    .where(eq(sets.id, setId));
+
+  // 3. Insert new set with updated values and link to previous
+  await db.insert(sets).values({
+    id: newSetId,
+    workoutExerciseId: oldSet.workoutExerciseId,
+    setNumber: oldSet.setNumber,
+    weightKg: updates.weightKg !== undefined ? updates.weightKg : oldSet.weightKg,
+    reps: updates.reps !== undefined ? updates.reps : oldSet.reps,
+    rpe: updates.rpe !== undefined ? updates.rpe : oldSet.rpe,
+    rir: updates.rir !== undefined ? updates.rir : oldSet.rir,
+    restSeconds: updates.restSeconds !== undefined ? updates.restSeconds : oldSet.restSeconds,
+    tempo: updates.tempo !== undefined ? updates.tempo : oldSet.tempo,
+    isWarmup: updates.isWarmup !== undefined ? updates.isWarmup : oldSet.isWarmup,
+    isFailure: updates.isFailure !== undefined ? updates.isFailure : oldSet.isFailure,
+    isDropset: updates.isDropset !== undefined ? updates.isDropset : oldSet.isDropset,
+    completedAt: oldSet.completedAt,
+    isDeleted: false,
+    previousVersionId: setId, // Link to history
+  });
+
+  // 4. Update workout's updatedAt timestamp
+  await db
+    .update(workouts)
+    .set({ updatedAt: now })
+    .where(eq(workouts.id, workoutId));
+
+  // 5. Create new workout snapshot (optional - only if full snapshot needed)
+  // For performance, we skip snapshot update on individual set edits
+  // Full snapshot is created on workout completion
+
+  return newSetId;
+}
+
+/**
+ * Soft delete a set.
+ *
+ * Per DATA_HANDLING.md: Never hard delete.
+ */
+export async function deleteSet(setId: string): Promise<void> {
+  await db
+    .update(sets)
+    .set({ isDeleted: true })
+    .where(eq(sets.id, setId));
+}
+
+/**
+ * Soft delete a workout exercise and all its sets.
+ *
+ * Per DATA_HANDLING.md: Never hard delete.
+ */
+export async function deleteWorkoutExercise(workoutExerciseId: string): Promise<void> {
+  // Mark the workout exercise as deleted
+  await db
+    .update(workoutExercises)
+    .set({ isDeleted: true })
+    .where(eq(workoutExercises.id, workoutExerciseId));
+
+  // Note: Sets inherit deletion via parent - filtered by isDeleted in queries
+}
+
+/**
+ * Get workout JSON from snapshot (fastest method).
+ *
+ * Per DATA_HANDLING.md: Use snapshot for full reconstruction.
+ */
+export async function getWorkoutJSON(workoutId: string): Promise<CanonicalWorkout | null> {
+  const snapshot = await db
+    .select()
+    .from(workoutSnapshots)
+    .where(eq(workoutSnapshots.workoutId, workoutId))
+    .orderBy(desc(workoutSnapshots.createdAt))
+    .limit(1);
+
+  if (snapshot.length === 0) return null;
+
+  return JSON.parse(snapshot[0].jsonData) as CanonicalWorkout;
+}
+
+/**
+ * Get set history (all versions including deleted).
+ * Useful for audit trail and undo functionality.
+ */
+export async function getSetHistory(currentSetId: string): Promise<Set[]> {
+  const history: Set[] = [];
+  let currentId: string | null = currentSetId;
+
+  while (currentId) {
+    const setResult = await db
+      .select()
+      .from(sets)
+      .where(eq(sets.id, currentId))
+      .limit(1);
+
+    if (setResult.length === 0) break;
+
+    history.push(setResult[0]);
+    currentId = setResult[0].previousVersionId;
+  }
+
+  return history;
+}

@@ -5,6 +5,7 @@ import { eq, desc, and, gte } from 'drizzle-orm';
 import type { Exercise } from '../db/schema';
 
 // Calculate estimated 1RM using Brzycki formula
+// NOTE: This is computed at read time, never stored (per DATA_HANDLING.md)
 export function calculate1RM(weight: number, reps: number): number {
   if (reps === 1) return weight;
   if (reps > 12) return weight * 1.3; // Rough estimate for high reps
@@ -43,35 +44,50 @@ export function useExerciseProgress(exerciseId: string | null) {
     async function fetchProgress() {
       setIsLoading(true);
       try {
-        // Get all workouts that include this exercise
+        // Get all non-deleted workout exercises for this exercise (soft delete filter per DATA_HANDLING.md)
         const workoutExerciseResults = await db
           .select({
             workoutExerciseId: workoutExercises.id,
             workoutId: workoutExercises.workoutId,
           })
           .from(workoutExercises)
-          .where(eq(workoutExercises.exerciseId, currentExerciseId));
+          .where(
+            and(
+              eq(workoutExercises.exerciseId, currentExerciseId),
+              eq(workoutExercises.isDeleted, false)
+            )
+          );
 
         const dataPoints: ProgressDataPoint[] = [];
         const volumePoints: ProgressDataPoint[] = [];
 
         for (const we of workoutExerciseResults) {
-          // Get workout date
+          // Get workout date (only non-deleted workouts)
           const workoutResult = await db
             .select({ startedAt: workouts.startedAt })
             .from(workouts)
-            .where(eq(workouts.id, we.workoutId))
+            .where(
+              and(
+                eq(workouts.id, we.workoutId),
+                eq(workouts.isDeleted, false)
+              )
+            )
             .limit(1);
 
           if (workoutResult.length === 0) continue;
 
-          // Get sets for this workout exercise
+          // Get non-deleted sets for this workout exercise
           const setsResult = await db
             .select()
             .from(sets)
-            .where(eq(sets.workoutExerciseId, we.workoutExerciseId));
+            .where(
+              and(
+                eq(sets.workoutExerciseId, we.workoutExerciseId),
+                eq(sets.isDeleted, false)
+              )
+            );
 
-          // Find max weight and calculate volume
+          // Find max weight and calculate volume (computed at read time per DATA_HANDLING.md)
           let maxWeight = 0;
           let totalVolume = 0;
 
@@ -86,7 +102,7 @@ export function useExerciseProgress(exerciseId: string | null) {
             dataPoints.push({
               date: workoutResult[0].startedAt,
               value: maxWeight,
-              label: `${maxWeight} lbs`,
+              label: `${maxWeight} kg`,
             });
           }
 
@@ -94,7 +110,7 @@ export function useExerciseProgress(exerciseId: string | null) {
             volumePoints.push({
               date: workoutResult[0].startedAt,
               value: totalVolume,
-              label: `${totalVolume.toLocaleString()} lbs`,
+              label: `${totalVolume.toLocaleString()} kg`,
             });
           }
         }
@@ -125,20 +141,30 @@ export function useExerciseStats() {
   const fetchStats = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Get all exercises that have been performed
+      // Get all non-deleted exercises that have been performed
       const exerciseResults = await db
         .select()
         .from(exercises)
-        .where(eq(exercises.isCustom, false));
+        .where(
+          and(
+            eq(exercises.isCustom, false),
+            eq(exercises.isDeleted, false)
+          )
+        );
 
       const exerciseStats: ExerciseStats[] = [];
 
       for (const exercise of exerciseResults) {
-        // Get all workout exercises for this exercise
+        // Get all non-deleted workout exercises for this exercise
         const weResults = await db
           .select()
           .from(workoutExercises)
-          .where(eq(workoutExercises.exerciseId, exercise.id));
+          .where(
+            and(
+              eq(workoutExercises.exerciseId, exercise.id),
+              eq(workoutExercises.isDeleted, false)
+            )
+          );
 
         if (weResults.length === 0) continue;
 
@@ -148,11 +174,16 @@ export function useExerciseStats() {
         let lastPerformed: Date | null = null;
 
         for (const we of weResults) {
-          // Get workout date
+          // Get non-deleted workout date
           const workoutResult = await db
             .select({ startedAt: workouts.startedAt })
             .from(workouts)
-            .where(eq(workouts.id, we.workoutId))
+            .where(
+              and(
+                eq(workouts.id, we.workoutId),
+                eq(workouts.isDeleted, false)
+              )
+            )
             .limit(1);
 
           if (workoutResult.length > 0) {
@@ -161,11 +192,16 @@ export function useExerciseStats() {
             }
           }
 
-          // Get sets
+          // Get non-deleted sets
           const setsResult = await db
             .select()
             .from(sets)
-            .where(eq(sets.workoutExerciseId, we.id));
+            .where(
+              and(
+                eq(sets.workoutExerciseId, we.id),
+                eq(sets.isDeleted, false)
+              )
+            );
 
           for (const s of setsResult) {
             if (s.weightKg && (!maxWeight || s.weightKg > maxWeight)) {
@@ -174,6 +210,7 @@ export function useExerciseStats() {
             if (s.reps && (!maxReps || s.reps > maxReps)) {
               maxReps = s.reps;
             }
+            // Volume computed at read time (per DATA_HANDLING.md)
             totalVolume += (s.weightKg || 0) * (s.reps || 0);
           }
         }
@@ -184,6 +221,7 @@ export function useExerciseStats() {
             exercise,
             maxWeight,
             maxReps,
+            // 1RM computed at read time (per DATA_HANDLING.md)
             estimated1RM: maxWeight && maxReps ? calculate1RM(maxWeight, maxReps) : null,
             totalVolume,
             lastPerformed,
@@ -222,14 +260,19 @@ export function useWorkoutFrequency() {
     async function fetchFrequency() {
       setIsLoading(true);
       try {
-        // Get last 90 days of workouts
+        // Get last 90 days of non-deleted workouts (soft delete filter per DATA_HANDLING.md)
         const ninetyDaysAgo = new Date();
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
         const workoutResults = await db
           .select({ startedAt: workouts.startedAt })
           .from(workouts)
-          .where(gte(workouts.startedAt, ninetyDaysAgo));
+          .where(
+            and(
+              gte(workouts.startedAt, ninetyDaysAgo),
+              eq(workouts.isDeleted, false)
+            )
+          );
 
         // Count workouts per day
         const dayCounts: Record<string, number> = {};
@@ -282,10 +325,22 @@ export function useMuscleGroupStats() {
       try {
         const muscleVolumes: Record<string, number> = {};
 
-        // Get all workout exercises
-        const weResults = await db.select().from(workoutExercises);
+        // Get all non-deleted workout exercises (soft delete filter per DATA_HANDLING.md)
+        const weResults = await db
+          .select()
+          .from(workoutExercises)
+          .where(eq(workoutExercises.isDeleted, false));
 
         for (const we of weResults) {
+          // Check if parent workout is not deleted
+          const workoutCheck = await db
+            .select({ isDeleted: workouts.isDeleted })
+            .from(workouts)
+            .where(eq(workouts.id, we.workoutId))
+            .limit(1);
+
+          if (workoutCheck.length === 0 || workoutCheck[0].isDeleted) continue;
+
           // Get exercise details
           const exerciseResult = await db
             .select()
@@ -295,13 +350,18 @@ export function useMuscleGroupStats() {
 
           if (exerciseResult.length === 0) continue;
 
-          // Get sets for this workout exercise
+          // Get non-deleted sets for this workout exercise
           const setsResult = await db
             .select()
             .from(sets)
-            .where(eq(sets.workoutExerciseId, we.id));
+            .where(
+              and(
+                eq(sets.workoutExerciseId, we.id),
+                eq(sets.isDeleted, false)
+              )
+            );
 
-          // Calculate volume
+          // Calculate volume (computed at read time per DATA_HANDLING.md)
           let volume = 0;
           for (const s of setsResult) {
             volume += (s.weightKg || 0) * (s.reps || 0);
@@ -345,14 +405,19 @@ export function useWeeklyVolume() {
     async function fetchWeeklyVolume() {
       setIsLoading(true);
       try {
-        // Get last 8 weeks of workouts
+        // Get last 8 weeks of non-deleted workouts (soft delete filter per DATA_HANDLING.md)
         const eightWeeksAgo = new Date();
         eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 56);
 
         const workoutResults = await db
           .select()
           .from(workouts)
-          .where(gte(workouts.startedAt, eightWeeksAgo))
+          .where(
+            and(
+              gte(workouts.startedAt, eightWeeksAgo),
+              eq(workouts.isDeleted, false)
+            )
+          )
           .orderBy(desc(workouts.startedAt));
 
         // Group by week and calculate volume
@@ -367,18 +432,30 @@ export function useWeeklyVolume() {
             weeklyVolumes[weekKey] = 0;
           }
 
-          // Get all sets for this workout
+          // Get all non-deleted workout exercises for this workout
           const weResults = await db
             .select()
             .from(workoutExercises)
-            .where(eq(workoutExercises.workoutId, workout.id));
+            .where(
+              and(
+                eq(workoutExercises.workoutId, workout.id),
+                eq(workoutExercises.isDeleted, false)
+              )
+            );
 
           for (const we of weResults) {
+            // Get non-deleted sets
             const setsResult = await db
               .select()
               .from(sets)
-              .where(eq(sets.workoutExerciseId, we.id));
+              .where(
+                and(
+                  eq(sets.workoutExerciseId, we.id),
+                  eq(sets.isDeleted, false)
+                )
+              );
 
+            // Volume computed at read time (per DATA_HANDLING.md)
             for (const s of setsResult) {
               weeklyVolumes[weekKey] += (s.weightKg || 0) * (s.reps || 0);
             }
