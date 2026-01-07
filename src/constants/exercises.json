@@ -3,826 +3,1298 @@
     "id": "bench-press",
     "name": "Bench Press",
     "category": "push",
-    "muscleGroup": "Chest",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["chest"],
+    "secondaryMuscleGroups": ["triceps", "front_delts"],
+    "equipment": "barbell",
+    "muscleGroup": "Chest"
   },
   {
     "id": "incline-bench-press",
     "name": "Incline Bench Press",
     "category": "push",
-    "muscleGroup": "Upper Chest",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["upper_chest"],
+    "secondaryMuscleGroups": ["triceps", "front_delts"],
+    "equipment": "barbell",
+    "muscleGroup": "Upper Chest"
   },
   {
     "id": "decline-bench-press",
     "name": "Decline Bench Press",
     "category": "push",
-    "muscleGroup": "Lower Chest",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["lower_chest"],
+    "secondaryMuscleGroups": ["triceps", "front_delts"],
+    "equipment": "barbell",
+    "muscleGroup": "Lower Chest"
   },
   {
     "id": "dumbbell-bench-press",
     "name": "Dumbbell Bench Press",
     "category": "push",
-    "muscleGroup": "Chest",
-    "equipment": "Dumbbell"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["chest"],
+    "secondaryMuscleGroups": ["triceps", "front_delts"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Chest"
   },
   {
     "id": "incline-dumbbell-press",
     "name": "Incline Dumbbell Press",
     "category": "push",
-    "muscleGroup": "Upper Chest",
-    "equipment": "Dumbbell"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["upper_chest"],
+    "secondaryMuscleGroups": ["triceps", "front_delts"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Upper Chest"
   },
   {
     "id": "chest-fly",
     "name": "Chest Fly",
     "category": "push",
-    "muscleGroup": "Chest",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["chest"],
+    "secondaryMuscleGroups": [],
+    "equipment": "dumbbell",
+    "muscleGroup": "Chest"
   },
   {
     "id": "cable-fly",
     "name": "Cable Fly",
     "category": "push",
-    "muscleGroup": "Chest",
-    "equipment": "Cable"
+    "exerciseType": "isolation",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["chest"],
+    "secondaryMuscleGroups": [],
+    "equipment": "cable",
+    "muscleGroup": "Chest"
   },
   {
     "id": "push-up",
     "name": "Push Up",
     "category": "push",
-    "muscleGroup": "Chest",
-    "equipment": "Bodyweight"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["chest"],
+    "secondaryMuscleGroups": ["triceps", "front_delts", "abs"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Chest"
   },
   {
     "id": "dip",
     "name": "Dip",
     "category": "push",
-    "muscleGroup": "Chest, Triceps",
-    "equipment": "Bodyweight"
+    "exerciseType": "compound",
+    "movementPattern": "vertical_push",
+    "primaryMuscleGroups": ["chest", "triceps"],
+    "secondaryMuscleGroups": ["front_delts"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Chest, Triceps"
   },
   {
     "id": "overhead-press",
     "name": "Overhead Press",
     "category": "push",
-    "muscleGroup": "Shoulders",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "vertical_push",
+    "primaryMuscleGroups": ["front_delts", "side_delts"],
+    "secondaryMuscleGroups": ["triceps", "upper_chest", "traps"],
+    "equipment": "barbell",
+    "muscleGroup": "Shoulders"
   },
   {
     "id": "dumbbell-shoulder-press",
     "name": "Dumbbell Shoulder Press",
     "category": "push",
-    "muscleGroup": "Shoulders",
-    "equipment": "Dumbbell"
+    "exerciseType": "compound",
+    "movementPattern": "vertical_push",
+    "primaryMuscleGroups": ["front_delts", "side_delts"],
+    "secondaryMuscleGroups": ["triceps", "traps"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Shoulders"
   },
   {
     "id": "arnold-press",
     "name": "Arnold Press",
     "category": "push",
-    "muscleGroup": "Shoulders",
-    "equipment": "Dumbbell"
+    "exerciseType": "compound",
+    "movementPattern": "vertical_push",
+    "primaryMuscleGroups": ["front_delts", "side_delts"],
+    "secondaryMuscleGroups": ["triceps", "upper_chest"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Shoulders"
   },
   {
     "id": "lateral-raise",
     "name": "Lateral Raise",
     "category": "push",
-    "muscleGroup": "Side Delts",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["side_delts"],
+    "secondaryMuscleGroups": ["traps"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Side Delts"
   },
   {
     "id": "front-raise",
     "name": "Front Raise",
     "category": "push",
-    "muscleGroup": "Front Delts",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["front_delts"],
+    "secondaryMuscleGroups": [],
+    "equipment": "dumbbell",
+    "muscleGroup": "Front Delts"
   },
   {
     "id": "face-pull",
     "name": "Face Pull",
     "category": "pull",
-    "muscleGroup": "Rear Delts",
-    "equipment": "Cable"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_pull",
+    "primaryMuscleGroups": ["rear_delts"],
+    "secondaryMuscleGroups": ["rhomboids", "traps"],
+    "equipment": "cable",
+    "muscleGroup": "Rear Delts"
   },
   {
     "id": "tricep-pushdown",
     "name": "Tricep Pushdown",
     "category": "push",
-    "muscleGroup": "Triceps",
-    "equipment": "Cable"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["triceps"],
+    "secondaryMuscleGroups": [],
+    "equipment": "cable",
+    "muscleGroup": "Triceps"
   },
   {
     "id": "tricep-extension",
     "name": "Tricep Extension",
     "category": "push",
-    "muscleGroup": "Triceps",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["triceps"],
+    "secondaryMuscleGroups": [],
+    "equipment": "dumbbell",
+    "muscleGroup": "Triceps"
   },
   {
     "id": "skull-crusher",
     "name": "Skull Crusher",
     "category": "push",
-    "muscleGroup": "Triceps",
-    "equipment": "Barbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["triceps"],
+    "secondaryMuscleGroups": [],
+    "equipment": "barbell",
+    "muscleGroup": "Triceps"
   },
   {
     "id": "close-grip-bench",
     "name": "Close Grip Bench Press",
     "category": "push",
-    "muscleGroup": "Triceps",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["triceps"],
+    "secondaryMuscleGroups": ["chest", "front_delts"],
+    "equipment": "barbell",
+    "muscleGroup": "Triceps"
   },
   {
     "id": "pull-up",
     "name": "Pull Up",
     "category": "pull",
-    "muscleGroup": "Lats",
-    "equipment": "Bodyweight"
+    "exerciseType": "compound",
+    "movementPattern": "vertical_pull",
+    "primaryMuscleGroups": ["lats"],
+    "secondaryMuscleGroups": ["biceps", "rhomboids", "rear_delts"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Lats"
   },
   {
     "id": "chin-up",
     "name": "Chin Up",
     "category": "pull",
-    "muscleGroup": "Lats, Biceps",
-    "equipment": "Bodyweight"
+    "exerciseType": "compound",
+    "movementPattern": "vertical_pull",
+    "primaryMuscleGroups": ["lats", "biceps"],
+    "secondaryMuscleGroups": ["rhomboids", "rear_delts"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Lats, Biceps"
   },
   {
     "id": "lat-pulldown",
     "name": "Lat Pulldown",
     "category": "pull",
-    "muscleGroup": "Lats",
-    "equipment": "Cable"
+    "exerciseType": "compound",
+    "movementPattern": "vertical_pull",
+    "primaryMuscleGroups": ["lats"],
+    "secondaryMuscleGroups": ["biceps", "rhomboids"],
+    "equipment": "cable",
+    "muscleGroup": "Lats"
   },
   {
     "id": "seated-row",
     "name": "Seated Cable Row",
     "category": "pull",
-    "muscleGroup": "Back",
-    "equipment": "Cable"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_pull",
+    "primaryMuscleGroups": ["lats", "rhomboids"],
+    "secondaryMuscleGroups": ["biceps", "rear_delts", "traps"],
+    "equipment": "cable",
+    "muscleGroup": "Back"
   },
   {
     "id": "barbell-row",
     "name": "Barbell Row",
     "category": "pull",
-    "muscleGroup": "Back",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_pull",
+    "primaryMuscleGroups": ["lats", "rhomboids"],
+    "secondaryMuscleGroups": ["biceps", "rear_delts", "lower_back"],
+    "equipment": "barbell",
+    "muscleGroup": "Back"
   },
   {
     "id": "dumbbell-row",
     "name": "Dumbbell Row",
     "category": "pull",
-    "muscleGroup": "Back",
-    "equipment": "Dumbbell"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_pull",
+    "primaryMuscleGroups": ["lats"],
+    "secondaryMuscleGroups": ["biceps", "rhomboids", "rear_delts"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Back"
   },
   {
     "id": "pendlay-row",
     "name": "Pendlay Row",
     "category": "pull",
-    "muscleGroup": "Back",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_pull",
+    "primaryMuscleGroups": ["lats", "upper_back"],
+    "secondaryMuscleGroups": ["biceps", "lower_back"],
+    "equipment": "barbell",
+    "muscleGroup": "Back"
   },
   {
     "id": "t-bar-row",
     "name": "T-Bar Row",
     "category": "pull",
-    "muscleGroup": "Back",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_pull",
+    "primaryMuscleGroups": ["lats", "rhomboids"],
+    "secondaryMuscleGroups": ["biceps", "rear_delts"],
+    "equipment": "machine",
+    "muscleGroup": "Back"
   },
   {
     "id": "deadlift",
     "name": "Deadlift",
     "category": "pull",
-    "muscleGroup": "Back, Hamstrings",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["hamstrings", "glutes", "lower_back"],
+    "secondaryMuscleGroups": ["lats", "traps", "quads", "forearms"],
+    "equipment": "barbell",
+    "muscleGroup": "Back, Hamstrings"
   },
   {
     "id": "romanian-deadlift",
     "name": "Romanian Deadlift",
     "category": "pull",
-    "muscleGroup": "Hamstrings",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["hamstrings", "glutes"],
+    "secondaryMuscleGroups": ["lower_back", "lats"],
+    "equipment": "barbell",
+    "muscleGroup": "Hamstrings"
   },
   {
     "id": "sumo-deadlift",
     "name": "Sumo Deadlift",
     "category": "pull",
-    "muscleGroup": "Back, Glutes",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["glutes", "quads"],
+    "secondaryMuscleGroups": ["hamstrings", "lower_back", "adductors"],
+    "equipment": "barbell",
+    "muscleGroup": "Back, Glutes"
   },
   {
     "id": "rack-pull",
     "name": "Rack Pull",
     "category": "pull",
-    "muscleGroup": "Back",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["upper_back", "traps"],
+    "secondaryMuscleGroups": ["lower_back", "glutes", "forearms"],
+    "equipment": "barbell",
+    "muscleGroup": "Back"
   },
   {
     "id": "shrug",
     "name": "Shrug",
     "category": "pull",
-    "muscleGroup": "Traps",
-    "equipment": "Barbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["traps"],
+    "secondaryMuscleGroups": [],
+    "equipment": "barbell",
+    "muscleGroup": "Traps"
   },
   {
     "id": "dumbbell-shrug",
     "name": "Dumbbell Shrug",
     "category": "pull",
-    "muscleGroup": "Traps",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["traps"],
+    "secondaryMuscleGroups": [],
+    "equipment": "dumbbell",
+    "muscleGroup": "Traps"
   },
   {
     "id": "barbell-curl",
     "name": "Barbell Curl",
     "category": "pull",
-    "muscleGroup": "Biceps",
-    "equipment": "Barbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["biceps"],
+    "secondaryMuscleGroups": ["forearms"],
+    "equipment": "barbell",
+    "muscleGroup": "Biceps"
   },
   {
     "id": "dumbbell-curl",
     "name": "Dumbbell Curl",
     "category": "pull",
-    "muscleGroup": "Biceps",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["biceps"],
+    "secondaryMuscleGroups": ["forearms"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Biceps"
   },
   {
     "id": "hammer-curl",
     "name": "Hammer Curl",
     "category": "pull",
-    "muscleGroup": "Biceps",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["biceps", "forearms"],
+    "secondaryMuscleGroups": [],
+    "equipment": "dumbbell",
+    "muscleGroup": "Biceps"
   },
   {
     "id": "preacher-curl",
     "name": "Preacher Curl",
     "category": "pull",
-    "muscleGroup": "Biceps",
-    "equipment": "Barbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["biceps"],
+    "secondaryMuscleGroups": [],
+    "equipment": "ez_bar",
+    "muscleGroup": "Biceps"
   },
   {
     "id": "concentration-curl",
     "name": "Concentration Curl",
     "category": "pull",
-    "muscleGroup": "Biceps",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["biceps"],
+    "secondaryMuscleGroups": [],
+    "equipment": "dumbbell",
+    "muscleGroup": "Biceps"
   },
   {
     "id": "cable-curl",
     "name": "Cable Curl",
     "category": "pull",
-    "muscleGroup": "Biceps",
-    "equipment": "Cable"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["biceps"],
+    "secondaryMuscleGroups": [],
+    "equipment": "cable",
+    "muscleGroup": "Biceps"
   },
   {
     "id": "reverse-curl",
     "name": "Reverse Curl",
     "category": "pull",
-    "muscleGroup": "Forearms",
-    "equipment": "Barbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["forearms"],
+    "secondaryMuscleGroups": ["biceps"],
+    "equipment": "barbell",
+    "muscleGroup": "Forearms"
   },
   {
     "id": "squat",
     "name": "Squat",
     "category": "legs",
-    "muscleGroup": "Quads",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "squat",
+    "primaryMuscleGroups": ["quads", "glutes"],
+    "secondaryMuscleGroups": ["hamstrings", "lower_back", "abs"],
+    "equipment": "barbell",
+    "muscleGroup": "Quads"
   },
   {
     "id": "front-squat",
     "name": "Front Squat",
     "category": "legs",
-    "muscleGroup": "Quads",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "squat",
+    "primaryMuscleGroups": ["quads"],
+    "secondaryMuscleGroups": ["glutes", "abs", "upper_back"],
+    "equipment": "barbell",
+    "muscleGroup": "Quads"
   },
   {
     "id": "goblet-squat",
     "name": "Goblet Squat",
     "category": "legs",
-    "muscleGroup": "Quads",
-    "equipment": "Dumbbell"
+    "exerciseType": "compound",
+    "movementPattern": "squat",
+    "primaryMuscleGroups": ["quads", "glutes"],
+    "secondaryMuscleGroups": ["abs"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Quads"
   },
   {
     "id": "hack-squat",
     "name": "Hack Squat",
     "category": "legs",
-    "muscleGroup": "Quads",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "squat",
+    "primaryMuscleGroups": ["quads"],
+    "secondaryMuscleGroups": ["glutes"],
+    "equipment": "machine",
+    "muscleGroup": "Quads"
   },
   {
     "id": "leg-press",
     "name": "Leg Press",
     "category": "legs",
-    "muscleGroup": "Quads",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "squat",
+    "primaryMuscleGroups": ["quads", "glutes"],
+    "secondaryMuscleGroups": ["hamstrings"],
+    "equipment": "machine",
+    "muscleGroup": "Quads"
   },
   {
     "id": "leg-extension",
     "name": "Leg Extension",
     "category": "legs",
-    "muscleGroup": "Quads",
-    "equipment": "Machine"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["quads"],
+    "secondaryMuscleGroups": [],
+    "equipment": "machine",
+    "muscleGroup": "Quads"
   },
   {
     "id": "leg-curl",
     "name": "Leg Curl",
     "category": "legs",
-    "muscleGroup": "Hamstrings",
-    "equipment": "Machine"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["hamstrings"],
+    "secondaryMuscleGroups": [],
+    "equipment": "machine",
+    "muscleGroup": "Hamstrings"
   },
   {
     "id": "lunge",
     "name": "Lunge",
     "category": "legs",
-    "muscleGroup": "Quads, Glutes",
-    "equipment": "Bodyweight"
+    "exerciseType": "compound",
+    "movementPattern": "lunge",
+    "primaryMuscleGroups": ["quads", "glutes"],
+    "secondaryMuscleGroups": ["hamstrings"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Quads, Glutes"
   },
   {
     "id": "walking-lunge",
     "name": "Walking Lunge",
     "category": "legs",
-    "muscleGroup": "Quads, Glutes",
-    "equipment": "Dumbbell"
+    "exerciseType": "compound",
+    "movementPattern": "lunge",
+    "primaryMuscleGroups": ["quads", "glutes"],
+    "secondaryMuscleGroups": ["hamstrings"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Quads, Glutes"
   },
   {
     "id": "bulgarian-split-squat",
     "name": "Bulgarian Split Squat",
     "category": "legs",
-    "muscleGroup": "Quads, Glutes",
-    "equipment": "Dumbbell"
+    "exerciseType": "compound",
+    "movementPattern": "lunge",
+    "primaryMuscleGroups": ["quads", "glutes"],
+    "secondaryMuscleGroups": ["hamstrings"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Quads, Glutes"
   },
   {
     "id": "step-up",
     "name": "Step Up",
     "category": "legs",
-    "muscleGroup": "Quads, Glutes",
-    "equipment": "Dumbbell"
+    "exerciseType": "compound",
+    "movementPattern": "lunge",
+    "primaryMuscleGroups": ["quads", "glutes"],
+    "secondaryMuscleGroups": [],
+    "equipment": "dumbbell",
+    "muscleGroup": "Quads, Glutes"
   },
   {
     "id": "hip-thrust",
     "name": "Hip Thrust",
     "category": "legs",
-    "muscleGroup": "Glutes",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["glutes"],
+    "secondaryMuscleGroups": ["hamstrings"],
+    "equipment": "barbell",
+    "muscleGroup": "Glutes"
   },
   {
     "id": "glute-bridge",
     "name": "Glute Bridge",
     "category": "legs",
-    "muscleGroup": "Glutes",
-    "equipment": "Bodyweight"
+    "exerciseType": "isolation",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["glutes"],
+    "secondaryMuscleGroups": ["hamstrings"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Glutes"
   },
   {
     "id": "good-morning",
     "name": "Good Morning",
     "category": "legs",
-    "muscleGroup": "Hamstrings",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["hamstrings", "lower_back"],
+    "secondaryMuscleGroups": ["glutes"],
+    "equipment": "barbell",
+    "muscleGroup": "Hamstrings"
   },
   {
     "id": "calf-raise",
     "name": "Calf Raise",
     "category": "legs",
-    "muscleGroup": "Calves",
-    "equipment": "Machine"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["calves"],
+    "secondaryMuscleGroups": [],
+    "equipment": "machine",
+    "muscleGroup": "Calves"
   },
   {
     "id": "seated-calf-raise",
     "name": "Seated Calf Raise",
     "category": "legs",
-    "muscleGroup": "Calves",
-    "equipment": "Machine"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["calves"],
+    "secondaryMuscleGroups": [],
+    "equipment": "machine",
+    "muscleGroup": "Calves"
   },
   {
     "id": "single-leg-calf-raise",
     "name": "Single Leg Calf Raise",
     "category": "legs",
-    "muscleGroup": "Calves",
-    "equipment": "Bodyweight"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["calves"],
+    "secondaryMuscleGroups": [],
+    "equipment": "bodyweight",
+    "muscleGroup": "Calves"
   },
   {
     "id": "hip-abduction",
     "name": "Hip Abduction",
     "category": "legs",
-    "muscleGroup": "Glutes",
-    "equipment": "Machine"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["abductors", "glutes"],
+    "secondaryMuscleGroups": [],
+    "equipment": "machine",
+    "muscleGroup": "Glutes"
   },
   {
     "id": "hip-adduction",
     "name": "Hip Adduction",
     "category": "legs",
-    "muscleGroup": "Inner Thigh",
-    "equipment": "Machine"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["adductors"],
+    "secondaryMuscleGroups": [],
+    "equipment": "machine",
+    "muscleGroup": "Inner Thigh"
   },
   {
     "id": "plank",
     "name": "Plank",
     "category": "core",
-    "muscleGroup": "Core",
-    "equipment": "Bodyweight"
+    "exerciseType": "isolation",
+    "movementPattern": "other",
+    "primaryMuscleGroups": ["abs"],
+    "secondaryMuscleGroups": ["obliques", "lower_back"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Core"
   },
   {
     "id": "side-plank",
     "name": "Side Plank",
     "category": "core",
-    "muscleGroup": "Obliques",
-    "equipment": "Bodyweight"
+    "exerciseType": "isolation",
+    "movementPattern": "other",
+    "primaryMuscleGroups": ["obliques"],
+    "secondaryMuscleGroups": ["abs"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Obliques"
   },
   {
     "id": "crunch",
     "name": "Crunch",
     "category": "core",
-    "muscleGroup": "Abs",
-    "equipment": "Bodyweight"
+    "exerciseType": "isolation",
+    "movementPattern": "other",
+    "primaryMuscleGroups": ["abs"],
+    "secondaryMuscleGroups": [],
+    "equipment": "bodyweight",
+    "muscleGroup": "Abs"
   },
   {
     "id": "sit-up",
     "name": "Sit Up",
     "category": "core",
-    "muscleGroup": "Abs",
-    "equipment": "Bodyweight"
+    "exerciseType": "compound",
+    "movementPattern": "other",
+    "primaryMuscleGroups": ["abs"],
+    "secondaryMuscleGroups": ["hip_flexors"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Abs"
   },
   {
     "id": "leg-raise",
     "name": "Leg Raise",
     "category": "core",
-    "muscleGroup": "Lower Abs",
-    "equipment": "Bodyweight"
+    "exerciseType": "isolation",
+    "movementPattern": "other",
+    "primaryMuscleGroups": ["abs"],
+    "secondaryMuscleGroups": ["hip_flexors"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Lower Abs"
   },
   {
     "id": "hanging-leg-raise",
     "name": "Hanging Leg Raise",
     "category": "core",
-    "muscleGroup": "Lower Abs",
-    "equipment": "Bodyweight"
+    "exerciseType": "compound",
+    "movementPattern": "other",
+    "primaryMuscleGroups": ["abs"],
+    "secondaryMuscleGroups": ["hip_flexors", "forearms"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Lower Abs"
   },
   {
     "id": "russian-twist",
     "name": "Russian Twist",
     "category": "core",
-    "muscleGroup": "Obliques",
-    "equipment": "Bodyweight"
+    "exerciseType": "isolation",
+    "movementPattern": "rotation",
+    "primaryMuscleGroups": ["obliques"],
+    "secondaryMuscleGroups": ["abs"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Obliques"
   },
   {
     "id": "cable-crunch",
     "name": "Cable Crunch",
     "category": "core",
-    "muscleGroup": "Abs",
-    "equipment": "Cable"
+    "exerciseType": "isolation",
+    "movementPattern": "other",
+    "primaryMuscleGroups": ["abs"],
+    "secondaryMuscleGroups": [],
+    "equipment": "cable",
+    "muscleGroup": "Abs"
   },
   {
     "id": "ab-wheel-rollout",
     "name": "Ab Wheel Rollout",
     "category": "core",
-    "muscleGroup": "Core",
-    "equipment": "Other"
+    "exerciseType": "compound",
+    "movementPattern": "other",
+    "primaryMuscleGroups": ["abs"],
+    "secondaryMuscleGroups": ["lats", "triceps"],
+    "equipment": "other",
+    "muscleGroup": "Core"
   },
   {
     "id": "mountain-climber",
     "name": "Mountain Climber",
     "category": "core",
-    "muscleGroup": "Core",
-    "equipment": "Bodyweight"
+    "exerciseType": "compound",
+    "movementPattern": "other",
+    "primaryMuscleGroups": ["abs"],
+    "secondaryMuscleGroups": ["hip_flexors", "quads"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Core"
   },
   {
     "id": "dead-bug",
     "name": "Dead Bug",
     "category": "core",
-    "muscleGroup": "Core",
-    "equipment": "Bodyweight"
+    "exerciseType": "isolation",
+    "movementPattern": "other",
+    "primaryMuscleGroups": ["abs"],
+    "secondaryMuscleGroups": [],
+    "equipment": "bodyweight",
+    "muscleGroup": "Core"
   },
   {
     "id": "bird-dog",
     "name": "Bird Dog",
     "category": "core",
-    "muscleGroup": "Core",
-    "equipment": "Bodyweight"
+    "exerciseType": "isolation",
+    "movementPattern": "other",
+    "primaryMuscleGroups": ["abs", "lower_back"],
+    "secondaryMuscleGroups": ["glutes"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Core"
   },
   {
     "id": "pallof-press",
     "name": "Pallof Press",
     "category": "core",
-    "muscleGroup": "Core",
-    "equipment": "Cable"
+    "exerciseType": "isolation",
+    "movementPattern": "rotation",
+    "primaryMuscleGroups": ["abs", "obliques"],
+    "secondaryMuscleGroups": [],
+    "equipment": "cable",
+    "muscleGroup": "Core"
   },
   {
     "id": "woodchop",
     "name": "Wood Chop",
     "category": "core",
-    "muscleGroup": "Obliques",
-    "equipment": "Cable"
+    "exerciseType": "compound",
+    "movementPattern": "rotation",
+    "primaryMuscleGroups": ["obliques"],
+    "secondaryMuscleGroups": ["abs", "front_delts"],
+    "equipment": "cable",
+    "muscleGroup": "Obliques"
   },
   {
     "id": "back-extension",
     "name": "Back Extension",
     "category": "core",
-    "muscleGroup": "Lower Back",
-    "equipment": "Machine"
+    "exerciseType": "isolation",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["lower_back"],
+    "secondaryMuscleGroups": ["glutes", "hamstrings"],
+    "equipment": "machine",
+    "muscleGroup": "Lower Back"
   },
   {
     "id": "running",
     "name": "Running",
     "category": "cardio",
-    "muscleGroup": "Cardio",
-    "equipment": "None"
+    "exerciseType": "compound",
+    "movementPattern": "cardio",
+    "primaryMuscleGroups": ["quads", "hamstrings", "calves"],
+    "secondaryMuscleGroups": ["glutes", "hip_flexors"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Cardio"
   },
   {
     "id": "treadmill",
     "name": "Treadmill",
     "category": "cardio",
-    "muscleGroup": "Cardio",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "cardio",
+    "primaryMuscleGroups": ["quads", "hamstrings", "calves"],
+    "secondaryMuscleGroups": ["glutes"],
+    "equipment": "machine",
+    "muscleGroup": "Cardio"
   },
   {
     "id": "cycling",
     "name": "Cycling",
     "category": "cardio",
-    "muscleGroup": "Cardio",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "cardio",
+    "primaryMuscleGroups": ["quads", "hamstrings"],
+    "secondaryMuscleGroups": ["calves", "glutes"],
+    "equipment": "machine",
+    "muscleGroup": "Cardio"
   },
   {
     "id": "rowing-machine",
     "name": "Rowing Machine",
     "category": "cardio",
-    "muscleGroup": "Cardio, Back",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "cardio",
+    "primaryMuscleGroups": ["lats", "quads"],
+    "secondaryMuscleGroups": ["biceps", "hamstrings", "glutes", "abs"],
+    "equipment": "machine",
+    "muscleGroup": "Cardio, Back"
   },
   {
     "id": "elliptical",
     "name": "Elliptical",
     "category": "cardio",
-    "muscleGroup": "Cardio",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "cardio",
+    "primaryMuscleGroups": ["quads", "glutes"],
+    "secondaryMuscleGroups": ["hamstrings", "calves"],
+    "equipment": "machine",
+    "muscleGroup": "Cardio"
   },
   {
     "id": "stair-climber",
     "name": "Stair Climber",
     "category": "cardio",
-    "muscleGroup": "Cardio, Legs",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "cardio",
+    "primaryMuscleGroups": ["quads", "glutes", "calves"],
+    "secondaryMuscleGroups": ["hamstrings"],
+    "equipment": "machine",
+    "muscleGroup": "Cardio, Legs"
   },
   {
     "id": "jump-rope",
     "name": "Jump Rope",
     "category": "cardio",
-    "muscleGroup": "Cardio",
-    "equipment": "Other"
+    "exerciseType": "compound",
+    "movementPattern": "cardio",
+    "primaryMuscleGroups": ["calves"],
+    "secondaryMuscleGroups": ["quads", "forearms"],
+    "equipment": "other",
+    "muscleGroup": "Cardio"
   },
   {
     "id": "burpee",
     "name": "Burpee",
     "category": "cardio",
-    "muscleGroup": "Full Body",
-    "equipment": "Bodyweight"
+    "exerciseType": "compound",
+    "movementPattern": "cardio",
+    "primaryMuscleGroups": ["chest", "quads", "abs"],
+    "secondaryMuscleGroups": ["triceps", "glutes", "hamstrings"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Full Body"
   },
   {
     "id": "box-jump",
     "name": "Box Jump",
     "category": "cardio",
-    "muscleGroup": "Legs",
-    "equipment": "Other"
+    "exerciseType": "compound",
+    "movementPattern": "cardio",
+    "primaryMuscleGroups": ["quads", "glutes"],
+    "secondaryMuscleGroups": ["hamstrings", "calves"],
+    "equipment": "other",
+    "muscleGroup": "Legs"
   },
   {
     "id": "battle-ropes",
     "name": "Battle Ropes",
     "category": "cardio",
-    "muscleGroup": "Full Body",
-    "equipment": "Other"
+    "exerciseType": "compound",
+    "movementPattern": "cardio",
+    "primaryMuscleGroups": ["front_delts", "abs"],
+    "secondaryMuscleGroups": ["biceps", "forearms", "lats"],
+    "equipment": "other",
+    "muscleGroup": "Full Body"
   },
   {
     "id": "kettlebell-swing",
     "name": "Kettlebell Swing",
     "category": "cardio",
-    "muscleGroup": "Full Body",
-    "equipment": "Kettlebell"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["glutes", "hamstrings"],
+    "secondaryMuscleGroups": ["abs", "lats", "front_delts"],
+    "equipment": "kettlebell",
+    "muscleGroup": "Full Body"
   },
   {
     "id": "clean",
     "name": "Clean",
     "category": "other",
-    "muscleGroup": "Full Body",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["quads", "glutes", "hamstrings"],
+    "secondaryMuscleGroups": ["traps", "front_delts", "forearms"],
+    "equipment": "barbell",
+    "muscleGroup": "Full Body"
   },
   {
     "id": "power-clean",
     "name": "Power Clean",
     "category": "other",
-    "muscleGroup": "Full Body",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["quads", "glutes", "hamstrings"],
+    "secondaryMuscleGroups": ["traps", "front_delts", "forearms"],
+    "equipment": "barbell",
+    "muscleGroup": "Full Body"
   },
   {
     "id": "snatch",
     "name": "Snatch",
     "category": "other",
-    "muscleGroup": "Full Body",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["quads", "glutes", "hamstrings", "traps"],
+    "secondaryMuscleGroups": ["front_delts", "triceps", "abs"],
+    "equipment": "barbell",
+    "muscleGroup": "Full Body"
   },
   {
     "id": "clean-and-jerk",
     "name": "Clean and Jerk",
     "category": "other",
-    "muscleGroup": "Full Body",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["quads", "glutes", "front_delts"],
+    "secondaryMuscleGroups": ["hamstrings", "traps", "triceps", "abs"],
+    "equipment": "barbell",
+    "muscleGroup": "Full Body"
   },
   {
     "id": "thruster",
     "name": "Thruster",
     "category": "other",
-    "muscleGroup": "Full Body",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "squat",
+    "primaryMuscleGroups": ["quads", "glutes", "front_delts"],
+    "secondaryMuscleGroups": ["triceps", "abs"],
+    "equipment": "barbell",
+    "muscleGroup": "Full Body"
   },
   {
     "id": "push-press",
     "name": "Push Press",
     "category": "push",
-    "muscleGroup": "Shoulders",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "vertical_push",
+    "primaryMuscleGroups": ["front_delts", "triceps"],
+    "secondaryMuscleGroups": ["quads", "glutes", "abs"],
+    "equipment": "barbell",
+    "muscleGroup": "Shoulders"
   },
   {
     "id": "farmers-walk",
     "name": "Farmer's Walk",
     "category": "other",
-    "muscleGroup": "Full Body",
-    "equipment": "Dumbbell"
+    "exerciseType": "compound",
+    "movementPattern": "carry",
+    "primaryMuscleGroups": ["traps", "forearms"],
+    "secondaryMuscleGroups": ["abs", "glutes", "quads"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Full Body"
   },
   {
     "id": "turkish-get-up",
     "name": "Turkish Get Up",
     "category": "other",
-    "muscleGroup": "Full Body",
-    "equipment": "Kettlebell"
+    "exerciseType": "compound",
+    "movementPattern": "other",
+    "primaryMuscleGroups": ["abs", "front_delts", "glutes"],
+    "secondaryMuscleGroups": ["quads", "triceps", "obliques"],
+    "equipment": "kettlebell",
+    "muscleGroup": "Full Body"
   },
   {
     "id": "wrist-curl",
     "name": "Wrist Curl",
     "category": "pull",
-    "muscleGroup": "Forearms",
-    "equipment": "Barbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["forearms"],
+    "secondaryMuscleGroups": [],
+    "equipment": "barbell",
+    "muscleGroup": "Forearms"
   },
   {
     "id": "reverse-wrist-curl",
     "name": "Reverse Wrist Curl",
     "category": "pull",
-    "muscleGroup": "Forearms",
-    "equipment": "Barbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["forearms"],
+    "secondaryMuscleGroups": [],
+    "equipment": "barbell",
+    "muscleGroup": "Forearms"
   },
   {
     "id": "rear-delt-fly",
     "name": "Rear Delt Fly",
     "category": "pull",
-    "muscleGroup": "Rear Delts",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["rear_delts"],
+    "secondaryMuscleGroups": ["rhomboids"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Rear Delts"
   },
   {
     "id": "machine-chest-press",
     "name": "Machine Chest Press",
     "category": "push",
-    "muscleGroup": "Chest",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["chest"],
+    "secondaryMuscleGroups": ["triceps", "front_delts"],
+    "equipment": "machine",
+    "muscleGroup": "Chest"
   },
   {
     "id": "machine-shoulder-press",
     "name": "Machine Shoulder Press",
     "category": "push",
-    "muscleGroup": "Shoulders",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "vertical_push",
+    "primaryMuscleGroups": ["front_delts", "side_delts"],
+    "secondaryMuscleGroups": ["triceps"],
+    "equipment": "machine",
+    "muscleGroup": "Shoulders"
   },
   {
     "id": "machine-row",
     "name": "Machine Row",
     "category": "pull",
-    "muscleGroup": "Back",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_pull",
+    "primaryMuscleGroups": ["lats", "rhomboids"],
+    "secondaryMuscleGroups": ["biceps"],
+    "equipment": "machine",
+    "muscleGroup": "Back"
   },
   {
     "id": "pec-deck",
     "name": "Pec Deck",
     "category": "push",
-    "muscleGroup": "Chest",
-    "equipment": "Machine"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["chest"],
+    "secondaryMuscleGroups": [],
+    "equipment": "machine",
+    "muscleGroup": "Chest"
   },
   {
     "id": "reverse-pec-deck",
     "name": "Reverse Pec Deck",
     "category": "pull",
-    "muscleGroup": "Rear Delts",
-    "equipment": "Machine"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["rear_delts"],
+    "secondaryMuscleGroups": ["rhomboids"],
+    "equipment": "machine",
+    "muscleGroup": "Rear Delts"
   },
   {
     "id": "smith-machine-squat",
     "name": "Smith Machine Squat",
     "category": "legs",
-    "muscleGroup": "Quads",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "squat",
+    "primaryMuscleGroups": ["quads", "glutes"],
+    "secondaryMuscleGroups": ["hamstrings"],
+    "equipment": "smith_machine",
+    "muscleGroup": "Quads"
   },
   {
     "id": "smith-machine-bench",
     "name": "Smith Machine Bench Press",
     "category": "push",
-    "muscleGroup": "Chest",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["chest"],
+    "secondaryMuscleGroups": ["triceps", "front_delts"],
+    "equipment": "smith_machine",
+    "muscleGroup": "Chest"
   },
   {
     "id": "incline-dumbbell-fly",
     "name": "Incline Dumbbell Fly",
     "category": "push",
-    "muscleGroup": "Upper Chest",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["upper_chest"],
+    "secondaryMuscleGroups": [],
+    "equipment": "dumbbell",
+    "muscleGroup": "Upper Chest"
   },
   {
     "id": "decline-dumbbell-press",
     "name": "Decline Dumbbell Press",
     "category": "push",
-    "muscleGroup": "Lower Chest",
-    "equipment": "Dumbbell"
+    "exerciseType": "compound",
+    "movementPattern": "horizontal_push",
+    "primaryMuscleGroups": ["lower_chest"],
+    "secondaryMuscleGroups": ["triceps", "front_delts"],
+    "equipment": "dumbbell",
+    "muscleGroup": "Lower Chest"
   },
   {
     "id": "close-grip-lat-pulldown",
     "name": "Close Grip Lat Pulldown",
     "category": "pull",
-    "muscleGroup": "Lats",
-    "equipment": "Cable"
+    "exerciseType": "compound",
+    "movementPattern": "vertical_pull",
+    "primaryMuscleGroups": ["lats"],
+    "secondaryMuscleGroups": ["biceps", "rhomboids"],
+    "equipment": "cable",
+    "muscleGroup": "Lats"
   },
   {
     "id": "straight-arm-pulldown",
     "name": "Straight Arm Pulldown",
     "category": "pull",
-    "muscleGroup": "Lats",
-    "equipment": "Cable"
+    "exerciseType": "isolation",
+    "movementPattern": "vertical_pull",
+    "primaryMuscleGroups": ["lats"],
+    "secondaryMuscleGroups": ["triceps"],
+    "equipment": "cable",
+    "muscleGroup": "Lats"
   },
   {
     "id": "upright-row",
     "name": "Upright Row",
     "category": "pull",
-    "muscleGroup": "Traps, Delts",
-    "equipment": "Barbell"
+    "exerciseType": "compound",
+    "movementPattern": "vertical_pull",
+    "primaryMuscleGroups": ["traps", "side_delts"],
+    "secondaryMuscleGroups": ["biceps", "front_delts"],
+    "equipment": "barbell",
+    "muscleGroup": "Traps, Delts"
   },
   {
     "id": "incline-curl",
     "name": "Incline Dumbbell Curl",
     "category": "pull",
-    "muscleGroup": "Biceps",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["biceps"],
+    "secondaryMuscleGroups": [],
+    "equipment": "dumbbell",
+    "muscleGroup": "Biceps"
   },
   {
     "id": "spider-curl",
     "name": "Spider Curl",
     "category": "pull",
-    "muscleGroup": "Biceps",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["biceps"],
+    "secondaryMuscleGroups": [],
+    "equipment": "dumbbell",
+    "muscleGroup": "Biceps"
   },
   {
     "id": "overhead-tricep-extension",
     "name": "Overhead Tricep Extension",
     "category": "push",
-    "muscleGroup": "Triceps",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["triceps"],
+    "secondaryMuscleGroups": [],
+    "equipment": "dumbbell",
+    "muscleGroup": "Triceps"
   },
   {
     "id": "tricep-kickback",
     "name": "Tricep Kickback",
     "category": "push",
-    "muscleGroup": "Triceps",
-    "equipment": "Dumbbell"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["triceps"],
+    "secondaryMuscleGroups": [],
+    "equipment": "dumbbell",
+    "muscleGroup": "Triceps"
   },
   {
     "id": "cable-lateral-raise",
     "name": "Cable Lateral Raise",
     "category": "push",
-    "muscleGroup": "Side Delts",
-    "equipment": "Cable"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["side_delts"],
+    "secondaryMuscleGroups": [],
+    "equipment": "cable",
+    "muscleGroup": "Side Delts"
   },
   {
     "id": "sissy-squat",
     "name": "Sissy Squat",
     "category": "legs",
-    "muscleGroup": "Quads",
-    "equipment": "Bodyweight"
+    "exerciseType": "isolation",
+    "movementPattern": "squat",
+    "primaryMuscleGroups": ["quads"],
+    "secondaryMuscleGroups": [],
+    "equipment": "bodyweight",
+    "muscleGroup": "Quads"
   },
   {
     "id": "pistol-squat",
     "name": "Pistol Squat",
     "category": "legs",
-    "muscleGroup": "Quads",
-    "equipment": "Bodyweight"
+    "exerciseType": "compound",
+    "movementPattern": "squat",
+    "primaryMuscleGroups": ["quads", "glutes"],
+    "secondaryMuscleGroups": ["hamstrings", "abs"],
+    "equipment": "bodyweight",
+    "muscleGroup": "Quads"
   },
   {
     "id": "nordic-curl",
     "name": "Nordic Curl",
     "category": "legs",
-    "muscleGroup": "Hamstrings",
-    "equipment": "Bodyweight"
+    "exerciseType": "isolation",
+    "movementPattern": "isolation",
+    "primaryMuscleGroups": ["hamstrings"],
+    "secondaryMuscleGroups": [],
+    "equipment": "bodyweight",
+    "muscleGroup": "Hamstrings"
   },
   {
     "id": "glute-ham-raise",
     "name": "Glute Ham Raise",
     "category": "legs",
-    "muscleGroup": "Hamstrings, Glutes",
-    "equipment": "Machine"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["hamstrings", "glutes"],
+    "secondaryMuscleGroups": ["lower_back"],
+    "equipment": "machine",
+    "muscleGroup": "Hamstrings, Glutes"
   },
   {
     "id": "cable-pull-through",
     "name": "Cable Pull Through",
     "category": "legs",
-    "muscleGroup": "Glutes",
-    "equipment": "Cable"
+    "exerciseType": "compound",
+    "movementPattern": "hinge",
+    "primaryMuscleGroups": ["glutes"],
+    "secondaryMuscleGroups": ["hamstrings"],
+    "equipment": "cable",
+    "muscleGroup": "Glutes"
   }
 ]

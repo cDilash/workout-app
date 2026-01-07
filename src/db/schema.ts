@@ -15,28 +15,120 @@ import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 export const SCHEMA_VERSION = '1.0.0';
 
 // ============================================
+// EXERCISE CONSTANTS (for visualization & filtering)
+// ============================================
+
+// Exercise type: compound (multi-joint) vs isolation (single-joint)
+export const EXERCISE_TYPES = ['compound', 'isolation'] as const;
+export type ExerciseType = (typeof EXERCISE_TYPES)[number];
+
+// Equipment categories for filtering
+export const EQUIPMENT_TYPES = [
+  'barbell',
+  'dumbbell',
+  'cable',
+  'machine',
+  'bodyweight',
+  'kettlebell',
+  'resistance_band',
+  'ez_bar',
+  'trap_bar',
+  'smith_machine',
+  'other',
+] as const;
+export type EquipmentType = (typeof EQUIPMENT_TYPES)[number];
+
+// Movement patterns for analytics
+export const MOVEMENT_PATTERNS = [
+  'horizontal_push',
+  'horizontal_pull',
+  'vertical_push',
+  'vertical_pull',
+  'squat',
+  'hinge',
+  'lunge',
+  'carry',
+  'rotation',
+  'isolation',
+  'cardio',
+  'other',
+] as const;
+export type MovementPattern = (typeof MOVEMENT_PATTERNS)[number];
+
+// Muscle groups for visualization
+export const MUSCLE_GROUPS = [
+  // Chest
+  'chest',
+  'upper_chest',
+  'lower_chest',
+  // Back
+  'lats',
+  'upper_back',
+  'lower_back',
+  'rhomboids',
+  'traps',
+  // Shoulders
+  'front_delts',
+  'side_delts',
+  'rear_delts',
+  // Arms
+  'biceps',
+  'triceps',
+  'forearms',
+  // Core
+  'abs',
+  'obliques',
+  'lower_back',
+  // Legs
+  'quads',
+  'hamstrings',
+  'glutes',
+  'calves',
+  'hip_flexors',
+  'adductors',
+  'abductors',
+] as const;
+export type MuscleGroup = (typeof MUSCLE_GROUPS)[number];
+
+// ============================================
 // EXERCISES (Reference Library)
 // ============================================
 export const exercises = sqliteTable('exercises', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
+
+  // Exercise classification
+  exerciseType: text('exercise_type', {
+    enum: ['compound', 'isolation'],
+  }),
+
   // Movement pattern for analytics
   movementPattern: text('movement_pattern', {
     enum: ['horizontal_push', 'horizontal_pull', 'vertical_push', 'vertical_pull',
            'squat', 'hinge', 'lunge', 'carry', 'rotation', 'isolation', 'cardio', 'other'],
   }),
-  // Legacy single field - kept for backward compatibility
-  muscleGroup: text('muscle_group'),
-  // New: Primary muscles as JSON array string
+
+  // Muscle groups as JSON arrays
   primaryMuscleGroups: text('primary_muscle_groups'), // JSON: ["chest", "triceps"]
-  // New: Secondary muscles as JSON array string
-  secondaryMuscleGroups: text('secondary_muscle_groups'), // JSON: ["anterior_deltoid"]
-  equipment: text('equipment'),
+  secondaryMuscleGroups: text('secondary_muscle_groups'), // JSON: ["front_delts"]
+
+  // Equipment used
+  equipment: text('equipment', {
+    enum: ['barbell', 'dumbbell', 'cable', 'machine', 'bodyweight',
+           'kettlebell', 'resistance_band', 'ez_bar', 'trap_bar', 'smith_machine', 'other'],
+  }),
+
+  // Workout category (for filtering)
   category: text('category', {
     enum: ['push', 'pull', 'legs', 'core', 'cardio', 'other'],
   }).notNull(),
+
+  // Legacy field - kept for backward compatibility
+  muscleGroup: text('muscle_group'),
+
   isCustom: integer('is_custom', { mode: 'boolean' }).notNull().default(false),
   notes: text('notes'),
+
   // Soft delete
   isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }),

@@ -1,7 +1,21 @@
 import { db } from './client';
 import { exercises } from './schema';
 import exerciseData from '../constants/exercises.json';
-import { eq, count } from 'drizzle-orm';
+import { count } from 'drizzle-orm';
+import type { ExerciseType, EquipmentType, MovementPattern } from './schema';
+
+// Type for the enhanced exercise data
+interface ExerciseDataItem {
+  id: string;
+  name: string;
+  category: 'push' | 'pull' | 'legs' | 'core' | 'cardio' | 'other';
+  exerciseType: ExerciseType;
+  movementPattern: MovementPattern;
+  primaryMuscleGroups: string[];
+  secondaryMuscleGroups: string[];
+  equipment: EquipmentType;
+  muscleGroup: string; // Legacy field
+}
 
 export async function seedExercises() {
   // Check if exercises already exist
@@ -12,19 +26,25 @@ export async function seedExercises() {
     return;
   }
 
-  console.log('Seeding exercises...');
+  console.log('Seeding exercises with full muscle group data...');
 
-  // Insert all exercises
-  for (const exercise of exerciseData) {
+  // Insert all exercises with enhanced data
+  for (const exercise of exerciseData as ExerciseDataItem[]) {
     await db.insert(exercises).values({
       id: exercise.id,
       name: exercise.name,
-      category: exercise.category as 'push' | 'pull' | 'legs' | 'core' | 'cardio' | 'other',
-      muscleGroup: exercise.muscleGroup,
+      category: exercise.category,
+      exerciseType: exercise.exerciseType,
+      movementPattern: exercise.movementPattern,
+      primaryMuscleGroups: JSON.stringify(exercise.primaryMuscleGroups),
+      secondaryMuscleGroups: JSON.stringify(exercise.secondaryMuscleGroups),
       equipment: exercise.equipment,
+      muscleGroup: exercise.muscleGroup, // Legacy field for backward compatibility
       isCustom: false,
+      isDeleted: false,
+      createdAt: new Date(),
     });
   }
 
-  console.log(`Seeded ${exerciseData.length} exercises`);
+  console.log(`Seeded ${exerciseData.length} exercises with compound/isolation classification`);
 }

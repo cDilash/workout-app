@@ -7,19 +7,21 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { useState, useMemo } from 'react';
 import { router } from 'expo-router';
-import { CaretRight, Plus } from 'phosphor-react-native';
+import { CaretRight, Plus, Check } from 'phosphor-react-native';
 
 import { Text, View } from '@/components/Themed';
 import { useExercises } from '@/src/hooks/useExercises';
 import { db } from '@/src/db/client';
-import { exercises } from '@/src/db/schema';
+import { exercises, EQUIPMENT_TYPES, MUSCLE_GROUPS as SCHEMA_MUSCLE_GROUPS, MOVEMENT_PATTERNS } from '@/src/db/schema';
 import * as Crypto from 'expo-crypto';
-import type { Exercise } from '@/src/db/schema';
+import type { Exercise, ExerciseType, EquipmentType, MovementPattern, MuscleGroup } from '@/src/db/schema';
 
-const MUSCLE_GROUPS = [
+// Filter options for the exercise list
+const MUSCLE_GROUP_FILTERS = [
   { key: null, label: 'All' },
   { key: 'Chest', label: 'Chest' },
   { key: 'Back', label: 'Back' },
@@ -34,14 +36,58 @@ const MUSCLE_GROUPS = [
   { key: 'Cardio', label: 'Cardio' },
 ];
 
-const EQUIPMENT_OPTIONS = [
-  'Barbell',
-  'Dumbbell',
-  'Cable',
-  'Machine',
-  'Bodyweight',
-  'Kettlebell',
-  'Other',
+// Equipment options for creating exercises (display-friendly labels)
+const EQUIPMENT_OPTIONS: { value: EquipmentType; label: string }[] = [
+  { value: 'barbell', label: 'Barbell' },
+  { value: 'dumbbell', label: 'Dumbbell' },
+  { value: 'cable', label: 'Cable' },
+  { value: 'machine', label: 'Machine' },
+  { value: 'bodyweight', label: 'Bodyweight' },
+  { value: 'kettlebell', label: 'Kettlebell' },
+  { value: 'ez_bar', label: 'EZ Bar' },
+  { value: 'smith_machine', label: 'Smith Machine' },
+  { value: 'resistance_band', label: 'Resistance Band' },
+  { value: 'trap_bar', label: 'Trap Bar' },
+  { value: 'other', label: 'Other' },
+];
+
+// Exercise type options
+const EXERCISE_TYPE_OPTIONS: { value: ExerciseType; label: string; description: string }[] = [
+  { value: 'compound', label: 'Compound', description: 'Multi-joint movement' },
+  { value: 'isolation', label: 'Isolation', description: 'Single-joint movement' },
+];
+
+// Muscle group options for creating exercises (organized by body part)
+const PRIMARY_MUSCLE_OPTIONS: { value: MuscleGroup; label: string; group: string }[] = [
+  // Chest
+  { value: 'chest', label: 'Chest', group: 'Chest' },
+  { value: 'upper_chest', label: 'Upper Chest', group: 'Chest' },
+  { value: 'lower_chest', label: 'Lower Chest', group: 'Chest' },
+  // Back
+  { value: 'lats', label: 'Lats', group: 'Back' },
+  { value: 'upper_back', label: 'Upper Back', group: 'Back' },
+  { value: 'lower_back', label: 'Lower Back', group: 'Back' },
+  { value: 'rhomboids', label: 'Rhomboids', group: 'Back' },
+  { value: 'traps', label: 'Traps', group: 'Back' },
+  // Shoulders
+  { value: 'front_delts', label: 'Front Delts', group: 'Shoulders' },
+  { value: 'side_delts', label: 'Side Delts', group: 'Shoulders' },
+  { value: 'rear_delts', label: 'Rear Delts', group: 'Shoulders' },
+  // Arms
+  { value: 'biceps', label: 'Biceps', group: 'Arms' },
+  { value: 'triceps', label: 'Triceps', group: 'Arms' },
+  { value: 'forearms', label: 'Forearms', group: 'Arms' },
+  // Core
+  { value: 'abs', label: 'Abs', group: 'Core' },
+  { value: 'obliques', label: 'Obliques', group: 'Core' },
+  // Legs
+  { value: 'quads', label: 'Quads', group: 'Legs' },
+  { value: 'hamstrings', label: 'Hamstrings', group: 'Legs' },
+  { value: 'glutes', label: 'Glutes', group: 'Legs' },
+  { value: 'calves', label: 'Calves', group: 'Legs' },
+  { value: 'hip_flexors', label: 'Hip Flexors', group: 'Legs' },
+  { value: 'adductors', label: 'Adductors', group: 'Legs' },
+  { value: 'abductors', label: 'Abductors', group: 'Legs' },
 ];
 
 function ExerciseRow({ exercise }: { exercise: Exercise }) {
@@ -77,14 +123,39 @@ interface CreateExerciseModalProps {
 
 function CreateExerciseModal({ visible, onClose, onCreated }: CreateExerciseModalProps) {
   const [name, setName] = useState('');
-  const [muscleGroup, setMuscleGroup] = useState('');
-  const [equipment, setEquipment] = useState('');
+  const [exerciseType, setExerciseType] = useState<ExerciseType | ''>('');
+  const [equipment, setEquipment] = useState<EquipmentType | ''>('');
+  const [primaryMuscles, setPrimaryMuscles] = useState<MuscleGroup[]>([]);
+  const [secondaryMuscles, setSecondaryMuscles] = useState<MuscleGroup[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
   const resetForm = () => {
     setName('');
-    setMuscleGroup('');
+    setExerciseType('');
     setEquipment('');
+    setPrimaryMuscles([]);
+    setSecondaryMuscles([]);
+  };
+
+  // Toggle a muscle in the given array
+  const toggleMuscle = (
+    muscle: MuscleGroup,
+    current: MuscleGroup[],
+    setter: React.Dispatch<React.SetStateAction<MuscleGroup[]>>
+  ) => {
+    if (current.includes(muscle)) {
+      setter(current.filter((m) => m !== muscle));
+    } else {
+      setter([...current, muscle]);
+    }
+  };
+
+  // Derive legacy muscleGroup for backward compatibility
+  const deriveMuscleGroup = (muscles: MuscleGroup[]): string => {
+    if (muscles.length === 0) return 'Other';
+    const first = muscles[0];
+    const option = PRIMARY_MUSCLE_OPTIONS.find((m) => m.value === first);
+    return option?.group || 'Other';
   };
 
   const handleCreate = async () => {
@@ -92,25 +163,50 @@ function CreateExerciseModal({ visible, onClose, onCreated }: CreateExerciseModa
       Alert.alert('Error', 'Please enter an exercise name');
       return;
     }
-    if (!muscleGroup) {
-      Alert.alert('Error', 'Please select a muscle group');
+    if (!exerciseType) {
+      Alert.alert('Error', 'Please select exercise type (compound or isolation)');
       return;
     }
     if (!equipment) {
       Alert.alert('Error', 'Please select equipment');
       return;
     }
+    if (primaryMuscles.length === 0) {
+      Alert.alert('Error', 'Please select at least one primary muscle group');
+      return;
+    }
 
     setIsCreating(true);
     try {
       const id = `custom-${Crypto.randomUUID()}`;
+      // Derive category from exercise type and primary muscles
+      const category = primaryMuscles.some((m) =>
+        ['chest', 'upper_chest', 'lower_chest', 'triceps', 'front_delts', 'side_delts'].includes(m)
+      )
+        ? 'push'
+        : primaryMuscles.some((m) =>
+            ['lats', 'upper_back', 'lower_back', 'rhomboids', 'traps', 'biceps', 'rear_delts'].includes(m)
+          )
+        ? 'pull'
+        : primaryMuscles.some((m) =>
+            ['quads', 'hamstrings', 'glutes', 'calves', 'hip_flexors', 'adductors', 'abductors'].includes(m)
+          )
+        ? 'legs'
+        : primaryMuscles.some((m) => ['abs', 'obliques'].includes(m))
+        ? 'core'
+        : 'other';
+
       await db.insert(exercises).values({
         id,
         name: name.trim(),
-        category: 'other',
-        muscleGroup,
+        category,
+        exerciseType,
         equipment,
+        primaryMuscleGroups: JSON.stringify(primaryMuscles),
+        secondaryMuscleGroups: JSON.stringify(secondaryMuscles),
+        muscleGroup: deriveMuscleGroup(primaryMuscles), // Legacy field
         isCustom: true,
+        createdAt: new Date(),
       });
 
       resetForm();
@@ -137,7 +233,7 @@ function CreateExerciseModal({ visible, onClose, onCreated }: CreateExerciseModa
           </Pressable>
         </View>
 
-        <View style={styles.modalContent}>
+        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
           <Text style={styles.inputLabel}>Exercise Name</Text>
           <TextInput
             style={styles.textInput}
@@ -148,22 +244,29 @@ function CreateExerciseModal({ visible, onClose, onCreated }: CreateExerciseModa
             autoFocus
           />
 
-          <Text style={styles.inputLabel}>Muscle Group</Text>
+          <Text style={styles.inputLabel}>Exercise Type</Text>
           <View style={styles.optionsGrid}>
-            {MUSCLE_GROUPS.filter((m) => m.key !== null).map((muscle) => (
+            {EXERCISE_TYPE_OPTIONS.map((option) => (
               <Pressable
-                key={muscle.key}
+                key={option.value}
                 style={[
-                  styles.optionButton,
-                  muscleGroup === muscle.key && styles.optionButtonActive,
+                  styles.typeOptionButton,
+                  exerciseType === option.value && styles.optionButtonActive,
                 ]}
-                onPress={() => setMuscleGroup(muscle.key!)}>
+                onPress={() => setExerciseType(option.value)}>
                 <Text
                   style={[
                     styles.optionButtonText,
-                    muscleGroup === muscle.key && styles.optionButtonTextActive,
+                    exerciseType === option.value && styles.optionButtonTextActive,
                   ]}>
-                  {muscle.label}
+                  {option.label}
+                </Text>
+                <Text
+                  style={[
+                    styles.typeOptionDescription,
+                    exerciseType === option.value && styles.typeOptionDescriptionActive,
+                  ]}>
+                  {option.description}
                 </Text>
               </Pressable>
             ))}
@@ -173,23 +276,89 @@ function CreateExerciseModal({ visible, onClose, onCreated }: CreateExerciseModa
           <View style={styles.optionsGrid}>
             {EQUIPMENT_OPTIONS.map((equip) => (
               <Pressable
-                key={equip}
+                key={equip.value}
                 style={[
                   styles.optionButton,
-                  equipment === equip && styles.optionButtonActive,
+                  equipment === equip.value && styles.optionButtonActive,
                 ]}
-                onPress={() => setEquipment(equip)}>
+                onPress={() => setEquipment(equip.value)}>
                 <Text
                   style={[
                     styles.optionButtonText,
-                    equipment === equip && styles.optionButtonTextActive,
+                    equipment === equip.value && styles.optionButtonTextActive,
                   ]}>
-                  {equip}
+                  {equip.label}
                 </Text>
               </Pressable>
             ))}
           </View>
-        </View>
+
+          <Text style={styles.inputLabel}>
+            Primary Muscles{' '}
+            <Text style={styles.inputLabelHint}>
+              ({primaryMuscles.length} selected)
+            </Text>
+          </Text>
+          <Text style={styles.inputHint}>Select the main muscles worked</Text>
+          <View style={styles.optionsGrid}>
+            {PRIMARY_MUSCLE_OPTIONS.map((muscle) => (
+              <Pressable
+                key={muscle.value}
+                style={[
+                  styles.optionButton,
+                  primaryMuscles.includes(muscle.value) && styles.optionButtonActive,
+                ]}
+                onPress={() => toggleMuscle(muscle.value, primaryMuscles, setPrimaryMuscles)}>
+                <View style={styles.muscleButtonContent}>
+                  {primaryMuscles.includes(muscle.value) && (
+                    <Check size={12} color="#fff" weight="bold" />
+                  )}
+                  <Text
+                    style={[
+                      styles.optionButtonText,
+                      primaryMuscles.includes(muscle.value) && styles.optionButtonTextActive,
+                    ]}>
+                    {muscle.label}
+                  </Text>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+
+          <Text style={styles.inputLabel}>
+            Secondary Muscles{' '}
+            <Text style={styles.inputLabelHint}>
+              ({secondaryMuscles.length} selected)
+            </Text>
+          </Text>
+          <Text style={styles.inputHint}>Select muscles that assist the movement</Text>
+          <View style={styles.optionsGrid}>
+            {PRIMARY_MUSCLE_OPTIONS.map((muscle) => (
+              <Pressable
+                key={muscle.value}
+                style={[
+                  styles.optionButton,
+                  secondaryMuscles.includes(muscle.value) && styles.secondaryMuscleActive,
+                ]}
+                onPress={() => toggleMuscle(muscle.value, secondaryMuscles, setSecondaryMuscles)}>
+                <View style={styles.muscleButtonContent}>
+                  {secondaryMuscles.includes(muscle.value) && (
+                    <Check size={12} color="#fff" weight="bold" />
+                  )}
+                  <Text
+                    style={[
+                      styles.optionButtonText,
+                      secondaryMuscles.includes(muscle.value) && styles.optionButtonTextActive,
+                    ]}>
+                    {muscle.label}
+                  </Text>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.modalBottomPadding} />
+        </ScrollView>
 
         <Pressable
           style={[styles.createButton, isCreating && styles.createButtonDisabled]}
@@ -265,7 +434,7 @@ export default function ExercisesScreen() {
 
       <SectionList
         horizontal
-        sections={[{ title: '', data: MUSCLE_GROUPS }]}
+        sections={[{ title: '', data: MUSCLE_GROUP_FILTERS }]}
         keyExtractor={(item) => item.key ?? 'all'}
         style={styles.muscleList}
         contentContainerStyle={styles.muscleListContent}
@@ -550,5 +719,44 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 17,
     fontWeight: '600',
+  },
+  // New styles for enhanced exercise creation
+  typeOptionButton: {
+    flex: 1,
+    minWidth: 140,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+  },
+  typeOptionDescription: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 4,
+  },
+  typeOptionDescriptionActive: {
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  inputLabelHint: {
+    fontWeight: '400',
+    color: '#888',
+  },
+  inputHint: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 8,
+    marginTop: -4,
+  },
+  muscleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  secondaryMuscleActive: {
+    backgroundColor: '#FF9500',
+  },
+  modalBottomPadding: {
+    height: 24,
   },
 });
