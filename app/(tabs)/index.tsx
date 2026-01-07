@@ -13,6 +13,7 @@ import { TemplatesModal } from '@/src/components/workout/TemplatesModal';
 import { Button, ButtonText, Card, MiniStat, StatNumber } from '@/src/components/ui';
 import { HomeHeader } from '@/src/components/header';
 import { ProfileModal, SettingsModal, BodyMeasurementsModal } from '@/src/components/modals';
+import { WorkoutStreakCard, WorkoutCalendar } from '@/src/components/home';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -154,6 +155,16 @@ export default function HomeScreen() {
             </ButtonText>
           </Button>
         </XStack>
+
+        {/* Workout Streak */}
+        <YStack marginBottom="$6">
+          <WorkoutStreakCard />
+        </YStack>
+
+        {/* Activity Calendar */}
+        <YStack marginBottom="$8">
+          <WorkoutCalendar weeks={12} />
+        </YStack>
 
         {/* Quick Start Templates */}
         {recentTemplates.length > 0 && (

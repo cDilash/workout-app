@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { Link, LinkBreak, BookmarkSimple, X, Plus, Fire } from 'phosphor-react-native';
+import { Link, LinkBreak, BookmarkSimple, X, Plus, Fire, Calculator } from 'phosphor-react-native';
 import { YStack, XStack, Text } from 'tamagui';
 
 import { useWorkoutStore, type ActiveExercise, type ActiveSet } from '@/src/stores/workoutStore';
@@ -16,6 +16,9 @@ import { saveWorkout } from '@/src/hooks/useWorkoutHistory';
 import { saveAsTemplate } from '@/src/hooks/useTemplates';
 import { RestTimer, RestTimerCompact } from '@/src/components/workout/RestTimer';
 import { SaveTemplateModal } from '@/src/components/workout/TemplatesModal';
+import { PlateCalculatorModal } from '@/src/components/workout/PlateCalculatorModal';
+import { PRCelebration } from '@/src/components/workout/PRCelebration';
+import { useCelebrationStore } from '@/src/stores/celebrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import {
   Card,
@@ -437,6 +440,7 @@ export default function ActiveWorkoutScreen() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [showPlateCalculator, setShowPlateCalculator] = useState(false);
 
   const {
     activeWorkout,
@@ -510,8 +514,27 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
+  const checkForPR = useCelebrationStore((s) => s.checkForPR);
+
   const handleCompleteSet = (exerciseId: string, setId: string) => {
+    // Find the exercise and set to check for PR
+    const exercise = activeWorkout?.exercises.find((e) => e.id === exerciseId);
+    const set = exercise?.sets.find((s) => s.id === setId);
+
+    // Complete the set
     completeSet(exerciseId, setId);
+
+    // Check for PR (async, doesn't block)
+    if (exercise && set && set.weight && set.reps) {
+      checkForPR(
+        exercise.exercise.id,
+        exercise.exercise.name,
+        set.weight,
+        set.reps,
+        set.isWarmup
+      );
+    }
+
     // Auto-start rest timer with last used duration
     startTimer(lastPresetSeconds);
   };
@@ -670,6 +693,16 @@ export default function ActiveWorkoutScreen() {
           variant="secondary"
           width={50}
           paddingHorizontal={0}
+          onPress={() => setShowPlateCalculator(true)}
+          accessibilityLabel="Plate calculator"
+          accessibilityRole="button"
+        >
+          <Calculator size={20} color="#FFFFFF" weight="bold" />
+        </Button>
+        <Button
+          variant="secondary"
+          width={50}
+          paddingHorizontal={0}
           onPress={() => setShowSaveTemplate(true)}
           accessibilityLabel="Save as template"
           accessibilityRole="button"
@@ -702,6 +735,14 @@ export default function ActiveWorkoutScreen() {
         onSave={handleSaveAsTemplate}
         defaultName={activeWorkout.name}
       />
+
+      <PlateCalculatorModal
+        visible={showPlateCalculator}
+        onClose={() => setShowPlateCalculator(false)}
+      />
+
+      {/* PR Celebration Overlay */}
+      <PRCelebration />
     </YStack>
   );
 }
