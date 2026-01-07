@@ -113,7 +113,7 @@ export default function ExerciseDetailScreen() {
         let best1RM = 0;
 
         const setSummaries = setsResult.map((s) => {
-          const weight = s.weight || 0;
+          const weight = s.weightKg || 0; // Use explicit unit per DATA_HANDLING.md
           const reps = s.reps || 0;
           const volume = weight * reps;
           totalVolume += volume;
@@ -128,7 +128,7 @@ export default function ExerciseDetailScreen() {
 
           return {
             setNumber: s.setNumber,
-            weight: s.weight,
+            weight: s.weightKg, // DB stores kg
             reps: s.reps,
             isWarmup: s.isWarmup,
           };

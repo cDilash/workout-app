@@ -2,11 +2,11 @@ import { Paths, File } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { db } from '../db/client';
 import { workouts, workoutExercises, sets, exercises } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 
 export interface ExportedSet {
   setNumber: number;
-  weight: number | null;
+  weightKg: number | null; // Explicit unit per DATA_HANDLING.md
   reps: number | null;
   isWarmup: boolean;
 }
@@ -23,7 +23,7 @@ export interface ExportedWorkout {
   name: string;
   date: string;
   duration: string;
-  durationSeconds: number | null;
+  durationSeconds: number | null; // Computed at read time
   exercises: ExportedExercise[];
   totalVolume: number;
   totalSets: number;
@@ -49,16 +49,23 @@ function formatDuration(seconds: number | null): string {
 }
 
 export async function getExportData(): Promise<WorkoutExportData> {
-  // Fetch all workouts
+  // Fetch all non-deleted workouts (soft delete filter per DATA_HANDLING.md)
   const allWorkouts = await db
     .select()
     .from(workouts)
+    .where(eq(workouts.isDeleted, false))
     .orderBy(desc(workouts.startedAt));
 
   const exportedWorkouts: ExportedWorkout[] = [];
 
   for (const workout of allWorkouts) {
-    // Get exercises for this workout
+    // Compute duration at read time (per DATA_HANDLING.md)
+    const durationSeconds =
+      workout.completedAt && workout.startedAt
+        ? Math.floor((workout.completedAt.getTime() - workout.startedAt.getTime()) / 1000)
+        : null;
+
+    // Get non-deleted exercises for this workout
     const weResults = await db
       .select({
         weId: workoutExercises.id,
@@ -66,7 +73,12 @@ export async function getExportData(): Promise<WorkoutExportData> {
         order: workoutExercises.order,
       })
       .from(workoutExercises)
-      .where(eq(workoutExercises.workoutId, workout.id));
+      .where(
+        and(
+          eq(workoutExercises.workoutId, workout.id),
+          eq(workoutExercises.isDeleted, false)
+        )
+      );
 
     const exportedExercises: ExportedExercise[] = [];
     let totalVolume = 0;
@@ -82,19 +94,24 @@ export async function getExportData(): Promise<WorkoutExportData> {
 
       if (exerciseResult.length === 0) continue;
 
-      // Get sets for this workout exercise
+      // Get non-deleted sets for this workout exercise
       const setsResult = await db
         .select()
         .from(sets)
-        .where(eq(sets.workoutExerciseId, we.weId))
+        .where(
+          and(
+            eq(sets.workoutExerciseId, we.weId),
+            eq(sets.isDeleted, false)
+          )
+        )
         .orderBy(sets.setNumber);
 
       const exportedSets: ExportedSet[] = setsResult.map((s) => {
-        totalVolume += (s.weight || 0) * (s.reps || 0);
+        totalVolume += (s.weightKg || 0) * (s.reps || 0); // Use weightKg
         totalSets++;
         return {
           setNumber: s.setNumber,
-          weight: s.weight,
+          weightKg: s.weightKg, // Explicit unit per DATA_HANDLING.md
           reps: s.reps,
           isWarmup: s.isWarmup,
         };
@@ -112,8 +129,8 @@ export async function getExportData(): Promise<WorkoutExportData> {
       id: workout.id,
       name: workout.name || 'Workout',
       date: workout.startedAt.toISOString(),
-      duration: formatDuration(workout.durationSeconds),
-      durationSeconds: workout.durationSeconds,
+      duration: formatDuration(durationSeconds), // Computed at read time
+      durationSeconds,
       exercises: exportedExercises,
       totalVolume,
       totalSets,
@@ -151,7 +168,7 @@ export async function exportToJSON(): Promise<void> {
 export async function exportToCSV(): Promise<void> {
   const data = await getExportData();
 
-  // CSV header
+  // CSV header - using kg as explicit unit per DATA_HANDLING.md
   const headers = [
     'Workout Date',
     'Workout Name',
@@ -160,10 +177,10 @@ export async function exportToCSV(): Promise<void> {
     'Muscle Group',
     'Equipment',
     'Set Number',
-    'Weight (lbs)',
+    'Weight (kg)',
     'Reps',
     'Is Warmup',
-    'Volume',
+    'Volume (kg)',
   ];
 
   const rows: string[][] = [headers];
@@ -171,7 +188,7 @@ export async function exportToCSV(): Promise<void> {
   for (const workout of data.workouts) {
     for (const exercise of workout.exercises) {
       for (const set of exercise.sets) {
-        const volume = (set.weight || 0) * (set.reps || 0);
+        const volume = (set.weightKg || 0) * (set.reps || 0);
         rows.push([
           workout.date.split('T')[0],
           `"${workout.name}"`,
@@ -180,7 +197,7 @@ export async function exportToCSV(): Promise<void> {
           exercise.muscleGroup || '',
           exercise.equipment || '',
           set.setNumber.toString(),
-          set.weight?.toString() || '',
+          set.weightKg?.toString() || '',
           set.reps?.toString() || '',
           set.isWarmup ? 'Yes' : 'No',
           volume.toString(),

@@ -1,11 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/client';
-import { workouts, workoutExercises, sets, exercises, personalRecords } from '../db/schema';
+import { workouts, workoutExercises, sets, exercises } from '../db/schema';
 import { eq, desc, and, gte } from 'drizzle-orm';
-import type { Exercise, PersonalRecord } from '../db/schema';
-import * as Crypto from 'expo-crypto';
-
-const uuid = () => Crypto.randomUUID();
+import type { Exercise } from '../db/schema';
 
 // Calculate estimated 1RM using Brzycki formula
 export function calculate1RM(weight: number, reps: number): number {
@@ -79,10 +76,10 @@ export function useExerciseProgress(exerciseId: string | null) {
           let totalVolume = 0;
 
           for (const s of setsResult) {
-            if (s.weight && s.weight > maxWeight) {
-              maxWeight = s.weight;
+            if (s.weightKg && s.weightKg > maxWeight) {
+              maxWeight = s.weightKg;
             }
-            totalVolume += (s.weight || 0) * (s.reps || 0);
+            totalVolume += (s.weightKg || 0) * (s.reps || 0);
           }
 
           if (maxWeight > 0) {
@@ -171,13 +168,13 @@ export function useExerciseStats() {
             .where(eq(sets.workoutExerciseId, we.id));
 
           for (const s of setsResult) {
-            if (s.weight && (!maxWeight || s.weight > maxWeight)) {
-              maxWeight = s.weight;
+            if (s.weightKg && (!maxWeight || s.weightKg > maxWeight)) {
+              maxWeight = s.weightKg;
             }
             if (s.reps && (!maxReps || s.reps > maxReps)) {
               maxReps = s.reps;
             }
-            totalVolume += (s.weight || 0) * (s.reps || 0);
+            totalVolume += (s.weightKg || 0) * (s.reps || 0);
           }
         }
 
@@ -307,7 +304,7 @@ export function useMuscleGroupStats() {
           // Calculate volume
           let volume = 0;
           for (const s of setsResult) {
-            volume += (s.weight || 0) * (s.reps || 0);
+            volume += (s.weightKg || 0) * (s.reps || 0);
           }
 
           // Group by muscle
@@ -383,7 +380,7 @@ export function useWeeklyVolume() {
               .where(eq(sets.workoutExerciseId, we.id));
 
             for (const s of setsResult) {
-              weeklyVolumes[weekKey] += (s.weight || 0) * (s.reps || 0);
+              weeklyVolumes[weekKey] += (s.weightKg || 0) * (s.reps || 0);
             }
           }
         }

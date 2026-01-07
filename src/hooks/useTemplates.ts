@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/client';
 import { workoutTemplates, templateExercises, exercises } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import type { Exercise } from '../db/schema';
 import type { ActiveWorkout } from '../stores/workoutStore';
 import * as Crypto from 'expo-crypto';
@@ -12,7 +12,7 @@ export interface TemplateExerciseData {
   exercise: Exercise;
   targetSets: number;
   targetReps: string | null;
-  targetWeight: number | null;
+  targetWeightKg: number | null; // Explicit unit per DATA_HANDLING.md
 }
 
 export interface WorkoutTemplate {
@@ -30,17 +30,25 @@ export function useTemplates() {
   const fetchTemplates = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Filter out soft-deleted templates (per DATA_HANDLING.md)
       const templateResults = await db
         .select()
         .from(workoutTemplates)
+        .where(eq(workoutTemplates.isDeleted, false))
         .orderBy(desc(workoutTemplates.lastUsedAt));
 
       const templatesWithExercises: WorkoutTemplate[] = await Promise.all(
         templateResults.map(async (template) => {
+          // Filter out soft-deleted template exercises
           const exerciseResults = await db
             .select()
             .from(templateExercises)
-            .where(eq(templateExercises.templateId, template.id))
+            .where(
+              and(
+                eq(templateExercises.templateId, template.id),
+                eq(templateExercises.isDeleted, false)
+              )
+            )
             .orderBy(templateExercises.order);
 
           const exercisesData: TemplateExerciseData[] = await Promise.all(
@@ -55,7 +63,7 @@ export function useTemplates() {
                 exercise: exerciseInfo[0],
                 targetSets: te.targetSets || 3,
                 targetReps: te.targetReps,
-                targetWeight: te.targetWeight,
+                targetWeightKg: te.targetWeightKg,
               };
             })
           );
@@ -85,7 +93,10 @@ export function useTemplates() {
   return { templates, isLoading, refresh: fetchTemplates };
 }
 
-// Save current workout as a template
+/**
+ * Save current workout as a template.
+ * Stores target weight in kg (explicit unit per DATA_HANDLING.md).
+ */
 export async function saveAsTemplate(
   workout: ActiveWorkout,
   templateName: string
@@ -99,6 +110,7 @@ export async function saveAsTemplate(
     name: templateName,
     createdAt: now,
     lastUsedAt: null,
+    isDeleted: false,
   });
 
   // Insert template exercises
@@ -114,7 +126,8 @@ export async function saveAsTemplate(
       order: i,
       targetSets: workingSets.length || 3,
       targetReps: lastSet?.reps?.toString() || null,
-      targetWeight: lastSet?.weight || null,
+      targetWeightKg: lastSet?.weight || null, // Stored as kg per DATA_HANDLING.md
+      isDeleted: false,
     });
   }
 
@@ -129,21 +142,29 @@ export async function markTemplateUsed(templateId: string): Promise<void> {
     .where(eq(workoutTemplates.id, templateId));
 }
 
-// Delete a template
+/**
+ * Soft delete a template.
+ * Per DATA_HANDLING.md: Never hard delete, set is_deleted flag.
+ */
 export async function deleteTemplate(templateId: string): Promise<void> {
-  // Delete template exercises first (foreign key constraint)
-  await db.delete(templateExercises).where(eq(templateExercises.templateId, templateId));
-  await db.delete(workoutTemplates).where(eq(workoutTemplates.id, templateId));
+  // Soft delete - don't actually remove data
+  await db
+    .update(workoutTemplates)
+    .set({ isDeleted: true })
+    .where(eq(workoutTemplates.id, templateId));
 }
 
-// Convert template to exercise data for starting a workout
+/**
+ * Convert template to exercise data for starting a workout.
+ * Returns weight in generic "weight" for in-memory use (converted to kg on save).
+ */
 export function templateToExerciseData(
   template: WorkoutTemplate
 ): { exercise: Exercise; sets: { weight: number | null; reps: number | null; isWarmup: boolean }[] }[] {
   return template.exercises.map((te) => ({
     exercise: te.exercise,
     sets: Array.from({ length: te.targetSets }, () => ({
-      weight: te.targetWeight,
+      weight: te.targetWeightKg, // Template stores kg, workout uses generic "weight"
       reps: te.targetReps ? parseInt(te.targetReps, 10) : null,
       isWarmup: false,
     })),

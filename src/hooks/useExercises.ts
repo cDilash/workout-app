@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '../db/client';
 import { exercises } from '../db/schema';
-import { like, eq, or } from 'drizzle-orm';
+import { like, eq, or, and } from 'drizzle-orm';
 import type { Exercise } from '../db/schema';
 
 export function useExercises(searchQuery: string = '', category: string | null = null) {
@@ -12,9 +12,12 @@ export function useExercises(searchQuery: string = '', category: string | null =
     async function fetchExercises() {
       setIsLoading(true);
       try {
-        let query = db.select().from(exercises);
+        // Fetch only non-deleted exercises (soft delete pattern per DATA_HANDLING.md)
+        const result = await db
+          .select()
+          .from(exercises)
+          .where(eq(exercises.isDeleted, false));
 
-        const result = await query;
         setData(result);
       } catch (error) {
         console.error('Error fetching exercises:', error);
@@ -81,10 +84,16 @@ export function useExercise(exerciseId: string) {
     async function fetchExercise() {
       setIsLoading(true);
       try {
+        // Filter out soft-deleted exercises (per DATA_HANDLING.md)
         const result = await db
           .select()
           .from(exercises)
-          .where(eq(exercises.id, exerciseId))
+          .where(
+            and(
+              eq(exercises.id, exerciseId),
+              eq(exercises.isDeleted, false)
+            )
+          )
           .limit(1);
 
         setExercise(result[0] || null);

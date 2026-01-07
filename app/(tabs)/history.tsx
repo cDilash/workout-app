@@ -41,7 +41,14 @@ function WorkoutCard({ workout, onRepeat }: { workout: WorkoutWithDetails; onRep
 
       <View style={styles.statsRow}>
         <View style={styles.stat}>
-          <Text style={styles.statValue}>{formatDuration(workout.durationSeconds)}</Text>
+          {/* Duration computed at read-time per DATA_HANDLING.md */}
+          <Text style={styles.statValue}>
+            {formatDuration(
+              workout.completedAt && workout.startedAt
+                ? Math.floor((workout.completedAt.getTime() - workout.startedAt.getTime()) / 1000)
+                : null
+            )}
+          </Text>
           <Text style={styles.statLabel}>Duration</Text>
         </View>
         <View style={styles.stat}>
@@ -78,11 +85,11 @@ export default function HistoryScreen() {
       return;
     }
 
-    // Convert to template format
+    // Convert to template format (weightKg stored in db, generic "weight" used in-memory)
     const exercisesForTemplate = details.exercises.map((ex) => ({
       exercise: ex.exercise,
       sets: ex.sets.map((s) => ({
-        weight: s.weight,
+        weight: s.weightKg, // DB stores kg, in-memory uses generic "weight"
         reps: s.reps,
         isWarmup: s.isWarmup,
       })),

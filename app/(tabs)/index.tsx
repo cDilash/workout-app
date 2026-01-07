@@ -120,7 +120,11 @@ export default function HomeScreen() {
                 </Text>
                 <Text style={styles.recentStatDivider}>•</Text>
                 <Text style={styles.recentStat}>
-                  {formatDuration(workout.durationSeconds)}
+                  {formatDuration(
+                    workout.completedAt && workout.startedAt
+                      ? Math.floor((workout.completedAt.getTime() - workout.startedAt.getTime()) / 1000)
+                      : null
+                  )}
                 </Text>
                 <Text style={styles.recentStatDivider}>•</Text>
                 <Text style={styles.recentStat}>
