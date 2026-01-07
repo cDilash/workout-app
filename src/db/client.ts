@@ -8,9 +8,24 @@ const expo = SQLite.openDatabaseSync('workout.db');
 // Create drizzle instance with schema for relational queries
 export const db = drizzle(expo, { schema });
 
+// Helper to safely add a column (ignores error if column already exists)
+async function addColumnIfNotExists(
+  tableName: string,
+  columnName: string,
+  columnDef: string
+) {
+  try {
+    await expo.execAsync(
+      `ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDef}`
+    );
+  } catch {
+    // Column likely already exists - ignore
+  }
+}
+
 // Initialize database tables
 export async function initializeDatabase() {
-  // Create tables if they don't exist
+  // Create tables if they don't exist (base structure)
   await expo.execAsync(`
     CREATE TABLE IF NOT EXISTS exercises (
       id TEXT PRIMARY KEY,
@@ -19,14 +34,22 @@ export async function initializeDatabase() {
       muscle_group TEXT,
       equipment TEXT,
       is_custom INTEGER NOT NULL DEFAULT 0,
-      notes TEXT
+      notes TEXT,
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER,
+      updated_at INTEGER,
+      exercise_type TEXT,
+      movement_pattern TEXT,
+      primary_muscle_groups TEXT,
+      secondary_muscle_groups TEXT
     );
 
     CREATE TABLE IF NOT EXISTS workout_templates (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       created_at INTEGER NOT NULL,
-      last_used_at INTEGER
+      last_used_at INTEGER,
+      is_deleted INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS template_exercises (
@@ -36,7 +59,8 @@ export async function initializeDatabase() {
       "order" INTEGER NOT NULL,
       target_sets INTEGER,
       target_reps TEXT,
-      target_weight REAL
+      target_weight_kg REAL,
+      is_deleted INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS workouts (
@@ -45,53 +69,133 @@ export async function initializeDatabase() {
       name TEXT,
       started_at INTEGER NOT NULL,
       completed_at INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      timezone TEXT,
+      bodyweight_kg REAL,
+      sleep_hours REAL,
+      readiness_score INTEGER,
       notes TEXT,
-      duration_seconds INTEGER
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      deleted_at INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS workout_exercises (
       id TEXT PRIMARY KEY,
       workout_id TEXT NOT NULL REFERENCES workouts(id) ON DELETE CASCADE,
       exercise_id TEXT NOT NULL REFERENCES exercises(id),
-      "order" INTEGER NOT NULL
+      "order" INTEGER NOT NULL,
+      superset_id TEXT,
+      notes TEXT,
+      is_deleted INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS sets (
       id TEXT PRIMARY KEY,
       workout_exercise_id TEXT NOT NULL REFERENCES workout_exercises(id) ON DELETE CASCADE,
       set_number INTEGER NOT NULL,
-      weight REAL,
+      weight_kg REAL,
       reps INTEGER,
       rpe REAL,
+      rir INTEGER,
+      rest_seconds INTEGER,
+      tempo TEXT,
       is_warmup INTEGER NOT NULL DEFAULT 0,
-      completed_at INTEGER
+      is_failure INTEGER NOT NULL DEFAULT 0,
+      is_dropset INTEGER NOT NULL DEFAULT 0,
+      completed_at INTEGER,
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      previous_version_id TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS workout_snapshots (
+      id TEXT PRIMARY KEY,
+      workout_id TEXT NOT NULL REFERENCES workouts(id) ON DELETE CASCADE,
+      schema_version TEXT NOT NULL,
+      json_data TEXT NOT NULL,
+      created_at INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS body_measurements (
       id TEXT PRIMARY KEY,
       date INTEGER NOT NULL,
-      weight REAL,
-      body_fat REAL,
-      notes TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS personal_records (
-      id TEXT PRIMARY KEY,
-      exercise_id TEXT NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
-      record_type TEXT NOT NULL CHECK (record_type IN ('max_weight', 'max_reps', 'max_volume', 'estimated_1rm')),
-      value REAL NOT NULL,
-      achieved_at INTEGER NOT NULL,
-      workout_id TEXT REFERENCES workouts(id),
-      set_id TEXT REFERENCES sets(id)
+      weight_kg REAL,
+      body_fat_percent REAL,
+      notes TEXT,
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER
     );
 
     -- Indexes for common queries
     CREATE INDEX IF NOT EXISTS idx_workouts_started_at ON workouts(started_at DESC);
     CREATE INDEX IF NOT EXISTS idx_workout_exercises_workout_id ON workout_exercises(workout_id);
     CREATE INDEX IF NOT EXISTS idx_sets_workout_exercise_id ON sets(workout_exercise_id);
-    CREATE INDEX IF NOT EXISTS idx_personal_records_exercise_id ON personal_records(exercise_id);
     CREATE INDEX IF NOT EXISTS idx_exercises_category ON exercises(category);
   `);
+
+  // ============================================
+  // MIGRATIONS: Add columns to existing tables
+  // (Safe to run multiple times - errors ignored if column exists)
+  // ============================================
+
+  // Exercises table migrations
+  await addColumnIfNotExists('exercises', 'is_deleted', 'INTEGER NOT NULL DEFAULT 0');
+  await addColumnIfNotExists('exercises', 'created_at', 'INTEGER');
+  await addColumnIfNotExists('exercises', 'updated_at', 'INTEGER');
+  await addColumnIfNotExists('exercises', 'exercise_type', 'TEXT');
+  await addColumnIfNotExists('exercises', 'movement_pattern', 'TEXT');
+  await addColumnIfNotExists('exercises', 'primary_muscle_groups', 'TEXT');
+  await addColumnIfNotExists('exercises', 'secondary_muscle_groups', 'TEXT');
+
+  // Workout templates migrations
+  await addColumnIfNotExists('workout_templates', 'is_deleted', 'INTEGER NOT NULL DEFAULT 0');
+
+  // Template exercises migrations
+  await addColumnIfNotExists('template_exercises', 'is_deleted', 'INTEGER NOT NULL DEFAULT 0');
+  await addColumnIfNotExists('template_exercises', 'target_weight_kg', 'REAL');
+
+  // Workouts table migrations
+  await addColumnIfNotExists('workouts', 'created_at', 'INTEGER');
+  await addColumnIfNotExists('workouts', 'updated_at', 'INTEGER');
+  await addColumnIfNotExists('workouts', 'timezone', 'TEXT');
+  await addColumnIfNotExists('workouts', 'bodyweight_kg', 'REAL');
+  await addColumnIfNotExists('workouts', 'sleep_hours', 'REAL');
+  await addColumnIfNotExists('workouts', 'readiness_score', 'INTEGER');
+  await addColumnIfNotExists('workouts', 'is_deleted', 'INTEGER NOT NULL DEFAULT 0');
+  await addColumnIfNotExists('workouts', 'deleted_at', 'INTEGER');
+
+  // Workout exercises migrations
+  await addColumnIfNotExists('workout_exercises', 'superset_id', 'TEXT');
+  await addColumnIfNotExists('workout_exercises', 'notes', 'TEXT');
+  await addColumnIfNotExists('workout_exercises', 'is_deleted', 'INTEGER NOT NULL DEFAULT 0');
+
+  // Sets table migrations
+  await addColumnIfNotExists('sets', 'weight_kg', 'REAL');
+  await addColumnIfNotExists('sets', 'rir', 'INTEGER');
+  await addColumnIfNotExists('sets', 'rest_seconds', 'INTEGER');
+  await addColumnIfNotExists('sets', 'tempo', 'TEXT');
+  await addColumnIfNotExists('sets', 'is_failure', 'INTEGER NOT NULL DEFAULT 0');
+  await addColumnIfNotExists('sets', 'is_dropset', 'INTEGER NOT NULL DEFAULT 0');
+  await addColumnIfNotExists('sets', 'is_deleted', 'INTEGER NOT NULL DEFAULT 0');
+  await addColumnIfNotExists('sets', 'previous_version_id', 'TEXT');
+
+  // Body measurements migrations
+  await addColumnIfNotExists('body_measurements', 'weight_kg', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'body_fat_percent', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'is_deleted', 'INTEGER NOT NULL DEFAULT 0');
+  await addColumnIfNotExists('body_measurements', 'created_at', 'INTEGER');
+
+  // Migrate old weight column data to weight_kg if needed
+  try {
+    await expo.execAsync(`
+      UPDATE sets SET weight_kg = weight WHERE weight_kg IS NULL AND weight IS NOT NULL;
+    `);
+  } catch {
+    // Ignore if weight column doesn't exist
+  }
+
+  // Create workout_snapshots table if it doesn't exist (new table)
+  // Already handled in CREATE TABLE IF NOT EXISTS above
 
   console.log('Database initialized successfully');
 }
