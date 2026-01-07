@@ -1,7 +1,7 @@
 import { styled, YStack, XStack, Text, GetProps } from 'tamagui';
 
 /**
- * Section Component
+ * Section Component - Premium Monochromatic
  *
  * Container for grouping related content with consistent spacing.
  */
@@ -29,7 +29,7 @@ export const Section = styled(YStack, {
 });
 
 /**
- * Section Header
+ * Section Header - Premium Monochromatic
  *
  * Title row with optional action button.
  */
@@ -43,11 +43,11 @@ export function SectionHeader({ title, subtitle, action }: SectionHeaderProps) {
   return (
     <XStack justifyContent="space-between" alignItems="center">
       <YStack gap="$1">
-        <Text fontSize="$6" fontWeight="700" color="$color">
+        <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
           {title}
         </Text>
         {subtitle && (
-          <Text fontSize="$2" color="$colorMuted">
+          <Text fontSize="$2" color="rgba(255, 255, 255, 0.5)">
             {subtitle}
           </Text>
         )}
@@ -58,26 +58,26 @@ export function SectionHeader({ title, subtitle, action }: SectionHeaderProps) {
 }
 
 /**
- * Section Title (Standalone)
+ * Section Title (Standalone) - Premium Monochromatic
  */
 export const SectionTitle = styled(Text, {
   name: 'SectionTitle',
   fontSize: '$6',
-  fontWeight: '700',
-  color: '$color',
+  fontWeight: '600',
+  color: '#FFFFFF',
 });
 
 /**
- * Section Subtitle
+ * Section Subtitle - Premium Monochromatic
  */
 export const SectionSubtitle = styled(Text, {
   name: 'SectionSubtitle',
   fontSize: '$2',
-  color: '$colorMuted',
+  color: 'rgba(255, 255, 255, 0.5)',
 });
 
 /**
- * Empty State
+ * Empty State - Premium Monochromatic
  *
  * Placeholder for empty sections.
  */
@@ -98,11 +98,11 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
     >
       {icon}
       <YStack alignItems="center" gap="$1">
-        <Text fontSize="$5" fontWeight="600" color="$color" textAlign="center">
+        <Text fontSize="$5" fontWeight="600" color="#FFFFFF" textAlign="center">
           {title}
         </Text>
         {description && (
-          <Text fontSize="$3" color="$colorMuted" textAlign="center">
+          <Text fontSize="$3" color="rgba(255, 255, 255, 0.5)" textAlign="center">
             {description}
           </Text>
         )}

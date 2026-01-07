@@ -1,45 +1,117 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { PlusCircle, ClockCounterClockwise, List, ChartLine } from 'phosphor-react-native';
 import { Tabs } from 'expo-router';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
+/**
+ * Tab Layout - Premium Monochromatic
+ *
+ * Pure black tab bar with white active icons.
+ */
+
+// Tab icon with active state
+function TabIcon({
+  icon: Icon,
+  color,
+  focused,
+}: {
+  icon: typeof PlusCircle;
+  color: string;
+  focused: boolean;
+}) {
+  return (
+    <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+      <Icon
+        size={24}
+        color={color}
+        weight={focused ? 'fill' : 'regular'}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    width: 44,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+  },
+  iconContainerActive: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+});
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        // Tab bar styling - Pure black
+        tabBarActiveTintColor: '#FFFFFF',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.4)',
+        tabBarStyle: {
+          backgroundColor: '#000000',
+          borderTopColor: 'rgba(255,255,255,0.08)',
+          borderTopWidth: 1,
+          paddingTop: 8,
+          paddingBottom: 4,
+          height: 60,
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500',
+          marginTop: 2,
+        },
+
+        // Header styling - Pure black
         headerShown: true,
-      }}>
+        headerStyle: {
+          backgroundColor: '#000000',
+        },
+        headerTintColor: '#FFFFFF',
+        headerTitleStyle: {
+          fontWeight: '600',
+          fontSize: 17,
+        },
+        headerShadowVisible: false,
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Workout',
-          tabBarIcon: ({ color }) => <PlusCircle size={24} color={color} />,
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon icon={PlusCircle} color={color} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
           title: 'History',
-          tabBarIcon: ({ color }) => <ClockCounterClockwise size={24} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon icon={ClockCounterClockwise} color={color} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="exercises"
         options={{
           title: 'Exercises',
-          tabBarIcon: ({ color }) => <List size={24} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon icon={List} color={color} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="progress"
         options={{
           title: 'Progress',
-          tabBarIcon: ({ color }) => <ChartLine size={24} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon icon={ChartLine} color={color} focused={focused} />
+          ),
         }}
       />
     </Tabs>

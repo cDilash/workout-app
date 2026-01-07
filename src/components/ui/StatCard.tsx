@@ -2,33 +2,34 @@ import { YStack, XStack, Text, styled, GetProps } from 'tamagui';
 import { Card } from './Card';
 
 /**
- * Stat Card Component
+ * Stat Card Component - Premium Monochromatic
  *
  * Displays a metric with label, value, and optional trend indicator.
- * Designed for Bento grid layouts.
+ * Clean white/gray styling without glow effects.
  */
 
 const StatLabel = styled(Text, {
   name: 'StatLabel',
-  color: '$colorMuted',
+  color: 'rgba(255, 255, 255, 0.5)',
   fontSize: '$2',
-  fontWeight: '500',
+  fontWeight: '600',
   textTransform: 'uppercase',
-  letterSpacing: 0.5,
+  letterSpacing: 1,
 });
 
 const StatValue = styled(Text, {
   name: 'StatValue',
   fontSize: '$8',
-  fontWeight: '800',
-  color: '$color',
+  fontWeight: '300',
+  color: '#FFFFFF',
+  fontVariant: ['tabular-nums'],
 });
 
 const StatUnit = styled(Text, {
   name: 'StatUnit',
   fontSize: '$4',
-  fontWeight: '600',
-  color: '$colorSubtle',
+  fontWeight: '500',
+  color: 'rgba(255, 255, 255, 0.5)',
   marginLeft: '$1',
 });
 
@@ -39,7 +40,6 @@ interface StatCardProps {
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
   icon?: React.ReactNode;
-  variant?: 'default' | 'primary' | 'success' | 'warning';
 }
 
 export function StatCard({
@@ -49,14 +49,17 @@ export function StatCard({
   trend,
   trendValue,
   icon,
-  variant = 'default',
 }: StatCardProps) {
-  const trendColor = trend === 'up' ? '$success' : trend === 'down' ? '$danger' : '$colorMuted';
+  // Monochromatic trend colors
+  const trendColor = trend === 'up'
+    ? '#FFFFFF'
+    : trend === 'down'
+    ? 'rgba(255, 255, 255, 0.5)'
+    : 'rgba(255, 255, 255, 0.4)';
 
   return (
     <Card
       elevated
-      variant={variant}
       animation="quick"
       pressable
       hoverStyle={{ scale: 1.02 }}
@@ -77,43 +80,12 @@ export function StatCard({
             <Text color={trendColor} fontSize="$3" fontWeight="600">
               {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→'}
             </Text>
-            <Text color={trendColor} fontSize="$3">
+            <Text color={trendColor} fontSize="$3" fontWeight="600">
               {trendValue}
             </Text>
           </XStack>
         )}
       </YStack>
     </Card>
-  );
-}
-
-/**
- * Mini Stat Component
- *
- * Compact version for inline stats display.
- */
-interface MiniStatProps {
-  label: string;
-  value: string | number;
-  unit?: string;
-}
-
-export function MiniStat({ label, value, unit }: MiniStatProps) {
-  return (
-    <YStack alignItems="center" gap="$1" flex={1}>
-      <XStack alignItems="baseline">
-        <Text fontSize="$5" fontWeight="700" color="$color">
-          {value}
-        </Text>
-        {unit && (
-          <Text fontSize="$2" color="$colorMuted" marginLeft="$1">
-            {unit}
-          </Text>
-        )}
-      </XStack>
-      <Text fontSize="$1" color="$colorMuted" textTransform="uppercase">
-        {label}
-      </Text>
-    </YStack>
   );
 }

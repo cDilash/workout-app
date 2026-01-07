@@ -121,9 +121,41 @@ export async function initializeDatabase() {
       date INTEGER NOT NULL,
       weight_kg REAL,
       body_fat_percent REAL,
+      chest_cm REAL,
+      waist_cm REAL,
+      hips_cm REAL,
+      neck_cm REAL,
+      left_bicep_cm REAL,
+      right_bicep_cm REAL,
+      left_forearm_cm REAL,
+      right_forearm_cm REAL,
+      left_thigh_cm REAL,
+      right_thigh_cm REAL,
+      left_calf_cm REAL,
+      right_calf_cm REAL,
       notes TEXT,
       is_deleted INTEGER NOT NULL DEFAULT 0,
       created_at INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS user_profile (
+      id TEXT PRIMARY KEY,
+      username TEXT,
+      profile_picture_path TEXT,
+      created_at INTEGER,
+      updated_at INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS app_settings (
+      id TEXT PRIMARY KEY,
+      weight_unit TEXT NOT NULL DEFAULT 'kg',
+      measurement_unit TEXT NOT NULL DEFAULT 'cm',
+      default_rest_timer_seconds INTEGER NOT NULL DEFAULT 90,
+      haptics_enabled INTEGER NOT NULL DEFAULT 1,
+      theme TEXT NOT NULL DEFAULT 'dark',
+      notifications_enabled INTEGER NOT NULL DEFAULT 1,
+      created_at INTEGER,
+      updated_at INTEGER
     );
 
     -- Indexes for common queries
@@ -184,6 +216,35 @@ export async function initializeDatabase() {
   await addColumnIfNotExists('body_measurements', 'body_fat_percent', 'REAL');
   await addColumnIfNotExists('body_measurements', 'is_deleted', 'INTEGER NOT NULL DEFAULT 0');
   await addColumnIfNotExists('body_measurements', 'created_at', 'INTEGER');
+  // Tape measurements (expanded)
+  await addColumnIfNotExists('body_measurements', 'chest_cm', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'waist_cm', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'hips_cm', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'neck_cm', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'left_bicep_cm', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'right_bicep_cm', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'left_forearm_cm', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'right_forearm_cm', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'left_thigh_cm', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'right_thigh_cm', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'left_calf_cm', 'REAL');
+  await addColumnIfNotExists('body_measurements', 'right_calf_cm', 'REAL');
+
+  // User profile migrations
+  await addColumnIfNotExists('user_profile', 'username', 'TEXT');
+  await addColumnIfNotExists('user_profile', 'profile_picture_path', 'TEXT');
+  await addColumnIfNotExists('user_profile', 'created_at', 'INTEGER');
+  await addColumnIfNotExists('user_profile', 'updated_at', 'INTEGER');
+
+  // App settings migrations
+  await addColumnIfNotExists('app_settings', 'weight_unit', "TEXT NOT NULL DEFAULT 'kg'");
+  await addColumnIfNotExists('app_settings', 'measurement_unit', "TEXT NOT NULL DEFAULT 'cm'");
+  await addColumnIfNotExists('app_settings', 'default_rest_timer_seconds', 'INTEGER NOT NULL DEFAULT 90');
+  await addColumnIfNotExists('app_settings', 'haptics_enabled', 'INTEGER NOT NULL DEFAULT 1');
+  await addColumnIfNotExists('app_settings', 'theme', "TEXT NOT NULL DEFAULT 'dark'");
+  await addColumnIfNotExists('app_settings', 'notifications_enabled', 'INTEGER NOT NULL DEFAULT 1');
+  await addColumnIfNotExists('app_settings', 'created_at', 'INTEGER');
+  await addColumnIfNotExists('app_settings', 'updated_at', 'INTEGER');
 
   // Migrate old weight column data to weight_kg if needed
   try {

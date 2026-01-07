@@ -1,6 +1,4 @@
 import {
-  StyleSheet,
-  Pressable,
   ScrollView,
   TextInput,
   Modal,
@@ -9,9 +7,9 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { Link, LinkBreak, BookmarkSimple } from 'phosphor-react-native';
+import { Link, LinkBreak, BookmarkSimple, X, Plus, Fire } from 'phosphor-react-native';
+import { YStack, XStack, Text } from 'tamagui';
 
-import { Text, View } from '@/components/Themed';
 import { useWorkoutStore, type ActiveExercise, type ActiveSet } from '@/src/stores/workoutStore';
 import { useExercises } from '@/src/hooks/useExercises';
 import { saveWorkout } from '@/src/hooks/useWorkoutHistory';
@@ -19,9 +17,24 @@ import { saveAsTemplate } from '@/src/hooks/useTemplates';
 import { RestTimer, RestTimerCompact } from '@/src/components/workout/RestTimer';
 import { SaveTemplateModal } from '@/src/components/workout/TemplatesModal';
 import { useTimerStore } from '@/src/stores/timerStore';
+import {
+  Card,
+  Button,
+  ButtonText,
+  SearchInput,
+  Badge,
+  BadgeText,
+  TimerDisplay,
+  SetNumberBadge,
+  SetCompletionBadge,
+} from '@/src/components/ui';
 import type { Exercise } from '@/src/db/schema';
 
-// Set Row Component
+/**
+ * Set Row Component - Premium Monochromatic
+ *
+ * Clean inputs with elegant completion state
+ */
 function SetRow({
   set,
   setIndex,
@@ -40,49 +53,119 @@ function SetRow({
   };
 
   return (
-    <View style={[
-      styles.setRow,
-      set.isCompleted && styles.setRowCompleted,
-      set.isWarmup && styles.setRowWarmup,
-    ]}>
-      <Pressable onPress={handleToggleWarmup} onLongPress={onRemove}>
-        <View style={[styles.setNumberContainer, set.isWarmup && styles.setNumberWarmup]}>
-          <Text style={[styles.setNumber, set.isWarmup && styles.setNumberWarmupText]}>
-            {set.isWarmup ? 'W' : setIndex + 1}
-          </Text>
-        </View>
-      </Pressable>
+    <XStack
+      alignItems="center"
+      paddingVertical="$2"
+      paddingHorizontal="$2"
+      backgroundColor={
+        set.isCompleted
+          ? 'rgba(255, 255, 255, 0.05)'
+          : set.isWarmup
+          ? 'rgba(255, 255, 255, 0.03)'
+          : 'transparent'
+      }
+      borderRadius={12}
+      marginBottom="$2"
+      gap="$2"
+    >
+      {/* Set Number Badge */}
+      <XStack
+        onPress={handleToggleWarmup}
+        onLongPress={onRemove}
+        pressStyle={{ scale: 0.95 }}
+        accessibilityLabel={
+          set.isWarmup
+            ? 'Warmup set, tap to convert to working set'
+            : `Set ${setIndex + 1}, tap to convert to warmup`
+        }
+        accessibilityRole="button"
+      >
+        <SetNumberBadge
+          setNumber={setIndex + 1}
+          isWarmup={set.isWarmup}
+          isCompleted={set.isCompleted}
+          size={36}
+        />
+      </XStack>
 
-      <TextInput
-        style={styles.setInput}
-        placeholder="0"
-        placeholderTextColor="#999"
-        keyboardType="decimal-pad"
-        value={set.weight?.toString() || ''}
-        onChangeText={(text) => onUpdate({ weight: text ? parseFloat(text) : null })}
+      {/* Weight Input */}
+      <XStack
+        flex={1}
+        backgroundColor="rgba(255, 255, 255, 0.05)"
+        borderRadius={10}
+        borderWidth={1}
+        borderColor={set.isCompleted ? 'rgba(255, 255, 255, 0.20)' : 'rgba(255, 255, 255, 0.08)'}
+        height={48}
+        alignItems="center"
+        justifyContent="center"
+      >
+        <TextInput
+          style={{
+            flex: 1,
+            textAlign: 'center',
+            fontSize: 18,
+            fontWeight: '600',
+            color: '#FFFFFF',
+            paddingHorizontal: 8,
+          }}
+          placeholder="0"
+          placeholderTextColor="rgba(255, 255, 255, 0.3)"
+          keyboardType="decimal-pad"
+          value={set.weight?.toString() || ''}
+          onChangeText={(text) => onUpdate({ weight: text ? parseFloat(text) : null })}
+          accessibilityLabel="Weight in kilograms"
+        />
+      </XStack>
+      <Text fontSize="$2" color="rgba(255,255,255,0.4)" width={24}>
+        kg
+      </Text>
+
+      {/* Reps Input */}
+      <XStack
+        flex={1}
+        backgroundColor="rgba(255, 255, 255, 0.05)"
+        borderRadius={10}
+        borderWidth={1}
+        borderColor={set.isCompleted ? 'rgba(255, 255, 255, 0.20)' : 'rgba(255, 255, 255, 0.08)'}
+        height={48}
+        alignItems="center"
+        justifyContent="center"
+      >
+        <TextInput
+          style={{
+            flex: 1,
+            textAlign: 'center',
+            fontSize: 18,
+            fontWeight: '600',
+            color: '#FFFFFF',
+            paddingHorizontal: 8,
+          }}
+          placeholder="0"
+          placeholderTextColor="rgba(255, 255, 255, 0.3)"
+          keyboardType="number-pad"
+          value={set.reps?.toString() || ''}
+          onChangeText={(text) => onUpdate({ reps: text ? parseInt(text, 10) : null })}
+          accessibilityLabel="Number of reps"
+        />
+      </XStack>
+      <Text fontSize="$2" color="rgba(255,255,255,0.4)" width={30}>
+        reps
+      </Text>
+
+      {/* Completion Badge */}
+      <SetCompletionBadge
+        completed={set.isCompleted}
+        onPress={onComplete}
+        size={40}
+        haptic
       />
-      <Text style={styles.setLabel}>lbs</Text>
-
-      <TextInput
-        style={styles.setInput}
-        placeholder="0"
-        placeholderTextColor="#999"
-        keyboardType="number-pad"
-        value={set.reps?.toString() || ''}
-        onChangeText={(text) => onUpdate({ reps: text ? parseInt(text, 10) : null })}
-      />
-      <Text style={styles.setLabel}>reps</Text>
-
-      <Pressable
-        style={[styles.checkButton, set.isCompleted && styles.checkButtonCompleted]}
-        onPress={onComplete}>
-        <Text style={styles.checkButtonText}>{set.isCompleted ? '✓' : '○'}</Text>
-      </Pressable>
-    </View>
+    </XStack>
   );
 }
 
-// Exercise Card Component
+/**
+ * Exercise Card Component - Premium Monochromatic
+ */
 function ExerciseCard({
   activeExercise,
   onAddSet,
@@ -94,6 +177,7 @@ function ExerciseCard({
   onUpdateNotes,
   supersetLabel,
   onLinkSuperset,
+  isActive,
 }: {
   activeExercise: ActiveExercise;
   onAddSet: () => void;
@@ -105,6 +189,7 @@ function ExerciseCard({
   onUpdateNotes: (notes: string) => void;
   supersetLabel?: string;
   onLinkSuperset: () => void;
+  isActive?: boolean;
 }) {
   const [showNotes, setShowNotes] = useState(false);
 
@@ -120,48 +205,98 @@ function ExerciseCard({
   });
 
   return (
-    <View style={[styles.exerciseCard, supersetLabel && styles.exerciseCardSuperset]}>
+    <Card
+      marginBottom="$4"
+      borderLeftWidth={supersetLabel ? 3 : 0}
+      borderLeftColor="rgba(255, 255, 255, 0.4)"
+    >
       {supersetLabel && (
-        <View style={styles.supersetBadge}>
-          <Text style={styles.supersetBadgeText}>{supersetLabel}</Text>
-        </View>
+        <Badge variant="muted" marginBottom="$2" alignSelf="flex-start">
+          <BadgeText variant="muted">{supersetLabel}</BadgeText>
+        </Badge>
       )}
-      <View style={styles.exerciseHeader}>
-        <Pressable style={styles.exerciseNameContainer} onPress={() => setShowNotes(!showNotes)}>
-          <Text style={styles.exerciseName}>{activeExercise.exercise.name}</Text>
-          <Text style={styles.exerciseMuscle}>{activeExercise.exercise.muscleGroup}</Text>
-        </Pressable>
-        <View style={styles.exerciseActions}>
-          <Pressable onPress={onLinkSuperset} style={styles.linkButton}>
+
+      <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
+        <YStack
+          flex={1}
+          onPress={() => setShowNotes(!showNotes)}
+          pressStyle={{ opacity: 0.7 }}
+          accessibilityLabel={`${activeExercise.exercise.name}, tap to ${showNotes ? 'hide' : 'show'} notes`}
+          accessibilityRole="button"
+        >
+          <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
+            {activeExercise.exercise.name}
+          </Text>
+          <Text fontSize="$2" color="rgba(255,255,255,0.5)" marginTop={2}>
+            {activeExercise.exercise.muscleGroup}
+          </Text>
+        </YStack>
+        <XStack alignItems="center" gap="$3">
+          <XStack
+            padding="$2"
+            onPress={onLinkSuperset}
+            pressStyle={{ opacity: 0.7, scale: 0.95 }}
+            accessibilityLabel={
+              activeExercise.supersetId ? 'Remove from superset' : 'Link to superset'
+            }
+            accessibilityRole="button"
+          >
             {activeExercise.supersetId ? (
-              <LinkBreak size={14} color="#FF9500" />
+              <LinkBreak size={18} color="#FFFFFF" weight="bold" />
             ) : (
-              <Link size={14} color="#888" />
+              <Link size={18} color="rgba(255,255,255,0.4)" />
             )}
-          </Pressable>
-          <Pressable onPress={onRemoveExercise}>
-            <Text style={styles.removeButton}>✕</Text>
-          </Pressable>
-        </View>
-      </View>
+          </XStack>
+          <XStack
+            padding="$2"
+            onPress={onRemoveExercise}
+            pressStyle={{ opacity: 0.7, scale: 0.95 }}
+            accessibilityLabel="Remove exercise"
+            accessibilityRole="button"
+          >
+            <X size={18} color="rgba(255,255,255,0.4)" weight="bold" />
+          </XStack>
+        </XStack>
+      </XStack>
 
       {showNotes && (
         <TextInput
-          style={styles.notesInput}
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: 10,
+            padding: 12,
+            marginBottom: 12,
+            fontSize: 14,
+            color: '#FFFFFF',
+            minHeight: 60,
+            textAlignVertical: 'top',
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.10)',
+          }}
           placeholder="Add notes for this exercise..."
-          placeholderTextColor="#999"
+          placeholderTextColor="rgba(255, 255, 255, 0.3)"
           value={activeExercise.notes || ''}
           onChangeText={onUpdateNotes}
           multiline
+          accessibilityLabel="Exercise notes"
         />
       )}
 
-      <View style={styles.setHeader}>
-        <Text style={styles.setHeaderText}>Set</Text>
-        <Text style={styles.setHeaderText}>Weight</Text>
-        <Text style={styles.setHeaderText}>Reps</Text>
-        <Text style={styles.setHeaderText}></Text>
-      </View>
+      {/* Column Headers */}
+      <XStack paddingHorizontal="$2" marginBottom="$2">
+        <Text width={36} fontSize="$1" color="rgba(255,255,255,0.4)" textTransform="uppercase" letterSpacing={1}>
+          Set
+        </Text>
+        <Text flex={1} fontSize="$1" color="rgba(255,255,255,0.4)" textAlign="center" textTransform="uppercase" letterSpacing={1}>
+          Weight
+        </Text>
+        <Text width={24} />
+        <Text flex={1} fontSize="$1" color="rgba(255,255,255,0.4)" textAlign="center" textTransform="uppercase" letterSpacing={1}>
+          Reps
+        </Text>
+        <Text width={30} />
+        <Text width={40} />
+      </XStack>
 
       {setsWithIndex.map(({ set, displayIndex }) => (
         <SetRow
@@ -174,19 +309,40 @@ function ExerciseCard({
         />
       ))}
 
-      <View style={styles.addSetRow}>
-        <Pressable style={styles.addSetButton} onPress={onAddWarmupSet}>
-          <Text style={styles.addWarmupText}>+ Warmup</Text>
-        </Pressable>
-        <Pressable style={styles.addSetButton} onPress={onAddSet}>
-          <Text style={styles.addSetText}>+ Working Set</Text>
-        </Pressable>
-      </View>
-    </View>
+      {/* Add Set Buttons */}
+      <XStack justifyContent="center" gap="$4" marginTop="$3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={onAddWarmupSet}
+          accessibilityLabel="Add warmup set"
+          accessibilityRole="button"
+        >
+          <Fire size={14} color="rgba(255,255,255,0.5)" />
+          <Text color="rgba(255,255,255,0.6)" fontWeight="600" fontSize="$3">
+            Warmup
+          </Text>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={onAddSet}
+          accessibilityLabel="Add working set"
+          accessibilityRole="button"
+        >
+          <Plus size={14} color="#FFFFFF" weight="bold" />
+          <Text color="#FFFFFF" fontWeight="600" fontSize="$3">
+            Set
+          </Text>
+        </Button>
+      </XStack>
+    </Card>
   );
 }
 
-// Exercise Picker Modal
+/**
+ * Exercise Picker Modal - Premium Monochromatic
+ */
 function ExercisePicker({
   visible,
   onClose,
@@ -201,50 +357,81 @@ function ExercisePicker({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Add Exercise</Text>
-          <Pressable onPress={onClose}>
-            <Text style={styles.modalClose}>Cancel</Text>
-          </Pressable>
-        </View>
+      <YStack flex={1} paddingTop="$5" backgroundColor="#000000">
+        <XStack
+          justifyContent="space-between"
+          alignItems="center"
+          paddingHorizontal="$4"
+          paddingBottom="$4"
+          borderBottomWidth={1}
+          borderBottomColor="rgba(255, 255, 255, 0.08)"
+        >
+          <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
+            Add Exercise
+          </Text>
+          <Text
+            fontSize="$4"
+            fontWeight="600"
+            color="#FFFFFF"
+            onPress={onClose}
+            pressStyle={{ opacity: 0.7 }}
+            accessibilityLabel="Cancel"
+            accessibilityRole="button"
+          >
+            Cancel
+          </Text>
+        </XStack>
 
-        <TextInput
-          style={styles.modalSearch}
-          placeholder="Search exercises..."
-          placeholderTextColor="#888"
-          value={search}
-          onChangeText={setSearch}
-          autoFocus
-        />
+        <YStack padding="$4">
+          <SearchInput
+            placeholder="Search exercises..."
+            value={search}
+            onChangeText={setSearch}
+            autoFocus
+          />
+        </YStack>
 
         <FlatList
           data={exercises}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <Pressable
-              style={styles.modalExerciseRow}
+            <YStack
+              paddingVertical="$3"
+              paddingHorizontal="$4"
+              borderBottomWidth={1}
+              borderBottomColor="rgba(255, 255, 255, 0.05)"
               onPress={() => {
                 onSelect(item);
                 onClose();
-              }}>
-              <Text style={styles.modalExerciseName}>{item.name}</Text>
-              <Text style={styles.modalExerciseMeta}>
+              }}
+              pressStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+              accessibilityLabel={`Add ${item.name}`}
+              accessibilityRole="button"
+            >
+              <Text fontSize="$4" fontWeight="600" color="#FFFFFF" marginBottom={2}>
+                {item.name}
+              </Text>
+              <Text fontSize="$2" color="rgba(255,255,255,0.5)">
                 {item.muscleGroup} • {item.equipment}
               </Text>
-            </Pressable>
+            </YStack>
           )}
           ListEmptyComponent={
-            <Text style={styles.modalEmpty}>
+            <Text textAlign="center" color="rgba(255,255,255,0.5)" marginTop="$8">
               {isLoading ? 'Loading...' : 'No exercises found'}
             </Text>
           }
         />
-      </View>
+      </YStack>
     </Modal>
   );
 }
 
+/**
+ * Active Workout Screen - Premium Monochromatic
+ *
+ * Clean, elegant workout logging interface with white accents.
+ */
 export default function ActiveWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -288,32 +475,18 @@ export default function ActiveWorkoutScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  const formatTime = (seconds: number) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    if (hrs > 0) {
-      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const handleCancel = () => {
-    Alert.alert(
-      'Cancel Workout?',
-      'Your progress will be lost.',
-      [
-        { text: 'Keep Going', style: 'cancel' },
-        {
-          text: 'Cancel Workout',
-          style: 'destructive',
-          onPress: () => {
-            cancelWorkout();
-            router.replace('/');
-          },
+    Alert.alert('Cancel Workout?', 'Your progress will be lost.', [
+      { text: 'Keep Going', style: 'cancel' },
+      {
+        text: 'Cancel Workout',
+        style: 'destructive',
+        onPress: () => {
+          cancelWorkout();
+          router.replace('/');
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleFinish = async () => {
@@ -331,9 +504,9 @@ export default function ActiveWorkoutScreen() {
 
   if (!activeWorkout) {
     return (
-      <View style={styles.container}>
-        <Text>Starting workout...</Text>
-      </View>
+      <YStack flex={1} alignItems="center" justifyContent="center" backgroundColor="#000000">
+        <Text color="rgba(255,255,255,0.5)">Starting workout...</Text>
+      </YStack>
     );
   }
 
@@ -395,26 +568,42 @@ export default function ActiveWorkoutScreen() {
   // Calculate superset labels
   const getSupersetLabel = (supersetId: string | null): string | undefined => {
     if (!supersetId || !activeWorkout) return undefined;
-    const supersetExercises = activeWorkout.exercises.filter(
-      (e) => e.supersetId === supersetId
-    );
+    const supersetExercises = activeWorkout.exercises.filter((e) => e.supersetId === supersetId);
     if (supersetExercises.length < 2) return undefined;
     return `Superset (${supersetExercises.length})`;
   };
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <Text style={styles.timer}>{formatTime(elapsedTime)}</Text>
-          <RestTimerCompact />
-        </View>
-        <Text style={styles.workoutName}>{activeWorkout.name}</Text>
-      </View>
+  // Find the first exercise with incomplete sets (for active state)
+  const activeExerciseId = activeWorkout.exercises.find((ex) =>
+    ex.sets.some((s) => !s.isCompleted)
+  )?.id;
 
-      <ScrollView style={styles.exerciseList} contentContainerStyle={styles.exerciseListContent}>
+  return (
+    <YStack flex={1} backgroundColor="#000000">
+      {/* Header - Elegant Timer */}
+      <YStack
+        padding="$4"
+        alignItems="center"
+        borderBottomWidth={1}
+        borderBottomColor="rgba(255, 255, 255, 0.08)"
+        backgroundColor="#0a0a0a"
+      >
+        <XStack alignItems="center" gap="$3">
+          <TimerDisplay time={elapsedTime} size="lg" />
+          <RestTimerCompact />
+        </XStack>
+        <Text fontSize="$3" color="rgba(255,255,255,0.5)" marginTop="$2" fontWeight="500">
+          {activeWorkout.name}
+        </Text>
+      </YStack>
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+      >
         {/* Rest Timer */}
         <RestTimer />
+
         {activeWorkout.exercises.map((ex) => (
           <ExerciseCard
             key={ex.id}
@@ -428,35 +617,78 @@ export default function ActiveWorkoutScreen() {
             onUpdateNotes={(notes) => updateExerciseNotes(ex.id, notes)}
             supersetLabel={getSupersetLabel(ex.supersetId)}
             onLinkSuperset={() => handleLinkSuperset(ex.id, ex.supersetId)}
+            isActive={ex.id === activeExerciseId}
           />
         ))}
 
-        <Pressable
-          style={styles.addExerciseButton}
-          onPress={() => setShowExercisePicker(true)}>
-          <Text style={styles.addExerciseText}>+ Add Exercise</Text>
-        </Pressable>
+        {/* Add Exercise Button */}
+        <Card
+          pressable
+          onPress={() => setShowExercisePicker(true)}
+          backgroundColor="transparent"
+          borderStyle="dashed"
+          borderWidth={2}
+          borderColor="rgba(255, 255, 255, 0.15)"
+          alignItems="center"
+          marginBottom="$4"
+          accessibilityLabel="Add exercise"
+          accessibilityRole="button"
+        >
+          <XStack alignItems="center" gap="$2">
+            <Plus size={20} color="#FFFFFF" weight="bold" />
+            <Text fontSize="$4" fontWeight="600" color="#FFFFFF">
+              Add Exercise
+            </Text>
+          </XStack>
+        </Card>
 
         {activeWorkout.exercises.length === 0 && (
-          <Text style={styles.hintText}>
+          <Text textAlign="center" color="rgba(255,255,255,0.5)" fontSize="$3" marginTop="$4">
             Tap above to add exercises to your workout
           </Text>
         )}
       </ScrollView>
 
-      <View style={styles.footer}>
-        <Pressable style={styles.cancelButton} onPress={handleCancel}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </Pressable>
-        <Pressable
-          style={styles.saveTemplateButton}
-          onPress={() => setShowSaveTemplate(true)}>
-          <BookmarkSimple size={18} color="#007AFF" />
-        </Pressable>
-        <Pressable style={styles.finishButton} onPress={handleFinish}>
-          <Text style={styles.finishButtonText}>Finish</Text>
-        </Pressable>
-      </View>
+      {/* Bottom Action Bar */}
+      <XStack
+        padding="$4"
+        gap="$3"
+        borderTopWidth={1}
+        borderTopColor="rgba(255, 255, 255, 0.08)"
+        backgroundColor="#0a0a0a"
+      >
+        <Button
+          variant="ghost"
+          flex={1}
+          onPress={handleCancel}
+          accessibilityLabel="Cancel workout"
+          accessibilityRole="button"
+        >
+          <ButtonText variant="ghost">Cancel</ButtonText>
+        </Button>
+        <Button
+          variant="secondary"
+          width={50}
+          paddingHorizontal={0}
+          onPress={() => setShowSaveTemplate(true)}
+          accessibilityLabel="Save as template"
+          accessibilityRole="button"
+        >
+          <BookmarkSimple size={20} color="#FFFFFF" weight="bold" />
+        </Button>
+        <Button
+          variant="primary"
+          flex={1}
+          size="lg"
+          onPress={handleFinish}
+          accessibilityLabel="Finish workout"
+          accessibilityRole="button"
+        >
+          <ButtonText variant="primary" size="lg">
+            Finish
+          </ButtonText>
+        </Button>
+      </XStack>
 
       <ExercisePicker
         visible={showExercisePicker}
@@ -470,312 +702,6 @@ export default function ActiveWorkoutScreen() {
         onSave={handleSaveAsTemplate}
         defaultName={activeWorkout.name}
       />
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    padding: 16,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'transparent',
-  },
-  timer: {
-    fontSize: 32,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
-  },
-  workoutName: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  exerciseList: {
-    flex: 1,
-  },
-  exerciseListContent: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  exerciseCard: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  exerciseCardSuperset: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF9500',
-  },
-  supersetBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#FFF3E0',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  supersetBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#FF9500',
-  },
-  exerciseHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    backgroundColor: 'transparent',
-  },
-  exerciseActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'transparent',
-  },
-  linkButton: {
-    padding: 4,
-  },
-  exerciseNameContainer: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  exerciseName: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  exerciseMuscle: {
-    fontSize: 12,
-    color: '#888',
-    marginTop: 2,
-  },
-  removeButton: {
-    fontSize: 18,
-    color: '#999',
-    padding: 4,
-  },
-  notesInput: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    fontSize: 14,
-    color: '#333',
-    minHeight: 60,
-    textAlignVertical: 'top',
-  },
-  setHeader: {
-    flexDirection: 'row',
-    paddingHorizontal: 8,
-    marginBottom: 8,
-    backgroundColor: 'transparent',
-  },
-  setHeaderText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#888',
-    textAlign: 'center',
-  },
-  setRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 6,
-  },
-  setRowCompleted: {
-    backgroundColor: '#E8F5E9',
-  },
-  setRowWarmup: {
-    backgroundColor: '#FFF8E1',
-  },
-  setNumberContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f0f0f0',
-  },
-  setNumberWarmup: {
-    backgroundColor: '#FFE082',
-  },
-  setNumber: {
-    textAlign: 'center',
-    fontWeight: '600',
-    color: '#666',
-    fontSize: 14,
-  },
-  setNumberWarmupText: {
-    color: '#F57C00',
-  },
-  setInput: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    textAlign: 'center',
-    fontSize: 16,
-    marginHorizontal: 4,
-  },
-  setLabel: {
-    fontSize: 12,
-    color: '#888',
-    width: 30,
-  },
-  checkButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#e0e0e0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
-  },
-  checkButtonCompleted: {
-    backgroundColor: '#34C759',
-  },
-  checkButtonText: {
-    fontSize: 18,
-    color: '#fff',
-  },
-  addSetRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    marginTop: 8,
-    backgroundColor: 'transparent',
-  },
-  addSetButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  addSetText: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  addWarmupText: {
-    color: '#F57C00',
-    fontWeight: '600',
-  },
-  addExerciseButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  addExerciseText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#007AFF',
-  },
-  hintText: {
-    textAlign: 'center',
-    color: '#888',
-    fontSize: 14,
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 16,
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 10,
-    backgroundColor: '#f0f0f0',
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-  },
-  saveTemplateButton: {
-    width: 50,
-    paddingVertical: 14,
-    borderRadius: 10,
-    backgroundColor: '#f0f7ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  finishButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 10,
-    backgroundColor: '#34C759',
-    alignItems: 'center',
-  },
-  finishButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  // Modal styles
-  modalContainer: {
-    flex: 1,
-    paddingTop: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  modalClose: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
-  modalSearch: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    margin: 16,
-  },
-  modalExerciseRow: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  modalExerciseName: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  modalExerciseMeta: {
-    fontSize: 13,
-    color: '#666',
-  },
-  modalEmpty: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: 40,
-  },
-});

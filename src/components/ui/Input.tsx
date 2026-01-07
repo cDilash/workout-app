@@ -1,46 +1,47 @@
-import { styled, XStack, GetProps } from 'tamagui';
+import { styled, XStack } from 'tamagui';
 import { TextInput as RNTextInput, TextInputProps } from 'react-native';
 import { forwardRef } from 'react';
 import { MagnifyingGlass } from 'phosphor-react-native';
 
 /**
- * Input Container
- *
- * Styled wrapper for input fields.
+ * Input Container - Premium Monochromatic
  */
 const InputContainer = styled(XStack, {
   name: 'InputContainer',
-  backgroundColor: '$inputBackground',
-  borderRadius: '$input',
+  backgroundColor: 'rgba(255,255,255,0.05)',
+  borderRadius: 16,
   borderWidth: 1,
-  borderColor: '$inputBorder',
+  borderColor: 'rgba(255,255,255,0.10)',
   alignItems: 'center',
-  paddingHorizontal: '$3',
+  paddingHorizontal: '$4',
 
   focusStyle: {
-    borderColor: '$primary',
+    borderColor: 'rgba(255,255,255,0.30)',
   },
 
   variants: {
     size: {
       sm: {
-        minHeight: 40,
+        minHeight: 44,
+        borderRadius: 12,
       },
       md: {
-        minHeight: 48,
+        minHeight: 52,
+        borderRadius: 16,
       },
       lg: {
-        minHeight: 56,
+        minHeight: 60,
+        borderRadius: 20,
       },
     },
     error: {
       true: {
-        borderColor: '$danger',
+        borderColor: 'rgba(255,255,255,0.40)',
       },
     },
     disabled: {
       true: {
-        opacity: 0.6,
+        opacity: 0.4,
       },
     },
   } as const,
@@ -51,9 +52,7 @@ const InputContainer = styled(XStack, {
 });
 
 /**
- * Input Component
- *
- * A styled text input using Tamagui tokens.
+ * Input Component - Premium Monochromatic
  */
 interface InputProps extends Omit<TextInputProps, 'style'> {
   size?: 'sm' | 'md' | 'lg';
@@ -73,13 +72,13 @@ export const Input = forwardRef<RNTextInput, InputProps>(function Input(
       {leftIcon}
       <RNTextInput
         ref={ref}
-        placeholderTextColor="#a1a1aa"
+        placeholderTextColor="rgba(255,255,255,0.30)"
         style={{
           flex: 1,
           fontSize,
-          color: '#18181b',
-          paddingVertical: 12,
-          paddingHorizontal: leftIcon ? 8 : 0,
+          color: '#FFFFFF',
+          paddingVertical: 14,
+          paddingHorizontal: leftIcon ? 12 : 0,
         }}
         {...props}
       />
@@ -89,18 +88,18 @@ export const Input = forwardRef<RNTextInput, InputProps>(function Input(
 });
 
 /**
- * Search Input
- *
- * Specialized input for search with built-in icon.
+ * Search Input - Premium Monochromatic
  */
 interface SearchInputProps extends Omit<InputProps, 'leftIcon'> {
   iconColor?: string;
 }
 
-export function SearchInput({ iconColor = '#a1a1aa', ...props }: SearchInputProps) {
+export function SearchInput({ iconColor, ...props }: SearchInputProps) {
+  const color = iconColor || 'rgba(255,255,255,0.40)';
+
   return (
     <Input
-      leftIcon={<MagnifyingGlass size={20} color={iconColor} />}
+      leftIcon={<MagnifyingGlass size={20} color={color} />}
       placeholder="Search..."
       returnKeyType="search"
       autoCorrect={false}
@@ -111,9 +110,7 @@ export function SearchInput({ iconColor = '#a1a1aa', ...props }: SearchInputProp
 }
 
 /**
- * Number Input
- *
- * Optimized for numeric entry (weights, reps).
+ * Number Input - For numeric entry
  */
 interface NumberInputProps extends Omit<InputProps, 'keyboardType'> {
   decimal?: boolean;

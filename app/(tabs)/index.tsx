@@ -1,14 +1,25 @@
-import { StyleSheet, Pressable, ScrollView } from 'react-native';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, Folder } from 'phosphor-react-native';
+import { Plus, Folder, Clock, Barbell } from 'phosphor-react-native';
 import { formatDistanceToNow } from 'date-fns';
+import * as Haptics from 'expo-haptics';
+import { YStack, XStack, Text } from 'tamagui';
 
-import { Text, View } from '@/components/Themed';
 import { useWorkoutHistory } from '@/src/hooks/useWorkoutHistory';
 import { useTemplates, markTemplateUsed, type WorkoutTemplate } from '@/src/hooks/useTemplates';
 import { useWorkoutStore } from '@/src/stores/workoutStore';
 import { TemplatesModal } from '@/src/components/workout/TemplatesModal';
+import { Button, ButtonText, Card, MiniStat, StatNumber } from '@/src/components/ui';
+import { HomeHeader } from '@/src/components/header';
+import { ProfileModal, SettingsModal, BodyMeasurementsModal } from '@/src/components/modals';
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
 
 function formatDuration(seconds: number | null): string {
   if (!seconds) return '--';
@@ -22,14 +33,19 @@ function formatDuration(seconds: number | null): string {
 
 export default function HomeScreen() {
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showMeasurements, setShowMeasurements] = useState(false);
   const { workouts } = useWorkoutHistory();
   const { templates } = useTemplates();
   const { startWorkoutFromTemplate } = useWorkoutStore();
 
+  const greeting = useMemo(() => getGreeting(), []);
   const recentWorkouts = workouts.slice(0, 3);
   const recentTemplates = templates.slice(0, 3);
 
   const handleStartEmpty = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/workout/new');
   };
 
@@ -38,12 +54,14 @@ export default function HomeScreen() {
     templateName: string,
     templateId: string
   ) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     await markTemplateUsed(templateId);
     startWorkoutFromTemplate(exercises, templateName);
     router.push('/workout/new');
   };
 
   const handleQuickStartTemplate = async (template: WorkoutTemplate) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const { templateToExerciseData } = await import('@/src/hooks/useTemplates');
     const exercises = templateToExerciseData(template);
     await markTemplateUsed(template.id);
@@ -52,222 +70,258 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <Text style={styles.title}>Ready to Train?</Text>
+    <YStack flex={1} backgroundColor="#000000">
+      <HomeHeader
+        onProfilePress={() => setShowProfile(true)}
+        onSettingsPress={() => setShowSettings(true)}
+        onMeasurementsPress={() => setShowMeasurements(true)}
+      />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 24, paddingBottom: 120 }}
+      >
+        {/* Hero Section */}
+        <YStack marginBottom="$8" marginTop="$6">
+          <Text
+            fontSize={14}
+            fontWeight="500"
+            color="rgba(255,255,255,0.5)"
+            marginBottom="$2"
+            textTransform="uppercase"
+            letterSpacing={1}
+          >
+            {greeting}
+          </Text>
+          <Text
+            fontSize={42}
+            fontWeight="200"
+            color="#FFFFFF"
+            letterSpacing={-1}
+          >
+            Ready to Train?
+          </Text>
+        </YStack>
 
-      {/* Main Action Buttons */}
-      <View style={styles.actionButtons}>
-        <Pressable style={styles.startButton} onPress={handleStartEmpty}>
-          <Plus size={20} color="#fff" weight="bold" />
-          <Text style={styles.startButtonText}>Empty Workout</Text>
-        </Pressable>
+        {/* Main CTA - White Pill */}
+        <Button
+          variant="primary"
+          size="xl"
+          fullWidth
+          marginBottom="$4"
+          onPress={handleStartEmpty}
+          accessibilityLabel="Start empty workout"
+          accessibilityRole="button"
+        >
+          <Plus size={22} color="#000000" weight="bold" />
+          <ButtonText variant="primary" size="xl">
+            Start Workout
+          </ButtonText>
+        </Button>
 
-        <Pressable
-          style={styles.templateButton}
-          onPress={() => setShowTemplates(true)}>
-          <Folder size={20} color="#007AFF" />
-          <Text style={styles.templateButtonText}>Templates</Text>
-        </Pressable>
-      </View>
+        {/* Secondary Actions */}
+        <XStack gap="$3" marginBottom="$8">
+          <Button
+            variant="secondary"
+            size="lg"
+            flex={1}
+            onPress={() => {
+              Haptics.selectionAsync();
+              setShowTemplates(true);
+            }}
+            accessibilityLabel="Open workout templates"
+            accessibilityRole="button"
+          >
+            <Folder size={20} color="#FFFFFF" />
+            <ButtonText variant="secondary" size="lg">
+              Templates
+            </ButtonText>
+          </Button>
 
-      {/* Quick Start Templates */}
-      {recentTemplates.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Quick Start</Text>
-            <Pressable onPress={() => setShowTemplates(true)}>
-              <Text style={styles.seeAllText}>See All</Text>
-            </Pressable>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.templateScroll}>
-            {recentTemplates.map((template) => (
-              <Pressable
-                key={template.id}
-                style={styles.quickTemplateCard}
-                onPress={() => handleQuickStartTemplate(template)}>
-                <Text style={styles.quickTemplateName} numberOfLines={1}>
-                  {template.name}
-                </Text>
-                <Text style={styles.quickTemplateInfo}>
-                  {template.exercises.length} exercises
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-      )}
+          <Button
+            variant="ghost"
+            size="lg"
+            flex={1}
+            onPress={() => {
+              Haptics.selectionAsync();
+              router.push('/(tabs)/history');
+            }}
+            accessibilityLabel="View workout history"
+            accessibilityRole="button"
+          >
+            <Clock size={20} color="rgba(255,255,255,0.6)" />
+            <ButtonText variant="ghost" size="lg">
+              History
+            </ButtonText>
+          </Button>
+        </XStack>
 
-      {/* Recent Workouts */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Workouts</Text>
-        {recentWorkouts.length === 0 ? (
-          <Text style={styles.emptyText}>No workouts yet. Start your first one!</Text>
-        ) : (
-          recentWorkouts.map((workout) => (
-            <View key={workout.id} style={styles.recentCard}>
-              <View style={styles.recentHeader}>
-                <Text style={styles.recentName}>{workout.name || 'Workout'}</Text>
-                <Text style={styles.recentTime}>
-                  {formatDistanceToNow(workout.startedAt, { addSuffix: true })}
-                </Text>
-              </View>
-              <View style={styles.recentStats}>
-                <Text style={styles.recentStat}>
-                  {workout.exerciseCount} exercises
-                </Text>
-                <Text style={styles.recentStatDivider}>•</Text>
-                <Text style={styles.recentStat}>
-                  {formatDuration(
-                    workout.completedAt && workout.startedAt
-                      ? Math.floor((workout.completedAt.getTime() - workout.startedAt.getTime()) / 1000)
-                      : null
-                  )}
-                </Text>
-                <Text style={styles.recentStatDivider}>•</Text>
-                <Text style={styles.recentStat}>
-                  {(workout.totalVolume / 1000).toFixed(1)}k lbs
-                </Text>
-              </View>
-            </View>
-          ))
+        {/* Quick Start Templates */}
+        {recentTemplates.length > 0 && (
+          <YStack marginBottom="$8">
+            <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
+              <Text
+                fontSize={14}
+                fontWeight="600"
+                color="rgba(255,255,255,0.5)"
+                textTransform="uppercase"
+                letterSpacing={1}
+              >
+                Quick Start
+              </Text>
+              <Text
+                fontSize={14}
+                fontWeight="500"
+                color="#FFFFFF"
+                pressStyle={{ opacity: 0.6 }}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setShowTemplates(true);
+                }}
+                accessibilityLabel="See all templates"
+                accessibilityRole="button"
+              >
+                See All
+              </Text>
+            </XStack>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 12 }}
+            >
+              {recentTemplates.map((template) => (
+                <Card
+                  key={template.id}
+                  pressable
+                  width={160}
+                  onPress={() => handleQuickStartTemplate(template)}
+                  accessibilityLabel={`Start ${template.name} workout`}
+                  accessibilityRole="button"
+                >
+                  <YStack gap="$3">
+                    <YStack
+                      width={40}
+                      height={40}
+                      borderRadius={20}
+                      backgroundColor="rgba(255,255,255,0.08)"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Barbell size={20} color="#FFFFFF" />
+                    </YStack>
+                    <YStack>
+                      <Text
+                        fontSize={16}
+                        fontWeight="600"
+                        color="#FFFFFF"
+                        numberOfLines={1}
+                      >
+                        {template.name}
+                      </Text>
+                      <Text fontSize={13} fontWeight="400" color="rgba(255,255,255,0.5)" marginTop={4}>
+                        {template.exercises.length} exercises
+                      </Text>
+                    </YStack>
+                  </YStack>
+                </Card>
+              ))}
+            </ScrollView>
+          </YStack>
         )}
-      </View>
 
+        {/* Recent Workouts */}
+        <YStack>
+          <Text
+            fontSize={14}
+            fontWeight="600"
+            color="rgba(255,255,255,0.5)"
+            textTransform="uppercase"
+            letterSpacing={1}
+            marginBottom="$4"
+          >
+            Recent Workouts
+          </Text>
+          {recentWorkouts.length === 0 ? (
+            <Card>
+              <YStack alignItems="center" paddingVertical="$6">
+                <Text fontSize={16} fontWeight="500" color="rgba(255,255,255,0.6)" marginBottom="$2">
+                  No workouts yet
+                </Text>
+                <Text fontSize={14} color="rgba(255,255,255,0.4)">
+                  Start your first workout to see it here!
+                </Text>
+              </YStack>
+            </Card>
+          ) : (
+            <YStack gap="$3">
+              {recentWorkouts.map((workout) => {
+                const durationSecs = workout.completedAt && workout.startedAt
+                  ? Math.floor((workout.completedAt.getTime() - workout.startedAt.getTime()) / 1000)
+                  : null;
+
+                return (
+                  <Card
+                    key={workout.id}
+                    pressable
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      router.push(`/(tabs)/history`);
+                    }}
+                  >
+                    <XStack
+                      justifyContent="space-between"
+                      alignItems="center"
+                      marginBottom="$4"
+                    >
+                      <Text fontSize={18} fontWeight="600" color="#FFFFFF">
+                        {workout.name || 'Workout'}
+                      </Text>
+                      <Text fontSize={13} fontWeight="400" color="rgba(255,255,255,0.4)">
+                        {formatDistanceToNow(workout.startedAt, { addSuffix: true })}
+                      </Text>
+                    </XStack>
+
+                    {/* Stats Row */}
+                    <XStack justifyContent="space-around">
+                      <MiniStat
+                        value={workout.exerciseCount.toString()}
+                        label="exercises"
+                      />
+                      <MiniStat
+                        value={formatDuration(durationSecs)}
+                        label="duration"
+                      />
+                      <MiniStat
+                        value={`${(workout.totalVolume / 1000).toFixed(1)}k`}
+                        label="volume"
+                      />
+                    </XStack>
+                  </Card>
+                );
+              })}
+            </YStack>
+          )}
+        </YStack>
+
+      </ScrollView>
+
+      {/* Modals */}
       <TemplatesModal
         visible={showTemplates}
         onClose={() => setShowTemplates(false)}
         onSelectTemplate={handleSelectTemplate}
       />
-    </ScrollView>
+      <ProfileModal
+        visible={showProfile}
+        onClose={() => setShowProfile(false)}
+      />
+      <SettingsModal
+        visible={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
+      <BodyMeasurementsModal
+        visible={showMeasurements}
+        onClose={() => setShowMeasurements(false)}
+      />
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 20,
-    paddingBottom: 100,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 24,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 32,
-  },
-  startButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    borderRadius: 12,
-  },
-  startButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  templateButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: '#f0f7ff',
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#007AFF',
-  },
-  templateButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    backgroundColor: 'transparent',
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  seeAllText: {
-    fontSize: 14,
-    color: '#007AFF',
-  },
-  templateScroll: {
-    gap: 12,
-  },
-  quickTemplateCard: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
-    width: 160,
-  },
-  quickTemplateName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  quickTemplateInfo: {
-    fontSize: 13,
-    color: '#666',
-  },
-  emptyText: {
-    color: '#888',
-    fontSize: 16,
-  },
-  recentCard: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  recentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-    backgroundColor: 'transparent',
-  },
-  recentName: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  recentTime: {
-    fontSize: 13,
-    color: '#888',
-  },
-  recentStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  recentStat: {
-    fontSize: 13,
-    color: '#666',
-  },
-  recentStatDivider: {
-    fontSize: 13,
-    color: '#ccc',
-    marginHorizontal: 8,
-  },
-});

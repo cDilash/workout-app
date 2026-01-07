@@ -1,102 +1,239 @@
-import { StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
+import { ScrollView, Dimensions } from 'react-native';
 import { useState } from 'react';
-import { CartesianChart, Line, Bar, useChartPressState } from 'victory-native';
+import { CartesianChart, Line, Bar } from 'victory-native';
 import { PieChart } from 'react-native-gifted-charts';
-import { Circle, useFont } from '@shopify/react-native-skia';
-import { format, subDays, eachDayOfInterval, startOfWeek, isSameDay } from 'date-fns';
+import {
+  format,
+  subDays,
+  subMonths,
+  eachDayOfInterval,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  isSameDay,
+  isSameMonth,
+  addMonths,
+} from 'date-fns';
+import { Fire, TrendUp, Scales, Trophy, Barbell, CaretLeft, CaretRight } from 'phosphor-react-native';
+import { YStack, XStack, Text } from 'tamagui';
 
-import { Text, View } from '@/components/Themed';
 import {
   useExerciseStats,
   useExerciseProgress,
   useWeeklyVolume,
   useWorkoutFrequency,
   useMuscleGroupStats,
+  useTrainingStreaks,
+  useEffortAnalytics,
+  useMovementPatternBalance,
   type ExerciseStats,
 } from '@/src/hooks/usePersonalRecords';
+import { Card, Chip, ChipText, Section, SectionHeader, StatCard, EmptyState, StatNumber } from '@/src/components/ui';
 
 const screenWidth = Dimensions.get('window').width;
 
-// Workout Calendar Component
+/**
+ * Progress Screen - Premium Monochromatic
+ *
+ * Clean analytics dashboard with white accents and elegant typography.
+ */
+
+// Workout Calendar Component - Calendar View Heat Map
 function WorkoutCalendar({ frequencyData }: { frequencyData: { date: string; count: number }[] }) {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const today = new Date();
-  const startDate = subDays(today, 83); // ~12 weeks
-  const days = eachDayOfInterval({ start: startDate, end: today });
 
-  // Group days by week
+  // Get calendar grid for current month (including padding days from adjacent months)
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sunday
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
+  // Group into weeks (rows)
   const weeks: Date[][] = [];
-  let currentWeek: Date[] = [];
-
-  days.forEach((day) => {
-    if (currentWeek.length === 0 || day.getDay() === 0) {
-      if (currentWeek.length > 0) {
-        weeks.push(currentWeek);
-      }
-      currentWeek = [day];
-    } else {
-      currentWeek.push(day);
-    }
-  });
-  if (currentWeek.length > 0) {
-    weeks.push(currentWeek);
+  for (let i = 0; i < calendarDays.length; i += 7) {
+    weeks.push(calendarDays.slice(i, i + 7));
   }
 
   const getIntensity = (date: Date): number => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = format(date, 'yyyy-MM-dd');
     const entry = frequencyData.find((d) => d.date === dateStr);
     return entry ? Math.min(entry.count, 3) : 0;
   };
 
-  const intensityColors = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e'];
+  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const cellSize = 40; // Fixed size for better readability
+
+  // Calculate workouts this month
+  const workoutsThisMonth = frequencyData.filter((d) => {
+    const date = new Date(d.date);
+    return isSameMonth(date, currentMonth);
+  }).reduce((sum, d) => sum + d.count, 0);
+
+  const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const handleNextMonth = () => {
+    if (!isSameMonth(currentMonth, today)) {
+      setCurrentMonth(addMonths(currentMonth, 1));
+    }
+  };
 
   return (
-    <View style={styles.calendarContainer}>
-      <View style={styles.calendarGrid}>
+    <Card padding="$4">
+      {/* Month Navigation Header */}
+      <XStack justifyContent="space-between" alignItems="center" marginBottom="$5">
+        <XStack
+          padding="$2"
+          borderRadius={20}
+          backgroundColor="rgba(255,255,255,0.1)"
+          onPress={handlePrevMonth}
+          pressStyle={{ opacity: 0.7, scale: 0.95 }}
+          hitSlop={8}
+        >
+          <CaretLeft size={20} color="#FFFFFF" weight="bold" />
+        </XStack>
+        <YStack alignItems="center">
+          <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
+            {format(currentMonth, 'MMMM yyyy')}
+          </Text>
+          <Text fontSize="$3" color="rgba(255,255,255,0.6)" marginTop="$1">
+            {workoutsThisMonth} workout{workoutsThisMonth !== 1 ? 's' : ''} this month
+          </Text>
+        </YStack>
+        <XStack
+          padding="$2"
+          borderRadius={20}
+          backgroundColor={isSameMonth(currentMonth, today) ? 'transparent' : 'rgba(255,255,255,0.1)'}
+          onPress={handleNextMonth}
+          pressStyle={{ opacity: 0.7, scale: 0.95 }}
+          hitSlop={8}
+          opacity={isSameMonth(currentMonth, today) ? 0.3 : 1}
+        >
+          <CaretRight size={20} color="#FFFFFF" weight="bold" />
+        </XStack>
+      </XStack>
+
+      {/* Day Labels Header */}
+      <XStack justifyContent="space-around" marginBottom="$3">
+        {dayLabels.map((label, index) => (
+          <YStack key={index} width={cellSize} alignItems="center">
+            <Text
+              fontSize={12}
+              fontWeight="600"
+              color="rgba(255,255,255,0.5)"
+            >
+              {label}
+            </Text>
+          </YStack>
+        ))}
+      </XStack>
+
+      {/* Calendar Grid */}
+      <YStack gap="$2">
         {weeks.map((week, weekIndex) => (
-          <View key={weekIndex} style={styles.calendarWeek}>
-            {week.map((day, dayIndex) => (
-              <View
-                key={dayIndex}
-                style={[
-                  styles.calendarDay,
-                  { backgroundColor: intensityColors[getIntensity(day)] },
-                  isSameDay(day, today) && styles.calendarDayToday,
-                ]}
-              />
-            ))}
-          </View>
+          <XStack key={weekIndex} justifyContent="space-around">
+            {week.map((day, dayIndex) => {
+              const isCurrentMonth = isSameMonth(day, currentMonth);
+              const isToday = isSameDay(day, today);
+              const intensity = getIntensity(day);
+              const hasWorkout = intensity > 0;
+
+              // Background color based on workout intensity
+              let bgColor = 'transparent';
+              if (hasWorkout && isCurrentMonth) {
+                if (intensity === 1) bgColor = 'rgba(255, 255, 255, 0.15)';
+                else if (intensity === 2) bgColor = 'rgba(255, 255, 255, 0.35)';
+                else bgColor = '#FFFFFF';
+              }
+
+              // Text color for contrast
+              let textColor = 'rgba(255,255,255,0.3)'; // Non-current month
+              if (isCurrentMonth) {
+                if (hasWorkout && intensity === 3) {
+                  textColor = '#000000'; // Black on white
+                } else {
+                  textColor = '#FFFFFF';
+                }
+              }
+
+              return (
+                <YStack
+                  key={dayIndex}
+                  width={cellSize}
+                  height={cellSize}
+                  alignItems="center"
+                  justifyContent="center"
+                  borderRadius={cellSize / 2}
+                  backgroundColor={bgColor}
+                  borderWidth={isToday ? 2 : 0}
+                  borderColor={isToday ? '#FFFFFF' : 'transparent'}
+                >
+                  <Text
+                    fontSize={16}
+                    fontWeight={hasWorkout && isCurrentMonth ? '700' : '500'}
+                    color={textColor}
+                  >
+                    {format(day, 'd')}
+                  </Text>
+                </YStack>
+              );
+            })}
+          </XStack>
         ))}
-      </View>
-      <View style={styles.calendarLegend}>
-        <Text style={styles.legendText}>Less</Text>
-        {intensityColors.map((color, index) => (
-          <View key={index} style={[styles.legendBox, { backgroundColor: color }]} />
-        ))}
-        <Text style={styles.legendText}>More</Text>
-      </View>
-    </View>
+      </YStack>
+
+      {/* Legend */}
+      <XStack alignItems="center" justifyContent="center" gap="$3" marginTop="$5" paddingTop="$3" borderTopWidth={1} borderTopColor="rgba(255,255,255,0.1)">
+        <XStack alignItems="center" gap="$2">
+          <YStack width={12} height={12} borderRadius={6} backgroundColor="rgba(255,255,255,0.15)" />
+          <Text fontSize={11} color="rgba(255,255,255,0.5)">1</Text>
+        </XStack>
+        <XStack alignItems="center" gap="$2">
+          <YStack width={12} height={12} borderRadius={6} backgroundColor="rgba(255,255,255,0.35)" />
+          <Text fontSize={11} color="rgba(255,255,255,0.5)">2</Text>
+        </XStack>
+        <XStack alignItems="center" gap="$2">
+          <YStack width={12} height={12} borderRadius={6} backgroundColor="#FFFFFF" />
+          <Text fontSize={11} color="rgba(255,255,255,0.5)">3+</Text>
+        </XStack>
+        <Text fontSize={11} color="rgba(255,255,255,0.4)" marginLeft="$2">workouts/day</Text>
+      </XStack>
+    </Card>
   );
 }
 
 function PRCard({ stat }: { stat: ExerciseStats }) {
   return (
-    <View style={styles.prCard}>
-      <Text style={styles.prExerciseName}>{stat.exercise.name}</Text>
-      <View style={styles.prStats}>
+    <Card minWidth={150}>
+      <XStack alignItems="center" gap="$2" marginBottom="$3">
+        <Trophy size={18} color="#FFFFFF" weight="fill" />
+        <Text fontSize="$3" fontWeight="600" color="#FFFFFF" numberOfLines={1} flex={1}>
+          {stat.exercise.name}
+        </Text>
+      </XStack>
+      <XStack gap="$4">
         {stat.maxWeight && (
-          <View style={styles.prStat}>
-            <Text style={styles.prValue}>{stat.maxWeight}</Text>
-            <Text style={styles.prLabel}>lbs</Text>
-          </View>
+          <YStack>
+            <StatNumber
+              value={stat.maxWeight}
+              unit="kg"
+              size="sm"
+            />
+            <Text fontSize="$1" color="rgba(255,255,255,0.4)" marginTop="$1">Max Weight</Text>
+          </YStack>
         )}
         {stat.estimated1RM && (
-          <View style={styles.prStat}>
-            <Text style={styles.prValue}>{Math.round(stat.estimated1RM)}</Text>
-            <Text style={styles.prLabel}>est. 1RM</Text>
-          </View>
+          <YStack>
+            <StatNumber
+              value={Math.round(stat.estimated1RM)}
+              size="sm"
+            />
+            <Text fontSize="$1" color="rgba(255,255,255,0.4)" marginTop="$1">Est. 1RM</Text>
+          </YStack>
         )}
-      </View>
-    </View>
+      </XStack>
+    </Card>
   );
 }
 
@@ -113,26 +250,140 @@ function ExerciseSelector({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      style={styles.exerciseSelector}
-      contentContainerStyle={styles.exerciseSelectorContent}>
+      style={{ marginBottom: 16, maxHeight: 40 }}
+      contentContainerStyle={{ gap: 8 }}
+    >
       {exercises.map((stat) => (
-        <Pressable
+        <Chip
           key={stat.exerciseId}
-          style={[
-            styles.exerciseChip,
-            selectedId === stat.exerciseId && styles.exerciseChipActive,
-          ]}
-          onPress={() => onSelect(stat.exerciseId)}>
-          <Text
-            style={[
-              styles.exerciseChipText,
-              selectedId === stat.exerciseId && styles.exerciseChipTextActive,
-            ]}>
+          selected={selectedId === stat.exerciseId}
+          onPress={() => onSelect(stat.exerciseId)}
+          accessibilityLabel={`Select ${stat.exercise.name}`}
+          accessibilityRole="button"
+        >
+          <ChipText selected={selectedId === stat.exerciseId}>
             {stat.exercise.name}
-          </Text>
-        </Pressable>
+          </ChipText>
+        </Chip>
       ))}
     </ScrollView>
+  );
+}
+
+// Training Overview Component - Quick stats at a glance
+function TrainingOverview({
+  streaks,
+  effort,
+  balance,
+}: {
+  streaks: ReturnType<typeof useTrainingStreaks>['streaks'];
+  effort: ReturnType<typeof useEffortAnalytics>['analytics'];
+  balance: ReturnType<typeof useMovementPatternBalance>['balance'];
+}) {
+  const getBalanceStatus = (ratio: number): { text: string; isBalanced: boolean } => {
+    if (ratio >= 0.8 && ratio <= 1.2) return { text: 'Balanced', isBalanced: true };
+    if (ratio > 1.2) return { text: 'Push heavy', isBalanced: false };
+    return { text: 'Pull heavy', isBalanced: false };
+  };
+
+  const pushPullStatus = balance ? getBalanceStatus(balance.ratios.pushPull) : null;
+  const streakValue = streaks?.currentStreak ?? 0;
+  const hasStreak = streakValue >= 3;
+
+  return (
+    <XStack gap="$3">
+      {/* Training Streak */}
+      <Card flex={1} alignItems="center" minHeight={110} padding="$3">
+        <YStack
+          width={40}
+          height={40}
+          borderRadius={20}
+          backgroundColor="rgba(255, 255, 255, 0.08)"
+          alignItems="center"
+          justifyContent="center"
+          marginBottom="$2"
+        >
+          <Fire size={22} color={hasStreak ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} weight="fill" />
+        </YStack>
+        <StatNumber value={streakValue} size="sm" />
+        <Text fontSize="$1" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$1">
+          Week Streak
+        </Text>
+        {streaks?.isOnTrack && (
+          <YStack
+            backgroundColor="rgba(255, 255, 255, 0.15)"
+            paddingHorizontal="$2"
+            paddingVertical={2}
+            borderRadius={10}
+            marginTop="$1"
+          >
+            <Text fontSize={9} color="#FFFFFF" fontWeight="600">On Track</Text>
+          </YStack>
+        )}
+      </Card>
+
+      {/* Effort Level */}
+      <Card flex={1} alignItems="center" minHeight={110} padding="$3">
+        <YStack
+          width={40}
+          height={40}
+          borderRadius={20}
+          backgroundColor="rgba(255, 255, 255, 0.08)"
+          alignItems="center"
+          justifyContent="center"
+          marginBottom="$2"
+        >
+          <TrendUp size={22} color="#FFFFFF" weight="bold" />
+        </YStack>
+        <Text
+          fontSize="$5"
+          fontWeight="300"
+          color="#FFFFFF"
+          marginBottom={2}
+        >
+          {effort?.effortLevel ?? '—'}
+        </Text>
+        <Text fontSize="$1" color="rgba(255,255,255,0.4)" textAlign="center">
+          Effort Level
+        </Text>
+        {effort?.avgRPE !== null && effort?.avgRPE !== undefined && (
+          <Text fontSize={10} color="rgba(255,255,255,0.5)" marginTop={2}>
+            RPE {effort.avgRPE.toFixed(1)}
+          </Text>
+        )}
+      </Card>
+
+      {/* Push/Pull Balance */}
+      <Card flex={1} alignItems="center" minHeight={110} padding="$3">
+        <YStack
+          width={40}
+          height={40}
+          borderRadius={20}
+          backgroundColor="rgba(255, 255, 255, 0.08)"
+          alignItems="center"
+          justifyContent="center"
+          marginBottom="$2"
+        >
+          <Scales size={22} color="#FFFFFF" weight="bold" />
+        </YStack>
+        <Text
+          fontSize={pushPullStatus ? 14 : '$5'}
+          fontWeight="300"
+          color="#FFFFFF"
+          marginBottom={2}
+        >
+          {pushPullStatus?.text ?? '—'}
+        </Text>
+        <Text fontSize="$1" color="rgba(255,255,255,0.4)" textAlign="center">
+          Push/Pull
+        </Text>
+        {balance && (
+          <Text fontSize={10} color="rgba(255,255,255,0.5)" marginTop={2}>
+            {balance.ratios.pushPull.toFixed(1)}:1
+          </Text>
+        )}
+      </Card>
+    </XStack>
   );
 }
 
@@ -141,6 +392,9 @@ export default function ProgressScreen() {
   const { weeklyData, isLoading: volumeLoading } = useWeeklyVolume();
   const { frequencyData, isLoading: frequencyLoading } = useWorkoutFrequency();
   const { muscleData, isLoading: muscleLoading } = useMuscleGroupStats();
+  const { streaks, isLoading: streaksLoading } = useTrainingStreaks();
+  const { analytics: effortAnalytics, isLoading: effortLoading } = useEffortAnalytics();
+  const { balance, isLoading: balanceLoading } = useMovementPatternBalance();
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
 
   const { progressData, isLoading: progressLoading } = useExerciseProgress(
@@ -161,93 +415,146 @@ export default function ProgressScreen() {
     label: format(new Date(week.week), 'M/d'),
   }));
 
-  // Prepare pie chart data for muscle groups
-  const pieChartData = muscleData.map((item) => ({
-    value: item.volume,
-    color: item.color,
-    text: item.group,
-  }));
-
   const hasData = stats.length > 0;
   const hasWeeklyData = weeklyData.length > 0;
   const hasMuscleData = muscleData.length > 0;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <YStack flex={1} backgroundColor="#000000">
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      >
+      {/* Training Overview - Quick stats */}
+      <Section marginBottom="$6">
+        <SectionHeader title="This Week" />
+        {streaksLoading || effortLoading || balanceLoading ? (
+          <Text color="rgba(255,255,255,0.5)" fontSize="$3">Loading...</Text>
+        ) : (
+          <TrainingOverview
+            streaks={streaks}
+            effort={effortAnalytics}
+            balance={balance}
+          />
+        )}
+      </Section>
+
       {/* Workout Frequency Calendar */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Workout Frequency</Text>
-        <Text style={styles.sectionSubtitle}>Last 12 weeks</Text>
+      <Section marginBottom="$6">
+        <SectionHeader title="Workout Frequency" />
         {frequencyLoading ? (
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text color="rgba(255,255,255,0.5)" fontSize="$3">Loading...</Text>
         ) : (
           <WorkoutCalendar frequencyData={frequencyData} />
         )}
-      </View>
+      </Section>
 
       {/* Personal Records Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Personal Records</Text>
+      <Section marginBottom="$6">
+        <SectionHeader title="Personal Records" />
         {statsLoading ? (
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text color="rgba(255,255,255,0.5)" fontSize="$3">Loading...</Text>
         ) : stats.length === 0 ? (
-          <Text style={styles.emptyText}>Complete workouts to track your PRs</Text>
+          <Text color="rgba(255,255,255,0.5)" fontSize="$3">Complete workouts to track your PRs</Text>
         ) : (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.prScrollContent}>
+            contentContainerStyle={{ gap: 12, paddingRight: 16 }}
+          >
             {stats.slice(0, 10).map((stat) => (
               <PRCard key={stat.exerciseId} stat={stat} />
             ))}
           </ScrollView>
         )}
-      </View>
+      </Section>
 
-      {/* Muscle Group Breakdown */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Muscle Groups</Text>
+      {/* Muscle Group Breakdown - Pie Chart */}
+      <Section marginBottom="$6">
+        <SectionHeader title="Muscle Groups" />
         {muscleLoading ? (
-          <View style={styles.chartPlaceholder}>
-            <Text style={styles.emptyText}>Loading...</Text>
-          </View>
+          <Card alignItems="center" justifyContent="center" padding="$6">
+            <Text color="rgba(255,255,255,0.5)">Loading...</Text>
+          </Card>
         ) : !hasMuscleData ? (
-          <View style={styles.chartPlaceholder}>
-            <Text style={styles.emptyText}>Complete workouts to see muscle breakdown</Text>
-          </View>
+          <Card alignItems="center" justifyContent="center" padding="$6">
+            <Text color="rgba(255,255,255,0.5)">Complete workouts to see muscle breakdown</Text>
+          </Card>
         ) : (
-          <View style={styles.muscleContainer}>
-            <View style={styles.muscleChart}>
-              <PieChart
-                data={pieChartData}
-                donut
-                radius={70}
-                innerRadius={45}
-                centerLabelComponent={() => (
-                  <View style={styles.pieCenterLabel}>
-                    <Text style={styles.pieCenterText}>Volume</Text>
-                  </View>
-                )}
-              />
-            </View>
-            <View style={styles.muscleLegend}>
-              {muscleData.slice(0, 6).map((item) => (
-                <View key={item.group} style={styles.muscleLegendItem}>
-                  <View style={[styles.muscleLegendDot, { backgroundColor: item.color }]} />
-                  <Text style={styles.muscleLegendText}>{item.group}</Text>
-                  <Text style={styles.muscleLegendValue}>
-                    {(item.volume / 1000).toFixed(1)}k
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
+          <Card>
+            {(() => {
+              // High contrast grayscale - no pure white
+              const pieColors = [
+                '#D0D0D0',    // Light gray
+                '#1A1A1A',    // Near black
+                '#909090',    // Medium gray
+                '#4D4D4D',    // Dark gray
+                '#B8B8B8',    // Silver
+                '#606060',    // Gray
+                '#383838',    // Charcoal
+                '#787878',    // Neutral gray
+              ];
+
+              const totalVolume = muscleData.reduce((sum, d) => sum + d.volume, 0);
+              const pieData = muscleData.slice(0, 6).map((item, index) => ({
+                value: item.volume,
+                color: pieColors[index % pieColors.length],
+                text: '',
+              }));
+
+              return (
+                <XStack alignItems="center" gap="$4">
+                  <PieChart
+                    data={pieData}
+                    donut
+                    radius={80}
+                    innerRadius={50}
+                    strokeWidth={2}
+                    strokeColor="#000000"
+                    centerLabelComponent={() => (
+                      <YStack alignItems="center" justifyContent="center">
+                        <Text fontSize={20} fontWeight="600" color="#FFFFFF">
+                          {(totalVolume / 1000).toFixed(1)}k
+                        </Text>
+                        <Text fontSize={11} color="rgba(255,255,255,0.5)">
+                          total kg
+                        </Text>
+                      </YStack>
+                    )}
+                  />
+                  <YStack flex={1} gap="$3">
+                    {muscleData.slice(0, 6).map((item, index) => {
+                      const percent = ((item.volume / totalVolume) * 100).toFixed(0);
+                      return (
+                        <XStack key={item.group} alignItems="center" gap="$3">
+                          <YStack
+                            width={14}
+                            height={14}
+                            borderRadius={4}
+                            backgroundColor={pieColors[index % pieColors.length]}
+                          />
+                          <YStack flex={1}>
+                            <Text fontSize={14} fontWeight="600" color="#FFFFFF">
+                              {item.group}
+                            </Text>
+                            <Text fontSize={12} color="rgba(255,255,255,0.5)">
+                              {(item.volume / 1000).toFixed(1)}k · {percent}%
+                            </Text>
+                          </YStack>
+                        </XStack>
+                      );
+                    })}
+                  </YStack>
+                </XStack>
+              );
+            })()}
+          </Card>
         )}
-      </View>
+      </Section>
 
       {/* Strength Progress Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Strength Progress</Text>
+      <Section marginBottom="$6">
+        <SectionHeader title="Strength Progress" />
 
         {hasData && (
           <ExerciseSelector
@@ -258,70 +565,72 @@ export default function ProgressScreen() {
         )}
 
         {progressLoading ? (
-          <View style={styles.chartPlaceholder}>
-            <Text style={styles.emptyText}>Loading chart...</Text>
-          </View>
+          <Card height={200} alignItems="center" justifyContent="center">
+            <Text color="rgba(255,255,255,0.5)">Loading chart...</Text>
+          </Card>
         ) : progressData.length < 2 ? (
-          <View style={styles.chartPlaceholder}>
-            <Text style={styles.emptyText}>
+          <Card height={200} alignItems="center" justifyContent="center">
+            <Text color="rgba(255,255,255,0.5)">
               {hasData
                 ? 'Log more workouts to see progress'
                 : 'Complete workouts to see progress charts'}
             </Text>
-          </View>
+          </Card>
         ) : (
-          <View style={styles.chartContainer}>
-            <View style={{ height: 200 }}>
+          <Card>
+            <YStack height={200}>
               <CartesianChart
                 data={lineChartData}
                 xKey="x"
                 yKeys={["y"]}
                 axisOptions={{
                   formatXLabel: (value) => lineChartData[value]?.label || '',
-                  labelColor: '#888',
-                  lineColor: '#e0e0e0',
+                  labelColor: 'rgba(255, 255, 255, 0.4)',
+                  lineColor: 'rgba(255, 255, 255, 0.08)',
                 }}
                 domainPadding={{ left: 20, right: 20, top: 20 }}
               >
                 {({ points }) => (
                   <Line
                     points={points.y}
-                    color="#007AFF"
-                    strokeWidth={3}
+                    color="#FFFFFF"
+                    strokeWidth={2}
                     curveType="natural"
                     animate={{ type: "timing", duration: 500 }}
                   />
                 )}
               </CartesianChart>
-            </View>
-            <Text style={styles.chartLabel}>Weight (lbs) over time</Text>
-          </View>
+            </YStack>
+            <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$3">
+              Weight (kg) over time
+            </Text>
+          </Card>
         )}
-      </View>
+      </Section>
 
       {/* Volume Trends Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Weekly Volume</Text>
+      <Section marginBottom="$6">
+        <SectionHeader title="Weekly Volume" />
 
         {volumeLoading ? (
-          <View style={styles.chartPlaceholder}>
-            <Text style={styles.emptyText}>Loading...</Text>
-          </View>
+          <Card height={200} alignItems="center" justifyContent="center">
+            <Text color="rgba(255,255,255,0.5)">Loading...</Text>
+          </Card>
         ) : !hasWeeklyData ? (
-          <View style={styles.chartPlaceholder}>
-            <Text style={styles.emptyText}>Log more workouts to see volume trends</Text>
-          </View>
+          <Card height={200} alignItems="center" justifyContent="center">
+            <Text color="rgba(255,255,255,0.5)">Log more workouts to see volume trends</Text>
+          </Card>
         ) : (
-          <View style={styles.chartContainer}>
-            <View style={{ height: 200 }}>
+          <Card>
+            <YStack height={200}>
               <CartesianChart
                 data={barChartData}
                 xKey="x"
                 yKeys={["y"]}
                 axisOptions={{
                   formatXLabel: (value) => barChartData[value]?.label || '',
-                  labelColor: '#888',
-                  lineColor: '#e0e0e0',
+                  labelColor: 'rgba(255, 255, 255, 0.4)',
+                  lineColor: 'rgba(255, 255, 255, 0.08)',
                 }}
                 domainPadding={{ left: 30, right: 30, top: 20 }}
               >
@@ -329,255 +638,46 @@ export default function ProgressScreen() {
                   <Bar
                     points={points.y}
                     chartBounds={chartBounds}
-                    color="#007AFF"
+                    color="#FFFFFF"
                     roundedCorners={{ topLeft: 6, topRight: 6 }}
                     animate={{ type: "timing", duration: 500 }}
                   />
                 )}
               </CartesianChart>
-            </View>
-            <Text style={styles.chartLabel}>Total volume (thousands of lbs) per week</Text>
-          </View>
+            </YStack>
+            <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$3">
+              Total volume (thousands of kg) per week
+            </Text>
+          </Card>
         )}
-      </View>
+      </Section>
 
       {/* Summary Stats */}
       {hasData && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Summary</Text>
-          <View style={styles.summaryGrid}>
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryValue}>{stats.length}</Text>
-              <Text style={styles.summaryLabel}>Exercises Tracked</Text>
-            </View>
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryValue}>
-                {Math.round(stats.reduce((sum, s) => sum + s.totalVolume, 0) / 1000)}k
+        <Section>
+          <SectionHeader title="All-Time Summary" />
+          <XStack gap="$3">
+            <Card flex={1} alignItems="center" paddingVertical="$4">
+              <Barbell size={24} color="#FFFFFF" weight="duotone" />
+              <StatNumber value={stats.length} size="md" />
+              <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$1">
+                Exercises Tracked
               </Text>
-              <Text style={styles.summaryLabel}>Total Volume (lbs)</Text>
-            </View>
-          </View>
-        </View>
+            </Card>
+            <Card flex={1} alignItems="center" paddingVertical="$4">
+              <TrendUp size={24} color="#FFFFFF" weight="bold" />
+              <StatNumber
+                value={`${Math.round(stats.reduce((sum, s) => sum + s.totalVolume, 0) / 1000)}k`}
+                size="md"
+              />
+              <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$1">
+                Total Volume (kg)
+              </Text>
+            </Card>
+          </XStack>
+        </Section>
       )}
-    </ScrollView>
+      </ScrollView>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  section: {
-    marginBottom: 28,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    fontSize: 13,
-    color: '#888',
-    marginBottom: 12,
-  },
-  loadingText: {
-    color: '#888',
-    fontSize: 14,
-  },
-  emptyText: {
-    color: '#888',
-    fontSize: 14,
-  },
-  chartPlaceholder: {
-    height: 200,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chartContainer: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
-    paddingTop: 20,
-  },
-  chartLabel: {
-    fontSize: 12,
-    color: '#888',
-    textAlign: 'center',
-    marginTop: 12,
-  },
-
-  // Calendar styles
-  calendarContainer: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
-  },
-  calendarGrid: {
-    flexDirection: 'row',
-    gap: 3,
-    backgroundColor: 'transparent',
-  },
-  calendarWeek: {
-    gap: 3,
-    backgroundColor: 'transparent',
-  },
-  calendarDay: {
-    width: 12,
-    height: 12,
-    borderRadius: 2,
-  },
-  calendarDayToday: {
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  calendarLegend: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 4,
-    marginTop: 12,
-    backgroundColor: 'transparent',
-  },
-  legendText: {
-    fontSize: 10,
-    color: '#888',
-  },
-  legendBox: {
-    width: 12,
-    height: 12,
-    borderRadius: 2,
-  },
-
-  // Muscle group styles
-  muscleContainer: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  muscleChart: {
-    backgroundColor: 'transparent',
-  },
-  muscleLegend: {
-    flex: 1,
-    marginLeft: 16,
-    backgroundColor: 'transparent',
-  },
-  muscleLegendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    backgroundColor: 'transparent',
-  },
-  muscleLegendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
-  },
-  muscleLegendText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#333',
-  },
-  muscleLegendValue: {
-    fontSize: 12,
-    color: '#888',
-    fontWeight: '500',
-  },
-  pieCenterLabel: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pieCenterText: {
-    fontSize: 12,
-    color: '#888',
-  },
-
-  // PR styles
-  prScrollContent: {
-    gap: 12,
-    paddingRight: 16,
-  },
-  prCard: {
-    backgroundColor: '#f0f7ff',
-    borderRadius: 12,
-    padding: 16,
-    minWidth: 140,
-  },
-  prExerciseName: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  prStats: {
-    flexDirection: 'row',
-    gap: 16,
-    backgroundColor: 'transparent',
-  },
-  prStat: {
-    backgroundColor: 'transparent',
-  },
-  prValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#007AFF',
-  },
-  prLabel: {
-    fontSize: 11,
-    color: '#666',
-  },
-  exerciseSelector: {
-    marginBottom: 16,
-    maxHeight: 40,
-  },
-  exerciseSelectorContent: {
-    gap: 8,
-  },
-  exerciseChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-  },
-  exerciseChipActive: {
-    backgroundColor: '#007AFF',
-  },
-  exerciseChipText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#333',
-  },
-  exerciseChipTextActive: {
-    color: '#fff',
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  summaryCard: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  summaryValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 4,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-  },
-});

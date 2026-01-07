@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
-import {
-  StyleSheet,
-  Modal,
-  FlatList,
-  Pressable,
-  TextInput,
-  Alert,
-} from 'react-native';
-import { Trash, FolderOpen } from 'phosphor-react-native';
+import { Modal, FlatList, Alert, TextInput } from 'react-native';
+import { Trash, FolderOpen, Barbell, Clock } from 'phosphor-react-native';
+import * as Haptics from 'expo-haptics';
+import { YStack, XStack, Text } from 'tamagui';
+import { format } from 'date-fns';
 
-import { Text, View } from '@/components/Themed';
 import {
   useTemplates,
   deleteTemplate,
   templateToExerciseData,
   type WorkoutTemplate,
 } from '@/src/hooks/useTemplates';
-import { format } from 'date-fns';
+import { Card, SearchInput, Button, ButtonText, EmptyState } from '@/src/components/ui';
+
+/**
+ * Templates Modal - Premium Monochromatic
+ *
+ * Clean template selection with elegant cards.
+ */
 
 interface TemplatesModalProps {
   visible: boolean;
@@ -43,29 +44,71 @@ function TemplateCard({
     .join(', ');
   const moreCount = template.exercises.length - 3;
 
+  const handleSelect = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onSelect();
+  };
+
+  const handleDelete = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onDelete();
+  };
+
   return (
-    <Pressable style={styles.templateCard} onPress={onSelect}>
-      <View style={styles.templateHeader}>
-        <Text style={styles.templateName}>{template.name}</Text>
-        <Pressable onPress={onDelete} hitSlop={8}>
-          <Trash size={16} color="#999" />
-        </Pressable>
-      </View>
-      <Text style={styles.templateExercises} numberOfLines={1}>
+    <Card
+      pressable
+      marginBottom="$3"
+      onPress={handleSelect}
+      accessibilityLabel={`Select ${template.name} template`}
+      accessibilityRole="button"
+    >
+      <XStack justifyContent="space-between" alignItems="flex-start" marginBottom="$2">
+        <XStack alignItems="center" gap="$3" flex={1}>
+          <YStack
+            width={40}
+            height={40}
+            borderRadius={20}
+            backgroundColor="rgba(255, 255, 255, 0.08)"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Barbell size={20} color="#FFFFFF" weight="duotone" />
+          </YStack>
+          <YStack flex={1}>
+            <Text fontSize="$5" fontWeight="600" color="#FFFFFF" numberOfLines={1}>
+              {template.name}
+            </Text>
+            <Text fontSize="$2" fontWeight="500" color="rgba(255,255,255,0.5)" marginTop={2}>
+              {template.exercises.length} exercises
+            </Text>
+          </YStack>
+        </XStack>
+        <XStack
+          padding="$2"
+          onPress={handleDelete}
+          pressStyle={{ scale: 0.9, opacity: 0.7 }}
+          hitSlop={8}
+          accessibilityLabel={`Delete ${template.name} template`}
+          accessibilityRole="button"
+        >
+          <Trash size={18} color="rgba(255,255,255,0.4)" />
+        </XStack>
+      </XStack>
+
+      <Text fontSize="$3" fontWeight="500" color="rgba(255,255,255,0.6)" marginBottom="$2" numberOfLines={1}>
         {exerciseNames}
         {moreCount > 0 && ` +${moreCount} more`}
       </Text>
-      <View style={styles.templateMeta}>
-        <Text style={styles.templateMetaText}>
-          {template.exercises.length} exercises
-        </Text>
-        {template.lastUsedAt && (
-          <Text style={styles.templateMetaText}>
+
+      {template.lastUsedAt && (
+        <XStack alignItems="center" gap="$1">
+          <Clock size={12} color="rgba(255,255,255,0.4)" />
+          <Text fontSize="$2" fontWeight="500" color="rgba(255,255,255,0.4)">
             Last used {format(template.lastUsedAt, 'MMM d')}
           </Text>
-        )}
-      </View>
-    </Pressable>
+        </XStack>
+      )}
+    </Card>
   );
 }
 
@@ -105,34 +148,57 @@ export function TemplatesModal({
     );
   };
 
+  const handleClose = () => {
+    Haptics.selectionAsync();
+    onClose();
+  };
+
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Workout Templates</Text>
-          <Pressable onPress={onClose}>
-            <Text style={styles.closeButton}>Done</Text>
-          </Pressable>
-        </View>
+      <YStack flex={1} backgroundColor="#000000">
+        <XStack
+          justifyContent="space-between"
+          alignItems="center"
+          paddingHorizontal="$4"
+          paddingVertical="$4"
+          borderBottomWidth={1}
+          borderBottomColor="rgba(255, 255, 255, 0.08)"
+          backgroundColor="#0a0a0a"
+        >
+          <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
+            Workout Templates
+          </Text>
+          <Text
+            fontSize="$4"
+            color="#FFFFFF"
+            fontWeight="600"
+            onPress={handleClose}
+            pressStyle={{ opacity: 0.7 }}
+            accessibilityLabel="Close templates"
+            accessibilityRole="button"
+          >
+            Done
+          </Text>
+        </XStack>
 
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search templates..."
-          placeholderTextColor="#888"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <YStack padding="$4">
+          <SearchInput
+            placeholder="Search templates..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </YStack>
 
         {isLoading ? (
-          <Text style={styles.loadingText}>Loading templates...</Text>
+          <Text textAlign="center" color="rgba(255,255,255,0.5)" marginTop="$8">
+            Loading templates...
+          </Text>
         ) : filteredTemplates.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <FolderOpen size={48} color="#ccc" />
-            <Text style={styles.emptyText}>No templates yet</Text>
-            <Text style={styles.emptySubtext}>
-              Save your workouts as templates to quickly repeat them
-            </Text>
-          </View>
+          <EmptyState
+            icon={<FolderOpen size={48} color="rgba(255,255,255,0.3)" weight="duotone" />}
+            title="No templates yet"
+            description="Save your workouts as templates to quickly repeat them"
+          />
         ) : (
           <FlatList
             data={filteredTemplates}
@@ -144,10 +210,10 @@ export function TemplatesModal({
                 onDelete={() => handleDeleteTemplate(item)}
               />
             )}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={{ padding: 16 }}
           />
         )}
-      </View>
+      </YStack>
     </Modal>
   );
 }
@@ -173,181 +239,84 @@ export function SaveTemplateModal({
       Alert.alert('Error', 'Please enter a template name');
       return;
     }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onSave(name.trim());
     setName('');
     onClose();
   };
 
+  const handleCancel = () => {
+    Haptics.selectionAsync();
+    onClose();
+  };
+
   return (
     <Modal visible={visible} animationType="fade" transparent>
-      <View style={styles.modalOverlay}>
-        <View style={styles.saveModal}>
-          <Text style={styles.saveModalTitle}>Save as Template</Text>
+      <YStack
+        flex={1}
+        backgroundColor="rgba(0,0,0,0.8)"
+        justifyContent="center"
+        alignItems="center"
+      >
+        <YStack
+          backgroundColor="#141414"
+          borderRadius={24}
+          padding="$6"
+          width="85%"
+          maxWidth={320}
+          borderWidth={1}
+          borderColor="rgba(255, 255, 255, 0.08)"
+        >
+          <Text
+            fontSize="$5"
+            fontWeight="600"
+            color="#FFFFFF"
+            marginBottom="$4"
+            textAlign="center"
+          >
+            Save as Template
+          </Text>
           <TextInput
-            style={styles.saveModalInput}
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              fontSize: 16,
+              marginBottom: 20,
+              color: '#FFFFFF',
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.10)',
+            }}
             placeholder="Template name"
-            placeholderTextColor="#888"
+            placeholderTextColor="rgba(255, 255, 255, 0.3)"
             value={name}
             onChangeText={setName}
             autoFocus
+            accessibilityLabel="Template name"
           />
-          <View style={styles.saveModalButtons}>
-            <Pressable style={styles.saveModalCancel} onPress={onClose}>
-              <Text style={styles.saveModalCancelText}>Cancel</Text>
-            </Pressable>
-            <Pressable style={styles.saveModalSave} onPress={handleSave}>
-              <Text style={styles.saveModalSaveText}>Save</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
+          <XStack gap="$3">
+            <Button
+              variant="ghost"
+              flex={1}
+              onPress={handleCancel}
+              accessibilityLabel="Cancel"
+              accessibilityRole="button"
+            >
+              <ButtonText variant="ghost">Cancel</ButtonText>
+            </Button>
+            <Button
+              variant="primary"
+              flex={1}
+              onPress={handleSave}
+              accessibilityLabel="Save template"
+              accessibilityRole="button"
+            >
+              <ButtonText variant="primary">Save</ButtonText>
+            </Button>
+          </XStack>
+        </YStack>
+      </YStack>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  closeButton: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  searchInput: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    margin: 16,
-  },
-  loadingText: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: 40,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#666',
-    marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#888',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  listContent: {
-    padding: 16,
-  },
-  templateCard: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  templateHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-    backgroundColor: 'transparent',
-  },
-  templateName: {
-    fontSize: 18,
-    fontWeight: '600',
-    flex: 1,
-  },
-  templateExercises: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
-  templateMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: 'transparent',
-  },
-  templateMetaText: {
-    fontSize: 12,
-    color: '#888',
-  },
-  // Save Template Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  saveModal: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    width: '85%',
-    maxWidth: 320,
-  },
-  saveModalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  saveModalInput: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  saveModalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  saveModalCancel: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#f0f0f0',
-    alignItems: 'center',
-  },
-  saveModalCancelText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-  },
-  saveModalSave: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#007AFF',
-    alignItems: 'center',
-  },
-  saveModalSaveText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-});

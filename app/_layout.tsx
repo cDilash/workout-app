@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { TamaguiProvider } from '@tamagui/core';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -6,21 +6,34 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/components/useColorScheme';
 import { DatabaseProvider } from '@/src/db/provider';
 import tamaguiConfig from '@/tamagui.config';
 
+/**
+ * Premium Monochromatic Theme
+ * Pure black navigation theme
+ */
+const PremiumDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: '#FFFFFF',
+    background: '#000000',
+    card: '#000000',
+    text: '#FFFFFF',
+    border: 'rgba(255, 255, 255, 0.08)',
+    notification: '#FFFFFF',
+  },
+};
+
 export {
-  // Catch any errors thrown by the Layout component.
   ErrorBoundary,
 } from 'expo-router';
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(tabs)',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -28,7 +41,6 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -53,10 +65,8 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={PremiumDarkTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
@@ -64,7 +74,15 @@ function RootLayoutNav() {
           options={{
             title: 'Workout',
             presentation: 'fullScreenModal',
-            headerShown: true,
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="exercise/[id]"
+          options={{
+            title: 'Exercise',
+            presentation: 'card',
+            headerShown: false,
           }}
         />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />

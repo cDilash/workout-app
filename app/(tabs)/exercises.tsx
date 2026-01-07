@@ -1,8 +1,5 @@
 import {
-  StyleSheet,
   SectionList,
-  TextInput,
-  Pressable,
   Modal,
   Alert,
   KeyboardAvoidingView,
@@ -11,14 +8,22 @@ import {
 } from 'react-native';
 import { useState, useMemo } from 'react';
 import { router } from 'expo-router';
-import { CaretRight, Plus, Check } from 'phosphor-react-native';
+import { CaretRight, Plus, Check, Barbell } from 'phosphor-react-native';
+import * as Haptics from 'expo-haptics';
+import { YStack, XStack, Text } from 'tamagui';
 
-import { Text, View } from '@/components/Themed';
 import { useExercises } from '@/src/hooks/useExercises';
 import { db } from '@/src/db/client';
 import { exercises, EQUIPMENT_TYPES, MUSCLE_GROUPS as SCHEMA_MUSCLE_GROUPS, MOVEMENT_PATTERNS } from '@/src/db/schema';
 import * as Crypto from 'expo-crypto';
 import type { Exercise, ExerciseType, EquipmentType, MovementPattern, MuscleGroup } from '@/src/db/schema';
+import { Card, Button, ButtonText, Chip, ChipText, SearchInput, Badge, BadgeText, EmptyState } from '@/src/components/ui';
+
+/**
+ * Exercises Screen - Premium Monochromatic
+ *
+ * Clean exercise library with white/gray filter chips and elegant cards.
+ */
 
 // Filter options for the exercise list
 const MUSCLE_GROUP_FILTERS = [
@@ -92,26 +97,49 @@ const PRIMARY_MUSCLE_OPTIONS: { value: MuscleGroup; label: string; group: string
 
 function ExerciseRow({ exercise }: { exercise: Exercise }) {
   const handlePress = () => {
+    Haptics.selectionAsync();
     router.push(`/exercise/${exercise.id}`);
   };
 
   return (
-    <Pressable style={styles.exerciseRow} onPress={handlePress}>
-      <View style={styles.exerciseInfo}>
-        <View style={styles.exerciseNameRow}>
-          <Text style={styles.exerciseName}>{exercise.name}</Text>
-          {exercise.isCustom && (
-            <View style={styles.customBadge}>
-              <Text style={styles.customBadgeText}>Custom</Text>
-            </View>
-          )}
-        </View>
-        <Text style={styles.exerciseMeta}>
-          {exercise.equipment}
-        </Text>
-      </View>
-      <CaretRight size={14} color="#ccc" />
-    </Pressable>
+    <Card
+      pressable
+      marginBottom="$2"
+      onPress={handlePress}
+      accessibilityLabel={`View ${exercise.name} details`}
+      accessibilityRole="button"
+    >
+      <XStack alignItems="center" justifyContent="space-between">
+        <XStack alignItems="center" gap="$3" flex={1}>
+          <YStack
+            width={36}
+            height={36}
+            borderRadius={18}
+            backgroundColor="rgba(255, 255, 255, 0.08)"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Barbell size={18} color="#FFFFFF" weight="duotone" />
+          </YStack>
+          <YStack flex={1}>
+            <XStack alignItems="center" gap="$2" marginBottom="$1">
+              <Text fontSize="$4" fontWeight="600" color="#FFFFFF" numberOfLines={1} flex={1}>
+                {exercise.name}
+              </Text>
+              {exercise.isCustom && (
+                <Badge variant="muted" size="sm">
+                  <BadgeText variant="muted" size="sm">Custom</BadgeText>
+                </Badge>
+              )}
+            </XStack>
+            <Text fontSize="$2" fontWeight="500" color="rgba(255,255,255,0.5)">
+              {exercise.equipment}
+            </Text>
+          </YStack>
+        </XStack>
+        <CaretRight size={16} color="rgba(255,255,255,0.4)" />
+      </XStack>
+    </Card>
   );
 }
 
@@ -225,149 +253,187 @@ function CreateExerciseModal({ visible, onClose, onCreated }: CreateExerciseModa
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Create Exercise</Text>
-          <Pressable onPress={onClose}>
-            <Text style={styles.modalClose}>Cancel</Text>
-          </Pressable>
-        </View>
+        style={{ flex: 1, backgroundColor: '#000000' }}
+      >
+        <XStack
+          justifyContent="space-between"
+          alignItems="center"
+          paddingHorizontal="$4"
+          paddingVertical="$4"
+          borderBottomWidth={1}
+          borderBottomColor="rgba(255, 255, 255, 0.08)"
+          backgroundColor="#0a0a0a"
+        >
+          <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
+            Create Exercise
+          </Text>
+          <Text
+            fontSize="$4"
+            fontWeight="600"
+            color="#FFFFFF"
+            onPress={() => {
+              Haptics.selectionAsync();
+              onClose();
+            }}
+            pressStyle={{ opacity: 0.7 }}
+            accessibilityLabel="Cancel creating exercise"
+            accessibilityRole="button"
+          >
+            Cancel
+          </Text>
+        </XStack>
 
-        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-          <Text style={styles.inputLabel}>Exercise Name</Text>
-          <TextInput
-            style={styles.textInput}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
+          <Text fontSize="$3" fontWeight="600" color="#FFFFFF" marginBottom="$2" marginTop="$4">
+            Exercise Name
+          </Text>
+          <SearchInput
             placeholder="e.g., Incline Hammer Curl"
-            placeholderTextColor="#888"
             value={name}
             onChangeText={setName}
             autoFocus
           />
 
-          <Text style={styles.inputLabel}>Exercise Type</Text>
-          <View style={styles.optionsGrid}>
+          <Text fontSize="$3" fontWeight="600" color="#FFFFFF" marginBottom="$2" marginTop="$4">
+            Exercise Type
+          </Text>
+          <XStack gap="$2" flexWrap="wrap">
             {EXERCISE_TYPE_OPTIONS.map((option) => (
-              <Pressable
+              <YStack
                 key={option.value}
-                style={[
-                  styles.typeOptionButton,
-                  exerciseType === option.value && styles.optionButtonActive,
-                ]}
-                onPress={() => setExerciseType(option.value)}>
+                flex={1}
+                minWidth={140}
+                paddingHorizontal="$4"
+                paddingVertical="$3"
+                borderRadius={16}
+                backgroundColor={exerciseType === option.value ? '#FFFFFF' : 'rgba(255, 255, 255, 0.08)'}
+                alignItems="center"
+                onPress={() => setExerciseType(option.value)}
+                pressStyle={{ opacity: 0.7 }}
+                cursor="pointer"
+                accessibilityLabel={`Select ${option.label} exercise type`}
+                accessibilityRole="button"
+              >
                 <Text
-                  style={[
-                    styles.optionButtonText,
-                    exerciseType === option.value && styles.optionButtonTextActive,
-                  ]}>
+                  fontSize="$3"
+                  color={exerciseType === option.value ? '#000000' : '#FFFFFF'}
+                  fontWeight={exerciseType === option.value ? '600' : '400'}
+                >
                   {option.label}
                 </Text>
                 <Text
-                  style={[
-                    styles.typeOptionDescription,
-                    exerciseType === option.value && styles.typeOptionDescriptionActive,
-                  ]}>
+                  fontSize="$1"
+                  color={exerciseType === option.value ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.5)'}
+                  marginTop="$1"
+                >
                   {option.description}
                 </Text>
-              </Pressable>
+              </YStack>
             ))}
-          </View>
+          </XStack>
 
-          <Text style={styles.inputLabel}>Equipment</Text>
-          <View style={styles.optionsGrid}>
+          <Text fontSize="$3" fontWeight="600" color="#FFFFFF" marginBottom="$2" marginTop="$4">
+            Equipment
+          </Text>
+          <XStack gap="$2" flexWrap="wrap">
             {EQUIPMENT_OPTIONS.map((equip) => (
-              <Pressable
+              <Chip
                 key={equip.value}
-                style={[
-                  styles.optionButton,
-                  equipment === equip.value && styles.optionButtonActive,
-                ]}
-                onPress={() => setEquipment(equip.value)}>
-                <Text
-                  style={[
-                    styles.optionButtonText,
-                    equipment === equip.value && styles.optionButtonTextActive,
-                  ]}>
-                  {equip.label}
-                </Text>
-              </Pressable>
+                selected={equipment === equip.value}
+                onPress={() => setEquipment(equip.value)}
+                accessibilityLabel={`Select ${equip.label} equipment`}
+                accessibilityRole="button"
+              >
+                <ChipText selected={equipment === equip.value}>{equip.label}</ChipText>
+              </Chip>
             ))}
-          </View>
+          </XStack>
 
-          <Text style={styles.inputLabel}>
+          <Text fontSize="$3" fontWeight="600" color="#FFFFFF" marginBottom="$1" marginTop="$4">
             Primary Muscles{' '}
-            <Text style={styles.inputLabelHint}>
+            <Text fontWeight="500" color="rgba(255,255,255,0.5)">
               ({primaryMuscles.length} selected)
             </Text>
           </Text>
-          <Text style={styles.inputHint}>Select the main muscles worked</Text>
-          <View style={styles.optionsGrid}>
+          <Text fontSize="$1" color="rgba(255,255,255,0.5)" marginBottom="$2">
+            Select the main muscles worked
+          </Text>
+          <XStack gap="$2" flexWrap="wrap">
             {PRIMARY_MUSCLE_OPTIONS.map((muscle) => (
-              <Pressable
+              <Chip
                 key={muscle.value}
-                style={[
-                  styles.optionButton,
-                  primaryMuscles.includes(muscle.value) && styles.optionButtonActive,
-                ]}
-                onPress={() => toggleMuscle(muscle.value, primaryMuscles, setPrimaryMuscles)}>
-                <View style={styles.muscleButtonContent}>
+                selected={primaryMuscles.includes(muscle.value)}
+                onPress={() => toggleMuscle(muscle.value, primaryMuscles, setPrimaryMuscles)}
+                accessibilityLabel={`${primaryMuscles.includes(muscle.value) ? 'Deselect' : 'Select'} ${muscle.label} as primary muscle`}
+                accessibilityRole="button"
+              >
+                <XStack alignItems="center" gap="$1">
                   {primaryMuscles.includes(muscle.value) && (
-                    <Check size={12} color="#fff" weight="bold" />
+                    <Check size={12} color="#000000" weight="bold" />
                   )}
-                  <Text
-                    style={[
-                      styles.optionButtonText,
-                      primaryMuscles.includes(muscle.value) && styles.optionButtonTextActive,
-                    ]}>
-                    {muscle.label}
-                  </Text>
-                </View>
-              </Pressable>
+                  <ChipText selected={primaryMuscles.includes(muscle.value)}>{muscle.label}</ChipText>
+                </XStack>
+              </Chip>
             ))}
-          </View>
+          </XStack>
 
-          <Text style={styles.inputLabel}>
+          <Text fontSize="$3" fontWeight="600" color="#FFFFFF" marginBottom="$1" marginTop="$4">
             Secondary Muscles{' '}
-            <Text style={styles.inputLabelHint}>
+            <Text fontWeight="500" color="rgba(255,255,255,0.5)">
               ({secondaryMuscles.length} selected)
             </Text>
           </Text>
-          <Text style={styles.inputHint}>Select muscles that assist the movement</Text>
-          <View style={styles.optionsGrid}>
+          <Text fontSize="$1" color="rgba(255,255,255,0.5)" marginBottom="$2">
+            Select muscles that assist the movement
+          </Text>
+          <XStack gap="$2" flexWrap="wrap">
             {PRIMARY_MUSCLE_OPTIONS.map((muscle) => (
-              <Pressable
+              <XStack
                 key={muscle.value}
-                style={[
-                  styles.optionButton,
-                  secondaryMuscles.includes(muscle.value) && styles.secondaryMuscleActive,
-                ]}
-                onPress={() => toggleMuscle(muscle.value, secondaryMuscles, setSecondaryMuscles)}>
-                <View style={styles.muscleButtonContent}>
-                  {secondaryMuscles.includes(muscle.value) && (
-                    <Check size={12} color="#fff" weight="bold" />
-                  )}
-                  <Text
-                    style={[
-                      styles.optionButtonText,
-                      secondaryMuscles.includes(muscle.value) && styles.optionButtonTextActive,
-                    ]}>
-                    {muscle.label}
-                  </Text>
-                </View>
-              </Pressable>
+                paddingHorizontal="$3"
+                paddingVertical="$2"
+                borderRadius={50}
+                backgroundColor={secondaryMuscles.includes(muscle.value) ? 'rgba(255, 255, 255, 0.30)' : 'rgba(255, 255, 255, 0.08)'}
+                alignItems="center"
+                gap="$1"
+                onPress={() => toggleMuscle(muscle.value, secondaryMuscles, setSecondaryMuscles)}
+                pressStyle={{ opacity: 0.7 }}
+                cursor="pointer"
+                accessibilityLabel={`${secondaryMuscles.includes(muscle.value) ? 'Deselect' : 'Select'} ${muscle.label} as secondary muscle`}
+                accessibilityRole="button"
+              >
+                {secondaryMuscles.includes(muscle.value) && (
+                  <Check size={12} color="#FFFFFF" weight="bold" />
+                )}
+                <Text
+                  fontSize="$2"
+                  fontWeight="500"
+                  color="#FFFFFF"
+                >
+                  {muscle.label}
+                </Text>
+              </XStack>
             ))}
-          </View>
+          </XStack>
 
-          <View style={styles.modalBottomPadding} />
+          <YStack height={24} />
         </ScrollView>
 
-        <Pressable
-          style={[styles.createButton, isCreating && styles.createButtonDisabled]}
+        <Button
+          variant="primary"
+          size="lg"
+          marginHorizontal="$4"
+          marginBottom="$8"
           onPress={handleCreate}
-          disabled={isCreating}>
-          <Text style={styles.createButtonText}>
+          disabled={isCreating}
+          opacity={isCreating ? 0.6 : 1}
+          accessibilityLabel={isCreating ? 'Creating exercise' : 'Create exercise'}
+          accessibilityRole="button"
+        >
+          <ButtonText variant="primary" size="lg">
             {isCreating ? 'Creating...' : 'Create Exercise'}
-          </Text>
-        </Pressable>
+          </ButtonText>
+        </Button>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -416,77 +482,97 @@ export default function ExercisesScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchRow}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search exercises..."
-          placeholderTextColor="#888"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        <Pressable
-          style={styles.addButton}
-          onPress={() => setShowCreateModal(true)}>
-          <Plus size={18} color="#fff" weight="bold" />
-        </Pressable>
-      </View>
+    <YStack flex={1} backgroundColor="#000000">
+      <XStack gap="$3" paddingHorizontal="$4" paddingTop="$4">
+        <YStack flex={1}>
+          <SearchInput
+            placeholder="Search exercises..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </YStack>
+        <Button
+          variant="primary"
+          size="md"
+          width={48}
+          paddingHorizontal={0}
+          onPress={() => setShowCreateModal(true)}
+          accessibilityLabel="Create new exercise"
+          accessibilityRole="button"
+        >
+          <Plus size={18} color="#000000" weight="bold" />
+        </Button>
+      </XStack>
 
-      <SectionList
+      <ScrollView
         horizontal
-        sections={[{ title: '', data: MUSCLE_GROUP_FILTERS }]}
-        keyExtractor={(item) => item.key ?? 'all'}
-        style={styles.muscleList}
-        contentContainerStyle={styles.muscleListContent}
         showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <Pressable
-            style={[
-              styles.muscleChip,
-              selectedMuscle === item.key && styles.muscleChipActive,
-            ]}
-            onPress={() => setSelectedMuscle(item.key)}>
-            <Text
-              style={[
-                styles.muscleChipText,
-                selectedMuscle === item.key && styles.muscleChipTextActive,
-              ]}>
-              {item.label}
-            </Text>
-          </Pressable>
-        )}
-        renderSectionHeader={() => null}
-      />
+        style={{ marginTop: 12, marginBottom: 4 }}
+        contentContainerStyle={{ paddingLeft: 16, paddingRight: 16, alignItems: 'center' }}
+      >
+        <XStack gap="$2" alignItems="center">
+          {MUSCLE_GROUP_FILTERS.map((item) => (
+            <Chip
+              key={item.key ?? 'all'}
+              selected={selectedMuscle === item.key}
+              onPress={() => setSelectedMuscle(item.key)}
+              accessibilityLabel={`Filter by ${item.label}`}
+              accessibilityRole="button"
+            >
+              <ChipText selected={selectedMuscle === item.key}>{item.label}</ChipText>
+            </Chip>
+          ))}
+        </XStack>
+      </ScrollView>
 
       {isLoading ? (
-        <Text style={styles.loadingText}>Loading exercises...</Text>
+        <YStack flex={1} alignItems="center" justifyContent="center">
+          <Text color="rgba(255,255,255,0.5)">Loading exercises...</Text>
+        </YStack>
       ) : (
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <ExerciseRow exercise={item} />}
           renderSectionHeader={({ section: { title, data } }) => (
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{title}</Text>
-              <Text style={styles.sectionCount}>{data.length}</Text>
-            </View>
+            <XStack alignItems="center" paddingVertical="$2" marginTop="$4" marginBottom="$2">
+              <Text fontSize="$5" fontWeight="600" color="#FFFFFF">
+                {title}
+              </Text>
+              <XStack
+                backgroundColor="rgba(255, 255, 255, 0.10)"
+                paddingHorizontal="$2"
+                paddingVertical={2}
+                borderRadius={50}
+                marginLeft="$2"
+              >
+                <Text fontSize="$2" fontWeight="600" color="#FFFFFF">
+                  {data.length}
+                </Text>
+              </XStack>
+            </XStack>
           )}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
           stickySectionHeadersEnabled={false}
           ListHeaderComponent={
-            <Text style={styles.resultCount}>
+            <Text fontSize="$2" fontWeight="500" color="rgba(255,255,255,0.5)" marginBottom="$3">
               {filteredExercises.length} of {totalCount} exercises
             </Text>
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No exercises found</Text>
-              <Pressable
-                style={styles.createFirstButton}
-                onPress={() => setShowCreateModal(true)}>
-                <Text style={styles.createFirstText}>Create Custom Exercise</Text>
-              </Pressable>
-            </View>
+            <EmptyState
+              title="No exercises found"
+              action={
+                <Button
+                  variant="primary"
+                  onPress={() => setShowCreateModal(true)}
+                  accessibilityLabel="Create custom exercise"
+                  accessibilityRole="button"
+                >
+                  <ButtonText variant="primary">Create Custom Exercise</ButtonText>
+                </Button>
+              }
+            />
           }
         />
       )}
@@ -496,267 +582,6 @@ export default function ExercisesScreen() {
         onClose={() => setShowCreateModal(false)}
         onCreated={handleRefresh}
       />
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 12,
-  },
-  searchInput: {
-    flex: 1,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  addButton: {
-    backgroundColor: '#007AFF',
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  muscleList: {
-    maxHeight: 50,
-    marginTop: 12,
-  },
-  muscleListContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  muscleChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-  },
-  muscleChipActive: {
-    backgroundColor: '#007AFF',
-  },
-  muscleChipText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#333',
-  },
-  muscleChipTextActive: {
-    color: '#fff',
-  },
-  listContent: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  resultCount: {
-    fontSize: 13,
-    color: '#888',
-    marginBottom: 12,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    marginTop: 16,
-    marginBottom: 8,
-    backgroundColor: 'transparent',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333',
-  },
-  sectionCount: {
-    fontSize: 14,
-    color: '#888',
-    marginLeft: 8,
-  },
-  exerciseRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-  exerciseInfo: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  exerciseNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'transparent',
-  },
-  exerciseName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  customBadge: {
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  customBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#4CAF50',
-  },
-  exerciseMeta: {
-    fontSize: 13,
-    color: '#666',
-  },
-  loadingText: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: 40,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#888',
-    marginBottom: 16,
-  },
-  createFirstButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  createFirstText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-
-  // Modal styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  modalClose: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
-  modalContent: {
-    flex: 1,
-    padding: 16,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  textInput: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-  },
-  optionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  optionButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
-  },
-  optionButtonActive: {
-    backgroundColor: '#007AFF',
-  },
-  optionButtonText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  optionButtonTextActive: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  createButton: {
-    backgroundColor: '#34C759',
-    marginHorizontal: 16,
-    marginBottom: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  createButtonDisabled: {
-    opacity: 0.6,
-  },
-  createButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  // New styles for enhanced exercise creation
-  typeOptionButton: {
-    flex: 1,
-    minWidth: 140,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 10,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-  },
-  typeOptionDescription: {
-    fontSize: 12,
-    color: '#888',
-    marginTop: 4,
-  },
-  typeOptionDescriptionActive: {
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  inputLabelHint: {
-    fontWeight: '400',
-    color: '#888',
-  },
-  inputHint: {
-    fontSize: 12,
-    color: '#888',
-    marginBottom: 8,
-    marginTop: -4,
-  },
-  muscleButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  secondaryMuscleActive: {
-    backgroundColor: '#FF9500',
-  },
-  modalBottomPadding: {
-    height: 24,
-  },
-});

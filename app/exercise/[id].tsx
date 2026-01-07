@@ -1,21 +1,24 @@
-import {
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  Dimensions,
-} from 'react-native';
+import { ScrollView, Dimensions } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { CartesianChart, Line } from 'victory-native';
-import { ArrowLeft } from 'phosphor-react-native';
+import { ArrowLeft, Trophy, Barbell } from 'phosphor-react-native';
+import * as Haptics from 'expo-haptics';
+import { YStack, XStack, Text } from 'tamagui';
 
-import { Text, View } from '@/components/Themed';
 import { db } from '@/src/db/client';
 import { exercises, workoutExercises, workouts, sets } from '@/src/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import type { Exercise } from '@/src/db/schema';
 import { calculate1RM } from '@/src/hooks/usePersonalRecords';
 import { format } from 'date-fns';
+import { Card, Section, SectionHeader, EmptyState, StatNumber, MiniStat } from '@/src/components/ui';
+
+/**
+ * Exercise Detail Screen - Premium Monochromatic
+ *
+ * Clean exercise history with elegant PR cards and white charts.
+ */
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -218,289 +221,200 @@ export default function ExerciseDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
+      <YStack flex={1} alignItems="center" justifyContent="center" backgroundColor="#000000">
+        <Text color="rgba(255,255,255,0.5)">Loading...</Text>
+      </YStack>
     );
   }
 
   if (!exercise) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Exercise not found</Text>
-      </View>
+      <YStack flex={1} alignItems="center" justifyContent="center" backgroundColor="#000000">
+        <Text color="rgba(255,255,255,0.5)">Exercise not found</Text>
+      </YStack>
     );
   }
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={20} color="#007AFF" />
-        </Pressable>
-        <View style={styles.headerContent}>
-          <Text style={styles.exerciseName}>{exercise.name}</Text>
-          <Text style={styles.exerciseMeta}>
-            {exercise.muscleGroup} • {exercise.equipment}
-          </Text>
-        </View>
-      </View>
+  const handleBack = () => {
+    Haptics.selectionAsync();
+    router.back();
+  };
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+  return (
+    <YStack flex={1} backgroundColor="#000000">
+      {/* Header */}
+      <XStack
+        alignItems="center"
+        padding="$4"
+        borderBottomWidth={1}
+        borderBottomColor="rgba(255, 255, 255, 0.08)"
+        backgroundColor="#0a0a0a"
+      >
+        <XStack
+          padding="$2"
+          marginRight="$3"
+          onPress={handleBack}
+          pressStyle={{ scale: 0.95, opacity: 0.8 }}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+        >
+          <ArrowLeft size={22} color="#FFFFFF" weight="bold" />
+        </XStack>
+        <XStack alignItems="center" gap="$3" flex={1}>
+          <YStack
+            width={44}
+            height={44}
+            borderRadius={22}
+            backgroundColor="rgba(255, 255, 255, 0.08)"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Barbell size={22} color="#FFFFFF" weight="duotone" />
+          </YStack>
+          <YStack flex={1}>
+            <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
+              {exercise.name}
+            </Text>
+            <Text fontSize="$3" fontWeight="500" color="rgba(255,255,255,0.5)" marginTop={2}>
+              {exercise.muscleGroup} • {exercise.equipment}
+            </Text>
+          </YStack>
+        </XStack>
+      </XStack>
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+      >
         {/* PR Cards */}
         {prs.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Personal Records</Text>
-            <View style={styles.prGrid}>
+          <Section marginBottom="$6">
+            <SectionHeader title="Personal Records" />
+            <XStack gap="$3">
               {prs.map((pr) => (
-                <View key={pr.type} style={styles.prCard}>
-                  <Text style={styles.prValue}>
-                    {pr.type === 'max_volume'
+                <Card
+                  key={pr.type}
+                  flex={1}
+                  alignItems="center"
+                  paddingVertical="$4"
+                >
+                  <Trophy size={20} color="#FFFFFF" weight="fill" />
+                  <StatNumber
+                    value={pr.type === 'max_volume'
                       ? `${(pr.value / 1000).toFixed(1)}k`
                       : pr.value}
-                    {pr.type !== 'max_volume' && <Text style={styles.prUnit}> lbs</Text>}
+                    unit={pr.type !== 'max_volume' ? 'kg' : undefined}
+                    size="sm"
+                  />
+                  <Text fontSize="$2" fontWeight="600" color="rgba(255,255,255,0.5)" marginTop="$1">
+                    {pr.label}
                   </Text>
-                  <Text style={styles.prLabel}>{pr.label}</Text>
-                  <Text style={styles.prDate}>{format(pr.date, 'MMM d, yyyy')}</Text>
-                </View>
+                  <Text fontSize="$1" color="rgba(255,255,255,0.4)" marginTop={2}>
+                    {format(pr.date, 'MMM d, yyyy')}
+                  </Text>
+                </Card>
               ))}
-            </View>
-          </View>
+            </XStack>
+          </Section>
         )}
 
         {/* Progress Chart */}
         {chartData.length > 1 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Weight Progression</Text>
-            <View style={styles.chartContainer}>
-              <View style={{ height: 180 }}>
+          <Section marginBottom="$6">
+            <SectionHeader title="Weight Progression" />
+            <Card>
+              <YStack height={180}>
                 <CartesianChart
                   data={chartData}
                   xKey="x"
                   yKeys={["y"]}
                   axisOptions={{
                     formatXLabel: (value) => chartData[value]?.label || '',
-                    labelColor: '#888',
-                    lineColor: '#e0e0e0',
+                    labelColor: 'rgba(255, 255, 255, 0.4)',
+                    lineColor: 'rgba(255, 255, 255, 0.08)',
                   }}
                   domainPadding={{ left: 20, right: 20, top: 20 }}
                 >
                   {({ points }) => (
                     <Line
                       points={points.y}
-                      color="#007AFF"
+                      color="#FFFFFF"
                       strokeWidth={2}
                       curveType="natural"
                       animate={{ type: "timing", duration: 500 }}
                     />
                   )}
                 </CartesianChart>
-              </View>
-            </View>
-          </View>
+              </YStack>
+              <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$3">
+                Max weight (kg) per workout
+              </Text>
+            </Card>
+          </Section>
         )}
 
         {/* History */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            History ({history.length} workout{history.length !== 1 ? 's' : ''})
-          </Text>
+        <Section>
+          <SectionHeader
+            title={`History (${history.length} workout${history.length !== 1 ? 's' : ''})`}
+          />
           {history.length === 0 ? (
-            <Text style={styles.emptyText}>
-              No history yet. Add this exercise to a workout to start tracking.
-            </Text>
+            <EmptyState
+              title="No history yet"
+              description="Add this exercise to a workout to start tracking."
+            />
           ) : (
             history.map((h) => (
-              <View key={h.workoutId} style={styles.historyCard}>
-                <View style={styles.historyHeader}>
-                  <Text style={styles.historyDate}>{format(h.date, 'EEEE, MMM d')}</Text>
-                  <Text style={styles.historyWorkoutName}>{h.workoutName}</Text>
-                </View>
-                <View style={styles.historyStats}>
-                  <View style={styles.historyStat}>
-                    <Text style={styles.historyStatValue}>{h.maxWeight} lbs</Text>
-                    <Text style={styles.historyStatLabel}>Max</Text>
-                  </View>
-                  <View style={styles.historyStat}>
-                    <Text style={styles.historyStatValue}>{h.sets.filter(s => !s.isWarmup).length}</Text>
-                    <Text style={styles.historyStatLabel}>Sets</Text>
-                  </View>
-                  <View style={styles.historyStat}>
-                    <Text style={styles.historyStatValue}>{(h.totalVolume / 1000).toFixed(1)}k</Text>
-                    <Text style={styles.historyStatLabel}>Volume</Text>
-                  </View>
+              <Card key={h.workoutId} marginBottom="$3">
+                <YStack marginBottom="$3">
+                  <Text fontSize="$4" fontWeight="600" color="#FFFFFF">
+                    {format(h.date, 'EEEE, MMM d')}
+                  </Text>
+                  <Text fontSize="$2" fontWeight="500" color="rgba(255,255,255,0.5)" marginTop={2}>
+                    {h.workoutName}
+                  </Text>
+                </YStack>
+
+                <XStack marginBottom="$3" justifyContent="space-between">
+                  <MiniStat
+                    value={`${h.maxWeight}`}
+                    label="max kg"
+                  />
+                  <MiniStat
+                    value={h.sets.filter(s => !s.isWarmup).length.toString()}
+                    label="sets"
+                  />
+                  <MiniStat
+                    value={`${(h.totalVolume / 1000).toFixed(1)}k`}
+                    label="volume"
+                  />
                   {h.estimated1RM && (
-                    <View style={styles.historyStat}>
-                      <Text style={styles.historyStatValue}>{h.estimated1RM}</Text>
-                      <Text style={styles.historyStatLabel}>E1RM</Text>
-                    </View>
+                    <MiniStat
+                      value={h.estimated1RM.toString()}
+                      label="e1rm"
+                    />
                   )}
-                </View>
-                <View style={styles.setsTable}>
+                </XStack>
+
+                <YStack
+                  borderTopWidth={1}
+                  borderTopColor="rgba(255, 255, 255, 0.08)"
+                  paddingTop="$3"
+                >
                   {h.sets.filter(s => !s.isWarmup).map((s, idx) => (
-                    <View key={idx} style={styles.setRow}>
-                      <Text style={styles.setNum}>Set {idx + 1}</Text>
-                      <Text style={styles.setData}>
-                        {s.weight || '-'} lbs × {s.reps || '-'} reps
+                    <XStack key={idx} justifyContent="space-between" paddingVertical="$1">
+                      <Text fontSize="$3" fontWeight="500" color="rgba(255,255,255,0.5)">Set {idx + 1}</Text>
+                      <Text fontSize="$3" fontWeight="600" color="#FFFFFF">
+                        {s.weight || '-'} kg × {s.reps || '-'} reps
                       </Text>
-                    </View>
+                    </XStack>
                   ))}
-                </View>
-              </View>
+                </YStack>
+              </Card>
             ))
           )}
-        </View>
+        </Section>
       </ScrollView>
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingText: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 12,
-  },
-  headerContent: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  exerciseName: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  exerciseMeta: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  prGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    backgroundColor: 'transparent',
-  },
-  prCard: {
-    flex: 1,
-    backgroundColor: '#f0f7ff',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  prValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#007AFF',
-  },
-  prUnit: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  prLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-  },
-  prDate: {
-    fontSize: 10,
-    color: '#999',
-    marginTop: 2,
-  },
-  chartContainer: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#888',
-    paddingVertical: 20,
-  },
-  historyCard: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  historyHeader: {
-    marginBottom: 12,
-    backgroundColor: 'transparent',
-  },
-  historyDate: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  historyWorkoutName: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 2,
-  },
-  historyStats: {
-    flexDirection: 'row',
-    marginBottom: 12,
-    backgroundColor: 'transparent',
-  },
-  historyStat: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  historyStatValue: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  historyStatLabel: {
-    fontSize: 11,
-    color: '#888',
-    marginTop: 2,
-  },
-  setsTable: {
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    paddingTop: 12,
-    backgroundColor: 'transparent',
-  },
-  setRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-    backgroundColor: 'transparent',
-  },
-  setNum: {
-    fontSize: 14,
-    color: '#666',
-  },
-  setData: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-});

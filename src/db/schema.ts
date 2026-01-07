@@ -263,13 +263,69 @@ export const workoutSnapshots = sqliteTable('workout_snapshots', {
 });
 
 // ============================================
-// BODY MEASUREMENTS
+// USER PROFILE (Single row - local user)
+// ============================================
+export const userProfile = sqliteTable('user_profile', {
+  id: text('id').primaryKey(), // Always 'local_user'
+  username: text('username'),
+  profilePicturePath: text('profile_picture_path'), // Local file path via expo-file-system
+  createdAt: integer('created_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }),
+});
+
+// ============================================
+// APP SETTINGS (Single row - app preferences)
+// ============================================
+export const appSettings = sqliteTable('app_settings', {
+  id: text('id').primaryKey(), // Always 'settings'
+
+  // Units
+  weightUnit: text('weight_unit').notNull().default('kg'), // 'kg' | 'lbs'
+  measurementUnit: text('measurement_unit').notNull().default('cm'), // 'cm' | 'in'
+
+  // Timer
+  defaultRestTimerSeconds: integer('default_rest_timer_seconds').notNull().default(90),
+
+  // Preferences
+  hapticsEnabled: integer('haptics_enabled', { mode: 'boolean' }).notNull().default(true),
+  theme: text('theme').notNull().default('dark'), // 'dark' | 'light' | 'system'
+
+  // Notifications (placeholder for future)
+  notificationsEnabled: integer('notifications_enabled', { mode: 'boolean' }).notNull().default(true),
+
+  createdAt: integer('created_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }),
+});
+
+// ============================================
+// BODY MEASUREMENTS (Expanded with tape measurements)
 // ============================================
 export const bodyMeasurements = sqliteTable('body_measurements', {
   id: text('id').primaryKey(),
   date: integer('date', { mode: 'timestamp' }).notNull(),
+
+  // Core measurements
   weightKg: real('weight_kg'),
   bodyFatPercent: real('body_fat_percent'),
+
+  // Tape measurements (all stored in cm, converted at display time)
+  chestCm: real('chest_cm'),
+  waistCm: real('waist_cm'),
+  hipsCm: real('hips_cm'),
+  neckCm: real('neck_cm'),
+
+  // Bilateral arm measurements
+  leftBicepCm: real('left_bicep_cm'),
+  rightBicepCm: real('right_bicep_cm'),
+  leftForearmCm: real('left_forearm_cm'),
+  rightForearmCm: real('right_forearm_cm'),
+
+  // Bilateral leg measurements
+  leftThighCm: real('left_thigh_cm'),
+  rightThighCm: real('right_thigh_cm'),
+  leftCalfCm: real('left_calf_cm'),
+  rightCalfCm: real('right_calf_cm'),
+
   notes: text('notes'),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }),
@@ -295,6 +351,12 @@ export type NewWorkoutSnapshot = typeof workoutSnapshots.$inferInsert;
 
 export type BodyMeasurement = typeof bodyMeasurements.$inferSelect;
 export type NewBodyMeasurement = typeof bodyMeasurements.$inferInsert;
+
+export type UserProfile = typeof userProfile.$inferSelect;
+export type NewUserProfile = typeof userProfile.$inferInsert;
+
+export type AppSettings = typeof appSettings.$inferSelect;
+export type NewAppSettings = typeof appSettings.$inferInsert;
 
 // ============================================
 // CANONICAL JSON TYPES (for export/import)

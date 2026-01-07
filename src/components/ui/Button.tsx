@@ -1,11 +1,10 @@
 import { styled, XStack, Text, GetProps } from 'tamagui';
-import { Pressable } from 'react-native';
 
 /**
- * Button Component
+ * Button Component - Premium Monochromatic
  *
- * Primary button with variants for different use cases.
- * Uses Tamagui styling with proper press states.
+ * Pill-shaped buttons with white fills and subtle interactions.
+ * Clean, minimal aesthetic - no colored variants.
  */
 export const Button = styled(XStack, {
   name: 'Button',
@@ -13,58 +12,76 @@ export const Button = styled(XStack, {
   justifyContent: 'center',
   gap: '$2',
   paddingVertical: '$3',
-  paddingHorizontal: '$4',
-  borderRadius: '$button',
+  paddingHorizontal: '$5',
+  borderRadius: 50, // Full pill shape
   cursor: 'pointer',
 
   pressStyle: {
-    opacity: 0.85,
+    opacity: 0.9,
     scale: 0.98,
   },
 
   variants: {
     variant: {
+      /**
+       * Primary - White fill, black text
+       */
       primary: {
-        backgroundColor: '$primary',
+        backgroundColor: '#FFFFFF',
       },
+      /**
+       * Secondary - Outline with white border
+       */
       secondary: {
-        backgroundColor: '$backgroundStrong',
-        borderWidth: 1,
-        borderColor: '$borderColor',
-      },
-      outline: {
         backgroundColor: 'transparent',
         borderWidth: 1,
-        borderColor: '$primary',
+        borderColor: 'rgba(255,255,255,0.30)',
       },
+      /**
+       * Ghost - Transparent, subtle hover
+       */
       ghost: {
         backgroundColor: 'transparent',
+        pressStyle: {
+          backgroundColor: 'rgba(255,255,255,0.05)',
+        },
       },
-      success: {
-        backgroundColor: '$success',
+      /**
+       * Subtle - Very subtle fill
+       */
+      subtle: {
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        pressStyle: {
+          backgroundColor: 'rgba(255,255,255,0.12)',
+        },
       },
-      danger: {
-        backgroundColor: '$danger',
-      },
-      warning: {
-        backgroundColor: '$warning',
+      /**
+       * Dark - Dark fill for light backgrounds
+       */
+      dark: {
+        backgroundColor: '#000000',
       },
     },
     size: {
       sm: {
-        paddingVertical: '$2',
-        paddingHorizontal: '$3',
-        minHeight: 36,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        minHeight: 40,
       },
       md: {
-        paddingVertical: '$3',
-        paddingHorizontal: '$4',
-        minHeight: 44,
+        paddingVertical: 12,
+        paddingHorizontal: 28,
+        minHeight: 48,
       },
       lg: {
-        paddingVertical: '$4',
-        paddingHorizontal: '$5',
-        minHeight: 52,
+        paddingVertical: 16,
+        paddingHorizontal: 36,
+        minHeight: 56,
+      },
+      xl: {
+        paddingVertical: 18,
+        paddingHorizontal: 44,
+        minHeight: 64,
       },
     },
     fullWidth: {
@@ -74,7 +91,7 @@ export const Button = styled(XStack, {
     },
     disabled: {
       true: {
-        opacity: 0.5,
+        opacity: 0.4,
         cursor: 'not-allowed',
       },
     },
@@ -89,48 +106,45 @@ export const Button = styled(XStack, {
 export type ButtonProps = GetProps<typeof Button>;
 
 /**
- * Button Text
- *
- * Text styled for use inside buttons.
+ * Button Text - Premium Monochromatic
  */
 export const ButtonText = styled(Text, {
   name: 'ButtonText',
   fontWeight: '600',
-  fontSize: '$4',
+  fontSize: 16,
 
   variants: {
     variant: {
       primary: {
-        color: 'white',
+        color: '#000000', // Black text on white button
       },
       secondary: {
-        color: '$color',
-      },
-      outline: {
-        color: '$primary',
+        color: '#FFFFFF',
       },
       ghost: {
-        color: '$primary',
+        color: 'rgba(255,255,255,0.6)',
       },
-      success: {
-        color: 'white',
+      subtle: {
+        color: '#FFFFFF',
       },
-      danger: {
-        color: 'white',
-      },
-      warning: {
-        color: 'white',
+      dark: {
+        color: '#FFFFFF',
       },
     },
     size: {
       sm: {
-        fontSize: '$3',
+        fontSize: 14,
       },
       md: {
-        fontSize: '$4',
+        fontSize: 16,
       },
       lg: {
-        fontSize: '$5',
+        fontSize: 18,
+        fontWeight: '600',
+      },
+      xl: {
+        fontSize: 18,
+        fontWeight: '700',
       },
     },
   } as const,
@@ -142,49 +156,56 @@ export const ButtonText = styled(Text, {
 });
 
 /**
- * Icon Button
- *
- * Circular button for icon-only actions.
+ * Icon Button - Circular button for icons
  */
 export const IconButton = styled(XStack, {
   name: 'IconButton',
   alignItems: 'center',
   justifyContent: 'center',
-  borderRadius: '$full',
+  borderRadius: 9999, // Full circle
   cursor: 'pointer',
 
   pressStyle: {
-    opacity: 0.7,
+    opacity: 0.8,
     scale: 0.95,
   },
 
   variants: {
     variant: {
       primary: {
-        backgroundColor: '$primary',
+        backgroundColor: '#FFFFFF',
       },
       secondary: {
-        backgroundColor: '$backgroundStrong',
+        backgroundColor: 'rgba(255,255,255,0.10)',
       },
       ghost: {
         backgroundColor: 'transparent',
+        pressStyle: {
+          backgroundColor: 'rgba(255,255,255,0.08)',
+        },
       },
-      danger: {
-        backgroundColor: '$danger',
+      outline: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.20)',
       },
     },
     size: {
       sm: {
-        width: 32,
-        height: 32,
+        width: 36,
+        height: 36,
       },
       md: {
         width: 44,
         height: 44,
       },
       lg: {
-        width: 56,
-        height: 56,
+        width: 52,
+        height: 52,
+      },
+      xl: {
+        width: 64,
+        height: 64,
       },
     },
   } as const,
