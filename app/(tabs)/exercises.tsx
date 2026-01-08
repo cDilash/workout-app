@@ -6,18 +6,20 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { router } from 'expo-router';
-import { CaretRight, Plus, Check, Barbell } from 'phosphor-react-native';
+import { Plus, Check } from 'phosphor-react-native';
 import * as Haptics from 'expo-haptics';
 import { YStack, XStack, Text } from 'tamagui';
 
 import { useExercises } from '@/src/hooks/useExercises';
+import { useExerciseActivityStats } from '@/src/hooks/useExerciseActivityStats';
 import { db } from '@/src/db/client';
-import { exercises, EQUIPMENT_TYPES, MUSCLE_GROUPS as SCHEMA_MUSCLE_GROUPS, MOVEMENT_PATTERNS } from '@/src/db/schema';
+import { exercises } from '@/src/db/schema';
 import * as Crypto from 'expo-crypto';
-import type { Exercise, ExerciseType, EquipmentType, MovementPattern, MuscleGroup } from '@/src/db/schema';
-import { Card, Button, ButtonText, Chip, ChipText, SearchInput, Badge, BadgeText, EmptyState } from '@/src/components/ui';
+import type { Exercise, ExerciseType, EquipmentType, MuscleGroup } from '@/src/db/schema';
+import { Button, ButtonText, Chip, ChipText, SearchInput, EmptyState } from '@/src/components/ui';
+import { EnhancedExerciseCard } from '@/src/components/exercises';
 
 /**
  * Exercises Screen - Premium Monochromatic
@@ -94,54 +96,6 @@ const PRIMARY_MUSCLE_OPTIONS: { value: MuscleGroup; label: string; group: string
   { value: 'adductors', label: 'Adductors', group: 'Legs' },
   { value: 'abductors', label: 'Abductors', group: 'Legs' },
 ];
-
-function ExerciseRow({ exercise }: { exercise: Exercise }) {
-  const handlePress = () => {
-    Haptics.selectionAsync();
-    router.push(`/exercise/${exercise.id}`);
-  };
-
-  return (
-    <Card
-      pressable
-      marginBottom="$2"
-      onPress={handlePress}
-      accessibilityLabel={`View ${exercise.name} details`}
-      accessibilityRole="button"
-    >
-      <XStack alignItems="center" justifyContent="space-between">
-        <XStack alignItems="center" gap="$3" flex={1}>
-          <YStack
-            width={36}
-            height={36}
-            borderRadius={18}
-            backgroundColor="rgba(255, 255, 255, 0.08)"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <Barbell size={18} color="#FFFFFF" weight="duotone" />
-          </YStack>
-          <YStack flex={1}>
-            <XStack alignItems="center" gap="$2" marginBottom="$1">
-              <Text fontSize="$4" fontWeight="600" color="#FFFFFF" numberOfLines={1} flex={1}>
-                {exercise.name}
-              </Text>
-              {exercise.isCustom && (
-                <Badge variant="muted" size="sm">
-                  <BadgeText variant="muted" size="sm">Custom</BadgeText>
-                </Badge>
-              )}
-            </XStack>
-            <Text fontSize="$2" fontWeight="500" color="rgba(255,255,255,0.5)">
-              {exercise.equipment}
-            </Text>
-          </YStack>
-        </XStack>
-        <CaretRight size={16} color="rgba(255,255,255,0.4)" />
-      </XStack>
-    </Card>
-  );
-}
 
 interface CreateExerciseModalProps {
   visible: boolean;
@@ -445,6 +399,7 @@ export default function ExercisesScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const { exercises: allExercises, isLoading, totalCount } = useExercises(searchQuery, null);
+  const { stats: activityStats, refresh: refreshStats } = useExerciseActivityStats();
 
   // Filter by muscle group
   const filteredExercises = useMemo(() => {
@@ -479,6 +434,7 @@ export default function ExercisesScreen() {
     const current = searchQuery;
     setSearchQuery('');
     setTimeout(() => setSearchQuery(current), 0);
+    refreshStats();
   };
 
   return (
@@ -504,6 +460,7 @@ export default function ExercisesScreen() {
         </Button>
       </XStack>
 
+      {/* Chip Filters */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -533,7 +490,12 @@ export default function ExercisesScreen() {
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ExerciseRow exercise={item} />}
+          renderItem={({ item }) => (
+            <EnhancedExerciseCard
+              exercise={item}
+              stats={activityStats.get(item.id)}
+            />
+          )}
           renderSectionHeader={({ section: { title, data } }) => (
             <XStack alignItems="center" paddingVertical="$2" marginTop="$4" marginBottom="$2">
               <Text fontSize="$5" fontWeight="600" color="#FFFFFF">

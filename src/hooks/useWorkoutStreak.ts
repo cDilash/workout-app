@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import {
   startOfDay,
   subDays,
+  addDays,
   differenceInCalendarDays,
   isSameDay,
   startOfWeek,
@@ -48,7 +49,8 @@ export function useWorkoutStreak() {
   const { workouts } = useWorkoutHistory();
 
   const streakData = useMemo((): StreakData => {
-    if (workouts.length === 0) {
+    // Guard against undefined/null workouts
+    if (!workouts || workouts.length === 0) {
       return {
         currentStreak: 0,
         longestStreak: 0,
@@ -141,7 +143,8 @@ export function useWorkoutStreak() {
 
       // Create a map of workout counts by date string
       const workoutCountByDate = new Map<string, number>();
-      for (const workout of workouts) {
+      const safeWorkouts = workouts || [];
+      for (const workout of safeWorkouts) {
         const dateKey = format(startOfDay(workout.startedAt), 'yyyy-MM-dd');
         workoutCountByDate.set(dateKey, (workoutCountByDate.get(dateKey) || 0) + 1);
       }
@@ -168,7 +171,7 @@ export function useWorkoutStreak() {
 
         weeks.push({ days, weekNumber });
         weekNumber++;
-        currentDate = subDays(weekEnd, -1); // Next day after week end
+        currentDate = addDays(weekEnd, 1); // Next day after week end
       }
 
       return weeks;

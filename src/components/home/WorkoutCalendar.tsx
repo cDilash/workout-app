@@ -93,14 +93,13 @@ export function WorkoutCalendar({ weeks = 12 }: WorkoutCalendarProps) {
       </XStack>
 
       {/* Month Labels */}
-      <XStack marginBottom="$1" marginLeft={18}>
+      <XStack marginBottom="$1" marginLeft={18} height={14} position="relative">
         {monthLabels.map(({ month, weekIndex }, index) => (
           <Text
             key={`${month}-${index}`}
             fontSize={10}
             color="rgba(255,255,255,0.4)"
-            position="absolute"
-            left={weekIndex * 14}
+            style={{ position: 'absolute', left: weekIndex * 14 }}
           >
             {month}
           </Text>

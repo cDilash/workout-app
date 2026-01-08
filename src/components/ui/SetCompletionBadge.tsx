@@ -16,6 +16,8 @@ interface SetCompletionBadgeProps {
   completed: boolean;
   /** Callback when pressed */
   onPress: () => void;
+  /** Callback when long pressed (e.g., for RPE) */
+  onLongPress?: () => void;
   /** Size of the badge */
   size?: number;
   /** Whether haptic feedback is enabled */
@@ -27,6 +29,7 @@ interface SetCompletionBadgeProps {
 export function SetCompletionBadge({
   completed,
   onPress,
+  onLongPress,
   size = 36,
   haptic = true,
   disabled = false,
@@ -48,9 +51,16 @@ export function SetCompletionBadge({
     onPress();
   };
 
+  const handleLongPress = () => {
+    if (disabled || !onLongPress) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onLongPress();
+  };
+
   return (
     <Pressable
       onPress={handlePress}
+      onLongPress={handleLongPress}
       disabled={disabled}
       style={({ pressed }) => ({
         opacity: pressed ? 0.8 : disabled ? 0.5 : 1,
@@ -63,7 +73,7 @@ export function SetCompletionBadge({
       <YStack
         width={size}
         height={size}
-        borderRadius={size / 2}
+        borderRadius={10}
         alignItems="center"
         justifyContent="center"
         backgroundColor={completed ? '#FFFFFF' : 'rgba(255, 255, 255, 0.08)'}
@@ -95,17 +105,17 @@ export function WarmupBadge({ setNumber, size = 36 }: WarmupBadgeProps) {
     <YStack
       width={size}
       height={size}
-      borderRadius={size / 2}
+      borderRadius={10}
       alignItems="center"
       justifyContent="center"
-      backgroundColor="rgba(255, 255, 255, 0.15)"
+      backgroundColor="rgba(255, 160, 60, 0.25)"
       borderWidth={1}
-      borderColor="rgba(255, 255, 255, 0.20)"
+      borderColor="rgba(255, 160, 60, 0.4)"
     >
       <Text
         fontSize={size * 0.4}
         fontWeight="600"
-        color="rgba(255, 255, 255, 0.6)"
+        color="rgba(255, 180, 100, 1)"
       >
         W
       </Text>
@@ -135,18 +145,18 @@ export function SetNumberBadge({
   isCompleted,
   size = 36,
 }: SetNumberBadgeProps) {
-  // Determine styling based on state - Premium Monochromatic
+  // Determine styling based on state - Premium Monochromatic with warm orange for warmup
   let backgroundColor: string;
   let textColor: string;
   let borderWidth: number;
   let borderColor: string | undefined;
 
   if (isWarmup) {
-    // Warmup: Subtle gray with border
-    backgroundColor = 'rgba(255, 255, 255, 0.15)';
-    textColor = 'rgba(255, 255, 255, 0.6)';
+    // Warmup: Orange tint to indicate warming up
+    backgroundColor = 'rgba(255, 160, 60, 0.25)';
+    textColor = 'rgba(255, 180, 100, 1)';
     borderWidth = 1;
-    borderColor = 'rgba(255, 255, 255, 0.20)';
+    borderColor = 'rgba(255, 160, 60, 0.4)';
   } else if (isCompleted) {
     // Completed: Solid white
     backgroundColor = '#FFFFFF';
@@ -165,7 +175,7 @@ export function SetNumberBadge({
     <YStack
       width={size}
       height={size}
-      borderRadius={size / 2}
+      borderRadius={10}
       alignItems="center"
       justifyContent="center"
       backgroundColor={backgroundColor}

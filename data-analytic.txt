@@ -1,0 +1,194 @@
+# Data Analytics Specification
+
+This document defines **all analytics derived from the workout data model** and clarifies **what belongs on Mobile vs Web**. It assumes:
+
+* Canonical, versioned Workout JSON as source of truth
+* Set-level data with load, reps, RPE/RIR, rest, flags
+* No derived metrics stored at write-time
+
+---
+
+## 1. Analytics Philosophy
+
+**Mobile = Awareness & Action**
+
+* Fast feedback
+* Minimal cognitive load
+* Session-level + short-term trends
+
+**Web = Analysis & Strategy**
+
+* Longitudinal trends
+* Comparisons, correlations
+* Program and coaching intelligence
+
+---
+
+## 2. Core Derived Metrics (Never Stored)
+
+### 2.1 Volume Metrics
+
+* **Set Volume** = weight_kg × reps
+* **Exercise Volume** = Σ set volumes (excluding warmups)
+* **Workout Volume** = Σ exercise volumes
+* **Weekly Volume** = Σ workout volumes per 7-day window
+
+Resolution: set / exercise / workout / week
+
+---
+
+### 2.2 Intensity Metrics
+
+* **Estimated 1RM (Epley)** = weight × (1 + reps/30)
+* **Estimated 1RM (Brzycki)** = weight × (36 / (37 − reps))
+* **Relative Intensity** = weight / estimated_1RM
+* **Top Set Intensity** = max relative intensity per exercise
+
+Resolution: set / exercise / workout
+
+---
+
+### 2.3 Effort & Fatigue Metrics
+
+* **Hard Sets** = sets with RPE ≥ 8 OR RIR ≤ 2
+* **Average RPE** = mean RPE per workout
+* **Effort Density** = workout volume / duration_minutes
+* **Fatigue Index (simple)** = avg RPE × total sets
+
+Resolution: workout / week
+
+---
+
+### 2.4 Frequency & Consistency
+
+* **Training Frequency** = workouts per week
+* **Exercise Frequency** = appearances per week
+* **Streaks** = consecutive weeks meeting frequency target
+* **Missed Sessions** = planned vs actual (if plan exists)
+
+Resolution: week / month
+
+---
+
+## 3. Performance Progression Analytics
+
+### 3.1 PR Detection
+
+* **Weight PR**: max weight per exercise
+* **Rep PR**: max reps at same weight
+* **Volume PR**: max volume per exercise per session
+* **Estimated 1RM PR**: highest computed 1RM
+
+Rules:
+
+* Ignore warmup sets
+* Ignore deleted sets
+* Context-aware (rep PR ≠ strength PR)
+
+---
+
+### 3.2 Progression Signals
+
+* **Positive Trend**: rolling avg ↑ over N sessions
+* **Plateau**: no PR or progression over N sessions
+* **Regression**: sustained drop in reps or load
+
+Resolution: exercise / movement pattern
+
+---
+
+## 4. Balance & Distribution Analytics
+
+### 4.1 Muscle Group Distribution
+
+* Volume per muscle group (weekly)
+* % distribution across muscle groups
+* Over/under-emphasis detection
+
+### 4.2 Movement Pattern Balance
+
+* Push vs Pull
+* Squat vs Hinge
+* Upper vs Lower
+
+Resolution: week / block
+
+
+
+---
+
+## 6. Mobile-First Analytics (MUST BE SIMPLE)
+
+### 6.1 In-Workout / Post-Workout
+
+* Today vs last session (same exercise)
+* Best set today
+* Session volume vs personal average
+* Session effort label: Low / Normal / High
+
+### 6.2 Motivation Signals
+
+* PR celebrations
+* Training streaks
+* Weekly goal progress
+
+### 6.3 Micro-Trends
+
+* 7–14 session sparkline (single metric)
+* No filters
+* No multi-exercise dashboards
+
+---
+
+## 7. Web-Only Analytics (Deep Analysis)
+
+* Multi-year trends
+* Volume landmarks
+* Program block comparisons
+* Exercise ranking tables
+* Correlation matrices
+* Coach dashboards
+
+---
+
+## 8. Reports & Data Products
+
+### 8.1 Auto-Generated Reports
+
+* Weekly summary
+* Monthly progress report
+* Program block review
+
+### 8.2 Exportable Outputs
+
+* CSV (analytics-ready)
+* PDF training reports
+* Shareable summaries
+
+---
+
+## 9. Advanced / ML-Ready Use Cases
+
+* PR probability prediction
+* Fatigue accumulation modeling
+* Load recommendation bands
+* Anomaly detection (bad sessions)
+* Personalized volume thresholds
+
+---
+
+## 10. Non-Goals (Explicit)
+
+* No real-time coaching logic
+* No storing computed metrics
+* No mobile dashboards with dense charts
+* No breaking schema for new analytics
+
+---
+
+## 11. Guiding Rule
+
+> **If an insight cannot be understood in 5 seconds, it does not belong on mobile.**
+
+Web is for thinking.
+Mobile is for acting.

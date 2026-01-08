@@ -1,23 +1,32 @@
 import {
-  ScrollView,
   TextInput,
   Modal,
   FlatList,
   Alert,
+  Pressable,
+  Animated,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import DraggableFlatList, { ScaleDecorator, RenderItemParams } from 'react-native-draggable-flatlist';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useState, useEffect } from 'react';
-import { Link, LinkBreak, BookmarkSimple, X, Plus, Fire, Calculator } from 'phosphor-react-native';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { Link, LinkBreak, BookmarkSimple, X, Plus, Calculator, Timer, ArrowsClockwise, Check, PencilSimple, Barbell } from 'phosphor-react-native';
 import { YStack, XStack, Text } from 'tamagui';
+import * as Haptics from 'expo-haptics';
 
 import { useWorkoutStore, type ActiveExercise, type ActiveSet } from '@/src/stores/workoutStore';
 import { useExercises } from '@/src/hooks/useExercises';
 import { saveWorkout } from '@/src/hooks/useWorkoutHistory';
 import { saveAsTemplate } from '@/src/hooks/useTemplates';
-import { RestTimer, RestTimerCompact } from '@/src/components/workout/RestTimer';
+// RestTimer imports removed - rest is now per-exercise via RestTimerPopover
 import { SaveTemplateModal } from '@/src/components/workout/TemplatesModal';
-import { PlateCalculatorModal } from '@/src/components/workout/PlateCalculatorModal';
 import { PRCelebration } from '@/src/components/workout/PRCelebration';
+import { RestTimerPopover, formatRestTime } from '@/src/components/workout/RestTimerPopover';
+import { RestTimerOverlay } from '@/src/components/workout/RestTimerOverlay';
+import { NumpadSheet } from '@/src/components/workout/NumpadSheet';
+import { useNumpadStore } from '@/src/stores/numpadStore';
+import { usePreviousSets } from '@/src/hooks/usePreviousSets';
 import { useCelebrationStore } from '@/src/stores/celebrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import {
@@ -27,48 +36,133 @@ import {
   SearchInput,
   Badge,
   BadgeText,
-  TimerDisplay,
   SetNumberBadge,
   SetCompletionBadge,
 } from '@/src/components/ui';
 import type { Exercise } from '@/src/db/schema';
 
 /**
+ * Get color for RPE value
+ * Green (easy) → Yellow → Orange → Red (hard)
+ */
+function getRpeColor(rpe: number): string {
+  const colors: Record<number, string> = {
+    6: '#4ADE80',  // Green - easy
+    7: '#A3E635',  // Lime - moderate
+    8: '#FACC15',  // Yellow - challenging
+    9: '#FB923C',  // Orange - hard
+    10: '#F87171', // Red - maximum
+  };
+  return colors[rpe] || '#FFFFFF';
+}
+
+/**
  * Set Row Component - Premium Monochromatic
  *
- * Clean inputs with elegant completion state
+ * Clean inputs with elegant completion state.
+ * Uses custom numpad instead of native keyboard.
  */
 function SetRow({
   set,
   setIndex,
+  exerciseId,
   onUpdate,
   onComplete,
   onRemove,
+  onShowRPE,
+  previousSet,
 }: {
   set: ActiveSet;
   setIndex: number;
+  exerciseId: string;
   onUpdate: (updates: Partial<ActiveSet>) => void;
   onComplete: () => void;
   onRemove: () => void;
+  onShowRPE: () => void;
+  previousSet?: { weight: number; reps: number } | null;
 }) {
+  const { showNumpad, isVisible, targetInput, currentValue } = useNumpadStore();
+  const swipeableRef = useRef<Swipeable>(null);
+
   const handleToggleWarmup = () => {
     onUpdate({ isWarmup: !set.isWarmup });
   };
 
+  const handleWeightPress = () => {
+    showNumpad(exerciseId, set.id, 'weight', set.weight);
+  };
+
+  const handleRepsPress = () => {
+    showNumpad(exerciseId, set.id, 'reps', set.reps);
+  };
+
+  // Auto-fill from previous set
+  const handlePreviousSetPress = () => {
+    if (previousSet) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onUpdate({ weight: previousSet.weight, reps: previousSet.reps });
+    }
+  };
+
+  // Check if this input is currently focused in numpad
+  const isWeightFocused = isVisible && targetInput?.exerciseId === exerciseId && targetInput?.setId === set.id && targetInput?.field === 'weight';
+  const isRepsFocused = isVisible && targetInput?.exerciseId === exerciseId && targetInput?.setId === set.id && targetInput?.field === 'reps';
+
+  // Display value - show numpad's current value if this input is focused
+  const displayWeight = isWeightFocused ? currentValue : (set.weight?.toString() || '');
+  const displayReps = isRepsFocused ? currentValue : (set.reps?.toString() || '');
+
+  // Warmup uses orange tint for visual distinction
+  const warmupColor = 'rgba(255, 160, 60, 0.12)';
+
+  // Swipe-to-delete action
+  const handleSwipeDelete = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    swipeableRef.current?.close();
+    onRemove();
+  };
+
+  // Render the delete action when swiping left
+  const renderRightActions = () => (
+    <Pressable
+      onPress={handleSwipeDelete}
+      style={{
+        backgroundColor: 'rgba(255, 80, 80, 0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 80,
+        borderRadius: 10,
+        marginBottom: 4,
+        marginLeft: 8,
+      }}
+    >
+      <X size={24} color="#FFFFFF" weight="bold" />
+      <Text fontSize={11} color="#FFFFFF" fontWeight="600" marginTop={2}>
+        Delete
+      </Text>
+    </Pressable>
+  );
+
   return (
+    <Swipeable
+      ref={swipeableRef}
+      renderRightActions={renderRightActions}
+      overshootRight={false}
+      friction={2}
+    >
     <XStack
       alignItems="center"
-      paddingVertical="$2"
+      paddingVertical="$1"
       paddingHorizontal="$2"
       backgroundColor={
         set.isCompleted
           ? 'rgba(255, 255, 255, 0.05)'
           : set.isWarmup
-          ? 'rgba(255, 255, 255, 0.03)'
+          ? warmupColor
           : 'transparent'
       }
-      borderRadius={12}
-      marginBottom="$2"
+      borderRadius={10}
+      marginBottom="$1"
       gap="$2"
     >
       {/* Set Number Badge */}
@@ -91,78 +185,116 @@ function SetRow({
         />
       </XStack>
 
-      {/* Weight Input */}
-      <XStack
-        flex={1}
-        backgroundColor="rgba(255, 255, 255, 0.05)"
-        borderRadius={10}
-        borderWidth={1}
-        borderColor={set.isCompleted ? 'rgba(255, 255, 255, 0.20)' : 'rgba(255, 255, 255, 0.08)'}
-        height={48}
-        alignItems="center"
-        justifyContent="center"
+      {/* Previous Set Data - Tap to auto-fill */}
+      <Pressable
+        onPress={handlePreviousSetPress}
+        disabled={!previousSet}
+        style={({ pressed }) => ({
+          width: 70,
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: pressed && previousSet ? 0.6 : 1,
+        })}
+        accessibilityLabel={previousSet ? `Previous: ${previousSet.weight}kg × ${previousSet.reps}. Tap to fill` : 'No previous data'}
+        accessibilityRole="button"
       >
-        <TextInput
-          style={{
-            flex: 1,
-            textAlign: 'center',
-            fontSize: 18,
-            fontWeight: '600',
-            color: '#FFFFFF',
-            paddingHorizontal: 8,
-          }}
-          placeholder="0"
-          placeholderTextColor="rgba(255, 255, 255, 0.3)"
-          keyboardType="decimal-pad"
-          value={set.weight?.toString() || ''}
-          onChangeText={(text) => onUpdate({ weight: text ? parseFloat(text) : null })}
-          accessibilityLabel="Weight in kilograms"
-        />
-      </XStack>
-      <Text fontSize="$2" color="rgba(255,255,255,0.4)" width={24}>
-        kg
-      </Text>
+        {previousSet ? (
+          <YStack
+            backgroundColor="rgba(255, 255, 255, 0.06)"
+            paddingHorizontal="$2"
+            paddingVertical="$1"
+            borderRadius={6}
+          >
+            <Text fontSize={11} color="rgba(255,255,255,0.5)" fontWeight="500">
+              {previousSet.weight}kg × {previousSet.reps}
+            </Text>
+          </YStack>
+        ) : (
+          <Text fontSize={11} color="rgba(255,255,255,0.2)">—</Text>
+        )}
+      </Pressable>
 
-      {/* Reps Input */}
-      <XStack
-        flex={1}
-        backgroundColor="rgba(255, 255, 255, 0.05)"
-        borderRadius={10}
-        borderWidth={1}
-        borderColor={set.isCompleted ? 'rgba(255, 255, 255, 0.20)' : 'rgba(255, 255, 255, 0.08)'}
-        height={48}
-        alignItems="center"
-        justifyContent="center"
+      {/* Weight Input - Pressable to open numpad */}
+      <Pressable
+        style={{ flex: 1 }}
+        onPress={handleWeightPress}
+        accessibilityLabel="Weight in kilograms"
+        accessibilityRole="button"
       >
-        <TextInput
-          style={{
-            flex: 1,
-            textAlign: 'center',
-            fontSize: 18,
-            fontWeight: '600',
-            color: '#FFFFFF',
-            paddingHorizontal: 8,
-          }}
-          placeholder="0"
-          placeholderTextColor="rgba(255, 255, 255, 0.3)"
-          keyboardType="number-pad"
-          value={set.reps?.toString() || ''}
-          onChangeText={(text) => onUpdate({ reps: text ? parseInt(text, 10) : null })}
-          accessibilityLabel="Number of reps"
-        />
-      </XStack>
-      <Text fontSize="$2" color="rgba(255,255,255,0.4)" width={30}>
-        reps
-      </Text>
+        <XStack
+          flex={1}
+          backgroundColor="rgba(255, 255, 255, 0.05)"
+          borderRadius={8}
+          borderWidth={isWeightFocused ? 2 : 1}
+          borderColor={isWeightFocused ? '#FFFFFF' : set.isCompleted ? 'rgba(255, 255, 255, 0.20)' : 'rgba(255, 255, 255, 0.08)'}
+          height={38}
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Text
+            fontSize={16}
+            fontWeight="600"
+            color={displayWeight ? '#FFFFFF' : 'rgba(255, 255, 255, 0.3)'}
+          >
+            {displayWeight || '0'}
+          </Text>
+        </XStack>
+      </Pressable>
 
-      {/* Completion Badge */}
+      {/* Reps Input - Pressable to open numpad */}
+      <Pressable
+        style={{ flex: 1 }}
+        onPress={handleRepsPress}
+        accessibilityLabel="Number of reps"
+        accessibilityRole="button"
+      >
+        <XStack
+          flex={1}
+          backgroundColor="rgba(255, 255, 255, 0.05)"
+          borderRadius={8}
+          borderWidth={isRepsFocused ? 2 : 1}
+          borderColor={isRepsFocused ? '#FFFFFF' : set.isCompleted ? 'rgba(255, 255, 255, 0.20)' : 'rgba(255, 255, 255, 0.08)'}
+          height={38}
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Text
+            fontSize={16}
+            fontWeight="600"
+            color={displayReps ? '#FFFFFF' : 'rgba(255, 255, 255, 0.3)'}
+          >
+            {displayReps || '0'}
+          </Text>
+        </XStack>
+      </Pressable>
+
+      {/* Completion Badge - long press for RPE when completed */}
       <SetCompletionBadge
         completed={set.isCompleted}
         onPress={onComplete}
+        onLongPress={set.isCompleted ? onShowRPE : undefined}
         size={40}
         haptic
       />
+
+      {/* Small RPE indicator if set */}
+      {set.isCompleted && set.rpe && (
+        <YStack
+          position="absolute"
+          right={-4}
+          top={-2}
+          backgroundColor={getRpeColor(set.rpe)}
+          paddingHorizontal={6}
+          paddingVertical={2}
+          borderRadius={10}
+        >
+          <Text fontSize={9} fontWeight="700" color="#000000">
+            {set.rpe}
+          </Text>
+        </YStack>
+      )}
     </XStack>
+    </Swipeable>
   );
 }
 
@@ -172,29 +304,36 @@ function SetRow({
 function ExerciseCard({
   activeExercise,
   onAddSet,
-  onAddWarmupSet,
   onUpdateSet,
   onCompleteSet,
   onRemoveSet,
   onRemoveExercise,
   onUpdateNotes,
+  onUpdateRestSeconds,
+  onReplaceExercise,
   supersetLabel,
   onLinkSuperset,
   isActive,
 }: {
   activeExercise: ActiveExercise;
   onAddSet: () => void;
-  onAddWarmupSet: () => void;
   onUpdateSet: (setId: string, updates: Partial<ActiveSet>) => void;
   onCompleteSet: (setId: string) => void;
   onRemoveSet: (setId: string) => void;
   onRemoveExercise: () => void;
   onUpdateNotes: (notes: string) => void;
+  onUpdateRestSeconds: (seconds: number) => void;
+  onReplaceExercise: () => void;
   supersetLabel?: string;
   onLinkSuperset: () => void;
   isActive?: boolean;
 }) {
   const [showNotes, setShowNotes] = useState(false);
+  const [showRestPopover, setShowRestPopover] = useState(false);
+  const [rpeSetId, setRpeSetId] = useState<string | null>(null);
+
+  // Fetch previous workout data for ghost rows
+  const { ghostSets, isLoading: isLoadingGhosts } = usePreviousSets(activeExercise.exercise.id);
 
   // Calculate working set index (excluding warmups)
   let workingSetIndex = 0;
@@ -214,8 +353,8 @@ function ExerciseCard({
       borderLeftColor="rgba(255, 255, 255, 0.4)"
     >
       {supersetLabel && (
-        <Badge variant="muted" marginBottom="$2" alignSelf="flex-start">
-          <BadgeText variant="muted">{supersetLabel}</BadgeText>
+        <Badge variant="subtle" marginBottom="$2" alignSelf="flex-start">
+          <BadgeText variant="subtle">{supersetLabel}</BadgeText>
         </Badge>
       )}
 
@@ -234,7 +373,34 @@ function ExerciseCard({
             {activeExercise.exercise.muscleGroup}
           </Text>
         </YStack>
-        <XStack alignItems="center" gap="$3">
+        <XStack alignItems="center" gap="$2">
+          {/* Rest Timer Icon */}
+          <YStack
+            alignItems="center"
+            padding="$1"
+            onPress={() => setShowRestPopover(true)}
+            pressStyle={{ opacity: 0.7, scale: 0.95 }}
+            accessibilityLabel={`Rest timer: ${formatRestTime(activeExercise.restSeconds)}`}
+            accessibilityRole="button"
+          >
+            <Timer size={16} color="rgba(255,255,255,0.5)" />
+            <Text fontSize={9} fontWeight="600" color="rgba(255,255,255,0.5)" marginTop={2}>
+              {formatRestTime(activeExercise.restSeconds)}
+            </Text>
+          </YStack>
+
+          {/* Replace Exercise Icon */}
+          <XStack
+            padding="$2"
+            onPress={onReplaceExercise}
+            pressStyle={{ opacity: 0.7, scale: 0.95 }}
+            accessibilityLabel="Replace exercise"
+            accessibilityRole="button"
+          >
+            <ArrowsClockwise size={18} color="rgba(255,255,255,0.4)" />
+          </XStack>
+
+          {/* Superset Icon */}
           <XStack
             padding="$2"
             onPress={onLinkSuperset}
@@ -250,6 +416,8 @@ function ExerciseCard({
               <Link size={18} color="rgba(255,255,255,0.4)" />
             )}
           </XStack>
+
+          {/* Remove Exercise Icon */}
           <XStack
             padding="$2"
             onPress={onRemoveExercise}
@@ -261,6 +429,14 @@ function ExerciseCard({
           </XStack>
         </XStack>
       </XStack>
+
+      {/* Rest Timer Popover */}
+      <RestTimerPopover
+        visible={showRestPopover}
+        onClose={() => setShowRestPopover(false)}
+        currentSeconds={activeExercise.restSeconds}
+        onSelect={onUpdateRestSeconds}
+      />
 
       {showNotes && (
         <TextInput
@@ -286,74 +462,180 @@ function ExerciseCard({
       )}
 
       {/* Column Headers */}
-      <XStack paddingHorizontal="$2" marginBottom="$2">
-        <Text width={36} fontSize="$1" color="rgba(255,255,255,0.4)" textTransform="uppercase" letterSpacing={1}>
+      <XStack paddingHorizontal="$2" marginBottom="$2" gap="$2" alignItems="center">
+        <Text width={36} fontSize={10} color="rgba(255,255,255,0.4)" textTransform="uppercase" letterSpacing={1}>
           Set
         </Text>
-        <Text flex={1} fontSize="$1" color="rgba(255,255,255,0.4)" textAlign="center" textTransform="uppercase" letterSpacing={1}>
-          Weight
+        <Text width={70} fontSize={10} color="rgba(255,255,255,0.4)" textAlign="center" textTransform="uppercase" letterSpacing={0.5}>
+          Prev
         </Text>
-        <Text width={24} />
-        <Text flex={1} fontSize="$1" color="rgba(255,255,255,0.4)" textAlign="center" textTransform="uppercase" letterSpacing={1}>
-          Reps
-        </Text>
-        <Text width={30} />
-        <Text width={40} />
+        <XStack flex={1} justifyContent="center" alignItems="center" gap="$1">
+          <Barbell size={12} color="rgba(255,255,255,0.4)" />
+          <Text fontSize={10} color="rgba(255,255,255,0.4)" textTransform="uppercase">kg</Text>
+        </XStack>
+        <XStack flex={1} justifyContent="center" alignItems="center">
+          <Text fontSize={10} color="rgba(255,255,255,0.4)" textTransform="uppercase">Reps</Text>
+        </XStack>
+        <YStack width={38} />
       </XStack>
 
-      {setsWithIndex.map(({ set, displayIndex }) => (
-        <SetRow
-          key={set.id}
-          set={set}
-          setIndex={displayIndex}
-          onUpdate={(updates) => onUpdateSet(set.id, updates)}
-          onComplete={() => onCompleteSet(set.id)}
-          onRemove={() => onRemoveSet(set.id)}
-        />
-      ))}
+      {setsWithIndex.map(({ set, displayIndex }) => {
+        // Find matching previous set by working set index (not warmup)
+        const prevSet = !set.isWarmup && displayIndex >= 0 && displayIndex < ghostSets.length
+          ? ghostSets[displayIndex]
+          : null;
 
-      {/* Add Set Buttons */}
-      <XStack justifyContent="center" gap="$4" marginTop="$3">
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={onAddWarmupSet}
-          accessibilityLabel="Add warmup set"
-          accessibilityRole="button"
-        >
-          <Fire size={14} color="rgba(255,255,255,0.5)" />
-          <Text color="rgba(255,255,255,0.6)" fontWeight="600" fontSize="$3">
-            Warmup
-          </Text>
-        </Button>
+        return (
+          <SetRow
+            key={set.id}
+            set={set}
+            setIndex={displayIndex}
+            exerciseId={activeExercise.id}
+            onUpdate={(updates) => onUpdateSet(set.id, updates)}
+            onComplete={() => onCompleteSet(set.id)}
+            onRemove={() => onRemoveSet(set.id)}
+            onShowRPE={() => setRpeSetId(set.id)}
+            previousSet={prevSet}
+          />
+        );
+      })}
+
+      {/* Add Set Button */}
+      <XStack justifyContent="center" marginTop="$3">
         <Button
           variant="ghost"
           size="sm"
           onPress={onAddSet}
-          accessibilityLabel="Add working set"
+          accessibilityLabel="Add set"
           accessibilityRole="button"
         >
           <Plus size={14} color="#FFFFFF" weight="bold" />
           <Text color="#FFFFFF" fontWeight="600" fontSize="$3">
-            Set
+            Add Set
           </Text>
         </Button>
       </XStack>
+
+      {/* RPE Picker Modal */}
+      <Modal
+        visible={rpeSetId !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRpeSetId(null)}
+      >
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          onPress={() => setRpeSetId(null)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <YStack
+              backgroundColor="#1a1a1a"
+              borderRadius={16}
+              padding="$4"
+              gap="$3"
+              minWidth={280}
+              borderWidth={1}
+              borderColor="rgba(255, 255, 255, 0.1)"
+            >
+              <Text fontSize={16} fontWeight="600" color="#FFFFFF" textAlign="center">
+                Rate of Perceived Exertion
+              </Text>
+              <Text fontSize={12} color="rgba(255,255,255,0.5)" textAlign="center">
+                How hard did this set feel?
+              </Text>
+
+              <XStack justifyContent="center" gap="$2" marginTop="$2">
+                {[6, 7, 8, 9, 10].map((rpe) => {
+                  const currentSet = activeExercise.sets.find(s => s.id === rpeSetId);
+                  const isSelected = currentSet?.rpe === rpe;
+                  // Color gradient: green (easy) → yellow → orange → red (hard)
+                  const rpeColor = getRpeColor(rpe);
+                  return (
+                    <Pressable
+                      key={rpe}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        if (rpeSetId) {
+                          onUpdateSet(rpeSetId, { rpe });
+                        }
+                        setRpeSetId(null);
+                      }}
+                      style={({ pressed }) => ({
+                        opacity: pressed ? 0.7 : 1,
+                      })}
+                    >
+                      <YStack
+                        width={48}
+                        height={48}
+                        borderRadius={12}
+                        backgroundColor={isSelected ? `${rpeColor}30` : 'rgba(255, 255, 255, 0.08)'}
+                        borderWidth={2}
+                        borderColor={isSelected ? rpeColor : `${rpeColor}50`}
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        <Text
+                          fontSize={18}
+                          fontWeight="700"
+                          color={isSelected ? rpeColor : `${rpeColor}CC`}
+                        >
+                          {rpe}
+                        </Text>
+                      </YStack>
+                    </Pressable>
+                  );
+                })}
+              </XStack>
+
+              {/* Clear RPE button */}
+              <XStack justifyContent="center" marginTop="$2">
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    if (rpeSetId) {
+                      onUpdateSet(rpeSetId, { rpe: null });
+                    }
+                    setRpeSetId(null);
+                  }}
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Text fontSize={14} color="rgba(255, 255, 255, 0.5)">
+                    Clear RPE
+                  </Text>
+                </Pressable>
+              </XStack>
+            </YStack>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Card>
   );
 }
 
 /**
  * Exercise Picker Modal - Premium Monochromatic
+ *
+ * Supports two modes:
+ * - "add": Add a new exercise to the workout
+ * - "replace": Replace an existing exercise (keeps sets)
  */
 function ExercisePicker({
   visible,
   onClose,
   onSelect,
+  mode = 'add',
 }: {
   visible: boolean;
   onClose: () => void;
   onSelect: (exercise: Exercise) => void;
+  mode?: 'add' | 'replace';
 }) {
   const [search, setSearch] = useState('');
   const { exercises, isLoading } = useExercises(search);
@@ -370,7 +652,7 @@ function ExercisePicker({
           borderBottomColor="rgba(255, 255, 255, 0.08)"
         >
           <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
-            Add Exercise
+            {mode === 'replace' ? 'Replace Exercise' : 'Add Exercise'}
           </Text>
           <Text
             fontSize="$4"
@@ -437,10 +719,10 @@ function ExercisePicker({
  */
 export default function ActiveWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
-  const [showPlateCalculator, setShowPlateCalculator] = useState(false);
 
   const {
     activeWorkout,
@@ -449,20 +731,27 @@ export default function ActiveWorkoutScreen() {
     finishWorkout,
     addExercise,
     removeExercise,
+    reorderExercises,
     addSet,
     updateSet,
     completeSet,
     removeSet,
     updateExerciseNotes,
     updateWorkoutNotes,
+    updateWorkoutName,
+    updateExerciseRestSeconds,
+    replaceExercise,
     createSuperset,
     removeFromSuperset,
   } = useWorkoutStore();
 
   const [selectedForSuperset, setSelectedForSuperset] = useState<string | null>(null);
+  const [replacingExerciseId, setReplacingExerciseId] = useState<string | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
 
   // Must be called unconditionally (before any early returns)
-  const { startTimer, lastPresetSeconds } = useTimerStore();
+  const { startTimer } = useTimerStore();
+  const checkForPR = useCelebrationStore((s) => s.checkForPR);
 
   // Start workout on mount if not already active
   useEffect(() => {
@@ -478,6 +767,27 @@ export default function ActiveWorkoutScreen() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Calculate total volume (weight × reps for completed sets)
+  const totalVolume = useMemo(() => {
+    if (!activeWorkout) return 0;
+    return activeWorkout.exercises.reduce((total, exercise) => {
+      return total + exercise.sets.reduce((exerciseTotal, set) => {
+        if (set.isCompleted && set.weight && set.reps && !set.isWarmup) {
+          return exerciseTotal + (set.weight * set.reps);
+        }
+        return exerciseTotal;
+      }, 0);
+    }, 0);
+  }, [activeWorkout]);
+
+  // Format volume (e.g., 1234 -> "1.2k", 12345 -> "12.3k")
+  const formatVolume = (volume: number): string => {
+    if (volume >= 1000) {
+      return `${(volume / 1000).toFixed(1)}k`;
+    }
+    return volume.toString();
+  };
 
   const handleCancel = () => {
     Alert.alert('Cancel Workout?', 'Your progress will be lost.', [
@@ -514,8 +824,6 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
-  const checkForPR = useCelebrationStore((s) => s.checkForPR);
-
   const handleCompleteSet = (exerciseId: string, setId: string) => {
     // Find the exercise and set to check for PR
     const exercise = activeWorkout?.exercises.find((e) => e.id === exerciseId);
@@ -535,8 +843,10 @@ export default function ActiveWorkoutScreen() {
       );
     }
 
-    // Auto-start rest timer with last used duration
-    startTimer(lastPresetSeconds);
+    // Auto-start rest timer with this exercise's rest duration
+    if (exercise) {
+      startTimer(exercise.restSeconds);
+    }
   };
 
   const handleSaveAsTemplate = async (templateName: string) => {
@@ -603,130 +913,222 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <YStack flex={1} backgroundColor="#000000">
-      {/* Header - Elegant Timer */}
-      <YStack
-        padding="$4"
+      {/* Header - Compact with Actions */}
+      <XStack
+        paddingHorizontal="$4"
+        paddingBottom="$3"
+        paddingTop={insets.top + 8}
         alignItems="center"
+        justifyContent="space-between"
         borderBottomWidth={1}
         borderBottomColor="rgba(255, 255, 255, 0.08)"
         backgroundColor="#0a0a0a"
       >
-        <XStack alignItems="center" gap="$3">
-          <TimerDisplay time={elapsedTime} size="lg" />
-          <RestTimerCompact />
-        </XStack>
-        <Text fontSize="$3" color="rgba(255,255,255,0.5)" marginTop="$2" fontWeight="500">
-          {activeWorkout.name}
-        </Text>
-      </YStack>
-
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
-      >
-        {/* Rest Timer */}
-        <RestTimer />
-
-        {activeWorkout.exercises.map((ex) => (
-          <ExerciseCard
-            key={ex.id}
-            activeExercise={ex}
-            onAddSet={() => addSet(ex.id, false)}
-            onAddWarmupSet={() => addSet(ex.id, true)}
-            onUpdateSet={(setId, updates) => updateSet(ex.id, setId, updates)}
-            onCompleteSet={(setId) => handleCompleteSet(ex.id, setId)}
-            onRemoveSet={(setId) => removeSet(ex.id, setId)}
-            onRemoveExercise={() => removeExercise(ex.id)}
-            onUpdateNotes={(notes) => updateExerciseNotes(ex.id, notes)}
-            supersetLabel={getSupersetLabel(ex.supersetId)}
-            onLinkSuperset={() => handleLinkSuperset(ex.id, ex.supersetId)}
-            isActive={ex.id === activeExerciseId}
-          />
-        ))}
-
-        {/* Add Exercise Button */}
-        <Card
-          pressable
-          onPress={() => setShowExercisePicker(true)}
-          backgroundColor="transparent"
-          borderStyle="dashed"
-          borderWidth={2}
-          borderColor="rgba(255, 255, 255, 0.15)"
-          alignItems="center"
-          marginBottom="$4"
-          accessibilityLabel="Add exercise"
-          accessibilityRole="button"
-        >
-          <XStack alignItems="center" gap="$2">
-            <Plus size={20} color="#FFFFFF" weight="bold" />
-            <Text fontSize="$4" fontWeight="600" color="#FFFFFF">
-              Add Exercise
+        {/* Left: Timer + Volume */}
+        <YStack gap="$1" minWidth={70}>
+          <XStack alignItems="center" gap="$1">
+            <Timer size={14} color="rgba(255,255,255,0.5)" />
+            <Text
+              fontSize={14}
+              fontWeight="500"
+              color="rgba(255,255,255,0.7)"
+              fontVariant={['tabular-nums']}
+            >
+              {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')}
             </Text>
           </XStack>
-        </Card>
+          {totalVolume > 0 && (
+            <XStack alignItems="center" gap="$1">
+              <Barbell size={12} color="rgba(255,255,255,0.4)" />
+              <Text
+                fontSize={12}
+                fontWeight="500"
+                color="rgba(255,255,255,0.5)"
+                fontVariant={['tabular-nums']}
+              >
+                {formatVolume(totalVolume)} kg
+              </Text>
+            </XStack>
+          )}
+        </YStack>
 
-        {activeWorkout.exercises.length === 0 && (
-          <Text textAlign="center" color="rgba(255,255,255,0.5)" fontSize="$3" marginTop="$4">
-            Tap above to add exercises to your workout
-          </Text>
-        )}
-      </ScrollView>
+        {/* Center: Editable Workout Name */}
+        <XStack flex={1} justifyContent="center" alignItems="center" paddingHorizontal="$2">
+          {isEditingName ? (
+            <XStack alignItems="center" gap="$2">
+              <TextInput
+                style={{
+                  fontSize: 15,
+                  fontWeight: '600',
+                  color: '#FFFFFF',
+                  textAlign: 'center',
+                  padding: 4,
+                  minWidth: 100,
+                  borderBottomWidth: 1,
+                  borderBottomColor: 'rgba(255,255,255,0.3)',
+                }}
+                value={activeWorkout.name}
+                onChangeText={(text) => updateWorkoutName(text)}
+                onBlur={() => setIsEditingName(false)}
+                onSubmitEditing={() => setIsEditingName(false)}
+                autoFocus
+                selectTextOnFocus
+              />
+              <XStack
+                onPress={() => setIsEditingName(false)}
+                padding="$1"
+                pressStyle={{ opacity: 0.7 }}
+              >
+                <Check size={16} color="#FFFFFF" weight="bold" />
+              </XStack>
+            </XStack>
+          ) : (
+            <XStack
+              alignItems="center"
+              gap="$1"
+              onPress={() => setIsEditingName(true)}
+              pressStyle={{ opacity: 0.7 }}
+            >
+              <Text fontSize={15} fontWeight="600" color="#FFFFFF" numberOfLines={1}>
+                {activeWorkout.name}
+              </Text>
+              <PencilSimple size={12} color="rgba(255,255,255,0.4)" />
+            </XStack>
+          )}
+        </XStack>
 
-      {/* Bottom Action Bar */}
-      <XStack
-        padding="$4"
-        gap="$3"
-        borderTopWidth={1}
-        borderTopColor="rgba(255, 255, 255, 0.08)"
-        backgroundColor="#0a0a0a"
-      >
-        <Button
-          variant="ghost"
-          flex={1}
-          onPress={handleCancel}
-          accessibilityLabel="Cancel workout"
-          accessibilityRole="button"
-        >
-          <ButtonText variant="ghost">Cancel</ButtonText>
-        </Button>
-        <Button
-          variant="secondary"
-          width={50}
-          paddingHorizontal={0}
-          onPress={() => setShowPlateCalculator(true)}
-          accessibilityLabel="Plate calculator"
-          accessibilityRole="button"
-        >
-          <Calculator size={20} color="#FFFFFF" weight="bold" />
-        </Button>
-        <Button
-          variant="secondary"
-          width={50}
-          paddingHorizontal={0}
-          onPress={() => setShowSaveTemplate(true)}
-          accessibilityLabel="Save as template"
-          accessibilityRole="button"
-        >
-          <BookmarkSimple size={20} color="#FFFFFF" weight="bold" />
-        </Button>
-        <Button
-          variant="primary"
-          flex={1}
-          size="lg"
-          onPress={handleFinish}
-          accessibilityLabel="Finish workout"
-          accessibilityRole="button"
-        >
-          <ButtonText variant="primary" size="lg">
-            Finish
-          </ButtonText>
-        </Button>
+        {/* Right: Action Buttons */}
+        <XStack alignItems="center" gap="$2">
+          <XStack
+            padding="$2"
+            onPress={() => setShowSaveTemplate(true)}
+            pressStyle={{ opacity: 0.7, scale: 0.95 }}
+            accessibilityLabel="Save as template"
+            accessibilityRole="button"
+          >
+            <BookmarkSimple size={20} color="rgba(255,255,255,0.6)" />
+          </XStack>
+          <XStack
+            backgroundColor="#FFFFFF"
+            paddingHorizontal="$5"
+            paddingVertical="$3"
+            borderRadius={12}
+            onPress={handleFinish}
+            pressStyle={{ opacity: 0.9, scale: 0.98 }}
+            accessibilityLabel="Finish workout"
+            accessibilityRole="button"
+          >
+            <Text fontSize={16} fontWeight="700" color="#000000">
+              Finish
+            </Text>
+          </XStack>
+        </XStack>
       </XStack>
+
+      <DraggableFlatList
+        data={activeWorkout.exercises}
+        keyExtractor={(item) => item.id}
+        onDragEnd={({ from, to }) => {
+          if (from !== to) {
+            reorderExercises(from, to);
+          }
+        }}
+        containerStyle={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        renderItem={({ item: ex, drag, isActive: isDragging }: RenderItemParams<ActiveExercise>) => (
+          <ScaleDecorator>
+            <YStack
+              onLongPress={drag}
+              opacity={isDragging ? 0.9 : 1}
+              transform={isDragging ? [{ scale: 1.02 }] : []}
+            >
+              <ExerciseCard
+                activeExercise={ex}
+                onAddSet={() => addSet(ex.id, false)}
+                onUpdateSet={(setId, updates) => updateSet(ex.id, setId, updates)}
+                onCompleteSet={(setId) => handleCompleteSet(ex.id, setId)}
+                onRemoveSet={(setId) => removeSet(ex.id, setId)}
+                onRemoveExercise={() => removeExercise(ex.id)}
+                onUpdateNotes={(notes) => updateExerciseNotes(ex.id, notes)}
+                onUpdateRestSeconds={(seconds) => updateExerciseRestSeconds(ex.id, seconds)}
+                onReplaceExercise={() => {
+                  setReplacingExerciseId(ex.id);
+                  setShowExercisePicker(true);
+                }}
+                supersetLabel={getSupersetLabel(ex.supersetId)}
+                onLinkSuperset={() => handleLinkSuperset(ex.id, ex.supersetId)}
+                isActive={ex.id === activeExerciseId}
+              />
+            </YStack>
+          </ScaleDecorator>
+        )}
+        ListFooterComponent={
+          <YStack>
+            {/* Add Exercise Button */}
+            <Card
+              pressable
+              onPress={() => setShowExercisePicker(true)}
+              backgroundColor="transparent"
+              borderStyle="dashed"
+              borderWidth={2}
+              borderColor="rgba(255, 255, 255, 0.15)"
+              alignItems="center"
+              marginBottom="$4"
+              accessibilityLabel="Add exercise"
+              accessibilityRole="button"
+            >
+              <XStack alignItems="center" gap="$2">
+                <Plus size={20} color="#FFFFFF" weight="bold" />
+                <Text fontSize="$4" fontWeight="600" color="#FFFFFF">
+                  Add Exercise
+                </Text>
+              </XStack>
+            </Card>
+
+            {activeWorkout.exercises.length === 0 && (
+              <Text textAlign="center" color="rgba(255,255,255,0.5)" fontSize="$3" marginTop="$4">
+                Long press and drag to reorder exercises
+              </Text>
+            )}
+
+            {/* Cancel Workout Button */}
+            <YStack alignItems="center" marginTop="$8" marginBottom="$8">
+              <XStack
+                paddingHorizontal="$8"
+                paddingVertical="$4"
+                borderRadius={14}
+                borderWidth={1}
+                borderColor="rgba(255, 100, 100, 0.35)"
+                backgroundColor="rgba(255, 100, 100, 0.1)"
+                onPress={handleCancel}
+                pressStyle={{ opacity: 0.7, scale: 0.97 }}
+                accessibilityLabel="Cancel workout"
+                accessibilityRole="button"
+              >
+                <Text fontSize={16} fontWeight="600" color="rgba(255, 100, 100, 0.9)">
+                  Cancel Workout
+                </Text>
+              </XStack>
+            </YStack>
+          </YStack>
+        }
+      />
 
       <ExercisePicker
         visible={showExercisePicker}
-        onClose={() => setShowExercisePicker(false)}
-        onSelect={addExercise}
+        onClose={() => {
+          setShowExercisePicker(false);
+          setReplacingExerciseId(null);
+        }}
+        onSelect={(exercise) => {
+          if (replacingExerciseId) {
+            replaceExercise(replacingExerciseId, exercise);
+            setReplacingExerciseId(null);
+          } else {
+            addExercise(exercise);
+          }
+        }}
+        mode={replacingExerciseId ? 'replace' : 'add'}
       />
 
       <SaveTemplateModal
@@ -736,10 +1138,11 @@ export default function ActiveWorkoutScreen() {
         defaultName={activeWorkout.name}
       />
 
-      <PlateCalculatorModal
-        visible={showPlateCalculator}
-        onClose={() => setShowPlateCalculator(false)}
-      />
+      {/* Custom Numpad - replaces native keyboard for weight/reps */}
+      <NumpadSheet />
+
+      {/* Rest Timer Overlay - appears when rest timer is running */}
+      <RestTimerOverlay />
 
       {/* PR Celebration Overlay */}
       <PRCelebration />

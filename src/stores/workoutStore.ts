@@ -4,6 +4,16 @@ import type { Exercise } from '../db/schema';
 
 const uuid = () => Crypto.randomUUID();
 
+/**
+ * Generate default workout name based on time of day
+ */
+function getDefaultWorkoutName(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Morning Workout';
+  if (hour < 17) return 'Afternoon Workout';
+  return 'Evening Workout';
+}
+
 // Types for active workout (in-memory, not yet persisted)
 export interface ActiveSet {
   id: string;
@@ -23,6 +33,7 @@ export interface ActiveExercise {
   order: number;
   notes: string | null;
   supersetId: string | null; // Group exercises into supersets
+  restSeconds: number; // Rest timer duration for this exercise
 }
 
 export interface ActiveWorkout {
@@ -61,8 +72,13 @@ interface WorkoutStore {
   createSuperset: (exerciseIds: string[]) => void;
   removeFromSuperset: (activeExerciseId: string) => void;
 
-  // Notes
+  // Workout metadata
   updateWorkoutNotes: (notes: string) => void;
+  updateWorkoutName: (name: string) => void;
+
+  // Exercise actions (additional)
+  replaceExercise: (activeExerciseId: string, newExercise: Exercise) => void;
+  updateExerciseRestSeconds: (activeExerciseId: string, seconds: number) => void;
 
   // Rest timer
   startRestTimer: (seconds: number) => void;
@@ -79,7 +95,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     set({
       activeWorkout: {
         id: uuid(),
-        name: name || `Workout ${new Date().toLocaleDateString()}`,
+        name: name || getDefaultWorkoutName(),
         startedAt: new Date(),
         exercises: [],
         restTimerSeconds: null,
@@ -97,6 +113,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       order: idx,
       notes: null,
       supersetId: null,
+      restSeconds: 90, // Default 90 second rest
       sets: ex.sets.length > 0
         ? ex.sets.map((s, setIdx) => ({
             id: uuid(),
@@ -121,7 +138,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     set({
       activeWorkout: {
         id: uuid(),
-        name: name || `Workout ${new Date().toLocaleDateString()}`,
+        name: name || getDefaultWorkoutName(),
         startedAt: new Date(),
         exercises: workoutExercises,
         restTimerSeconds: null,
@@ -152,6 +169,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       order: workout.exercises.length,
       notes: null,
       supersetId: null,
+      restSeconds: 90, // Default 90 second rest
       sets: [
         {
           id: uuid(),
@@ -347,6 +365,53 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       activeWorkout: {
         ...workout,
         notes,
+      },
+    });
+  },
+
+  updateWorkoutName: (name: string) => {
+    const workout = get().activeWorkout;
+    if (!workout) return;
+
+    set({
+      activeWorkout: {
+        ...workout,
+        name,
+      },
+    });
+  },
+
+  replaceExercise: (activeExerciseId: string, newExercise: Exercise) => {
+    const workout = get().activeWorkout;
+    if (!workout) return;
+
+    set({
+      activeWorkout: {
+        ...workout,
+        exercises: workout.exercises.map((ex) =>
+          ex.id === activeExerciseId
+            ? {
+                ...ex,
+                exerciseId: newExercise.id,
+                exercise: newExercise,
+                // Keep existing sets, notes, superset, rest timer
+              }
+            : ex
+        ),
+      },
+    });
+  },
+
+  updateExerciseRestSeconds: (activeExerciseId: string, seconds: number) => {
+    const workout = get().activeWorkout;
+    if (!workout) return;
+
+    set({
+      activeWorkout: {
+        ...workout,
+        exercises: workout.exercises.map((ex) =>
+          ex.id === activeExerciseId ? { ...ex, restSeconds: seconds } : ex
+        ),
       },
     });
   },

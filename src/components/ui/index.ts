@@ -30,3 +30,7 @@ export { ProgressRing, ProgressBar } from './ProgressRing';
 
 // Set completion components
 export { SetCompletionBadge, WarmupBadge, SetNumberBadge } from './SetCompletionBadge';
+
+// Activity indicators
+export { PRBadge } from './PRBadge';
+export { TrendIndicator, TrendBadge } from './TrendIndicator';

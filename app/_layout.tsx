@@ -5,6 +5,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { DatabaseProvider } from '@/src/db/provider';
 import tamaguiConfig from '@/tamagui.config';
@@ -56,11 +57,13 @@ export default function RootLayout() {
   }
 
   return (
-    <TamaguiProvider config={tamaguiConfig}>
-      <DatabaseProvider>
-        <RootLayoutNav />
-      </DatabaseProvider>
-    </TamaguiProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <TamaguiProvider config={tamaguiConfig}>
+        <DatabaseProvider>
+          <RootLayoutNav />
+        </DatabaseProvider>
+      </TamaguiProvider>
+    </GestureHandlerRootView>
   );
 }
 
