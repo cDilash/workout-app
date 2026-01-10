@@ -1,0 +1,297 @@
+{
+  "common": {
+    "cancel": "取消",
+    "done": "完成",
+    "save": "儲存",
+    "delete": "刪除",
+    "error": "錯誤",
+    "success": "成功",
+    "loading": "載入中...",
+    "add": "新增",
+    "edit": "編輯",
+    "remove": "移除",
+    "confirm": "確認",
+    "yes": "是",
+    "no": "否",
+    "ok": "確定",
+    "back": "返回",
+    "next": "下一步",
+    "close": "關閉",
+    "search": "搜尋"
+  },
+  "navigation": {
+    "workout": "訓練",
+    "history": "歷史",
+    "exercises": "動作庫",
+    "progress": "進度"
+  },
+  "settings": {
+    "title": "設定",
+    "sections": {
+      "language": "語言",
+      "units": "單位",
+      "workout": "訓練",
+      "soundsFeedback": "聲音與回饋",
+      "notifications": "通知",
+      "data": "資料",
+      "about": "關於"
+    },
+    "language": {
+      "label": "語言",
+      "description": "選擇您偏好的語言"
+    },
+    "weight": {
+      "label": "重量",
+      "lbs": "磅 (lbs)",
+      "kg": "公斤 (kg)",
+      "title": "重量單位",
+      "description": "選擇您偏好的單位"
+    },
+    "measurements": {
+      "label": "測量",
+      "cm": "公分 (cm)",
+      "in": "英寸 (in)",
+      "title": "測量單位",
+      "description": "選擇您偏好的單位"
+    },
+    "restTimer": {
+      "label": "預設休息時間",
+      "title": "預設休息時間",
+      "description": "選擇您的預設休息時間"
+    },
+    "autoStartTimer": {
+      "label": "自動開始計時",
+      "description": "完成一組後自動開始計時"
+    },
+    "keepScreenAwake": {
+      "label": "保持螢幕常亮",
+      "description": "訓練期間保持螢幕亮起"
+    },
+    "timerSound": {
+      "label": "計時器聲音",
+      "description": "計時結束時播放聲音"
+    },
+    "hapticFeedback": {
+      "label": "觸覺回饋",
+      "description": "互動時震動"
+    },
+    "notifications": {
+      "label": "通知",
+      "description": "休息提醒和通知"
+    },
+    "exportData": {
+      "label": "匯出資料",
+      "title": "匯出資料",
+      "comingSoon": "匯出功能即將推出"
+    },
+    "importData": {
+      "label": "匯入資料",
+      "title": "匯入資料",
+      "comingSoon": "匯入功能即將推出"
+    },
+    "appVersion": "應用程式版本",
+    "footer": "為健身愛好者用 💪 打造"
+  },
+  "home": {
+    "greeting": {
+      "morning": "早安",
+      "afternoon": "午安",
+      "evening": "晚安"
+    },
+    "startWorkout": "開始訓練",
+    "continueWorkout": "繼續訓練",
+    "quickStart": "快速開始",
+    "templates": "範本",
+    "recentWorkouts": "最近訓練",
+    "noRecentWorkouts": "暫無最近訓練",
+    "thisWeek": "本週",
+    "personalRecords": "個人紀錄",
+    "viewAll": "查看全部"
+  },
+  "workout": {
+    "title": "訓練",
+    "newWorkout": "新訓練",
+    "addExercise": "新增動作",
+    "addSet": "新增組數",
+    "finish": "完成",
+    "finishWorkout": "完成訓練",
+    "cancel": "取消訓練",
+    "cancelConfirm": {
+      "title": "取消訓練？",
+      "message": "您的進度將會遺失。",
+      "confirm": "取消訓練",
+      "cancel": "繼續訓練"
+    },
+    "discardChanges": "放棄變更",
+    "set": "組",
+    "sets": "組",
+    "warmup": "熱",
+    "warmupFull": "熱身",
+    "working": "正式",
+    "weight": "重量",
+    "reps": "次數",
+    "previous": "上次",
+    "restTimer": "休息計時",
+    "duration": "時長",
+    "volume": "容量",
+    "exercises": "動作",
+    "exercise": "動作",
+    "noExercises": "尚未新增動作",
+    "tapToAddExercise": "點擊上方按鈕新增您的第一個動作",
+    "notes": "備註",
+    "addNotes": "新增備註...",
+    "workoutNotes": "訓練備註",
+    "exerciseNotes": "動作備註",
+    "superset": "超級組",
+    "saveAsTemplate": "儲存為範本",
+    "templateName": "範本名稱",
+    "templateSaved": "範本已儲存！",
+    "loadTemplate": "載入範本",
+    "deleteTemplate": "刪除範本",
+    "deleteTemplateConfirm": "確定要刪除此範本嗎？"
+  },
+  "exercises": {
+    "title": "動作庫",
+    "search": "搜尋動作...",
+    "noResults": "未找到動作",
+    "tryDifferentSearch": "嘗試其他搜尋詞",
+    "filters": {
+      "all": "全部",
+      "muscleGroup": "肌肉群",
+      "equipment": "器材"
+    },
+    "muscleGroups": {
+      "all": "所有肌肉",
+      "chest": "胸部",
+      "back": "背部",
+      "shoulders": "肩部",
+      "biceps": "肱二頭肌",
+      "triceps": "肱三頭肌",
+      "forearms": "前臂",
+      "quads": "股四頭肌",
+      "hamstrings": "腿後肌",
+      "glutes": "臀部",
+      "core": "核心",
+      "calves": "小腿",
+      "cardio": "有氧",
+      "fullBody": "全身"
+    },
+    "equipment": {
+      "all": "所有器材",
+      "barbell": "槓鈴",
+      "dumbbell": "啞鈴",
+      "cable": "繩索",
+      "machine": "器械",
+      "bodyweight": "自重",
+      "kettlebell": "壺鈴",
+      "bands": "彈力帶",
+      "other": "其他"
+    },
+    "details": {
+      "history": "歷史",
+      "personalRecords": "個人紀錄",
+      "maxWeight": "最大重量",
+      "estimated1RM": "預估1RM",
+      "maxVolume": "最大容量",
+      "noHistory": "暫無歷史紀錄",
+      "addToWorkout": "將此動作新增到訓練中以開始記錄。"
+    }
+  },
+  "history": {
+    "title": "歷史",
+    "noWorkouts": "暫無訓練紀錄",
+    "completeFirst": "完成訓練後將在此顯示。",
+    "repeatWorkout": "重複訓練",
+    "export": "匯出",
+    "exporting": "匯出中...",
+    "exportTitle": "匯出訓練資料",
+    "exportMessage": "匯出 {{count}} 次訓練到檔案",
+    "exportMessage_plural": "匯出 {{count}} 次訓練到檔案",
+    "exportFormats": {
+      "json": "JSON（完整資料）",
+      "csv": "CSV（試算表）",
+      "analytics": "分析（用於網頁應用程式）"
+    },
+    "exportError": "匯出失敗",
+    "exportErrorMessage": "匯出資料時發生錯誤，請重試。",
+    "noData": "無資料",
+    "noDataMessage": "請先完成一些訓練以匯出資料。",
+    "stats": {
+      "exercises": "動作",
+      "sets": "組",
+      "volume": "容量"
+    },
+    "workoutsLogged": "已記錄 {{count}} 次訓練",
+    "workoutsLogged_plural": "已記錄 {{count}} 次訓練"
+  },
+  "progress": {
+    "title": "進度",
+    "thisWeek": "本週",
+    "workouts": "訓練",
+    "totalVolume": "總容量",
+    "exercisesPerformed": "動作數",
+    "personalRecords": "個人紀錄",
+    "prsThisWeek": "本週個人紀錄",
+    "muscleGroups": "肌肉群",
+    "muscleDistribution": "肌肉分佈",
+    "strengthProgress": "力量進步",
+    "selectExercise": "選擇動作查看進度",
+    "weeklyVolume": "週容量",
+    "last8Weeks": "最近8週",
+    "allTimeSummary": "總體統計",
+    "totalWorkouts": "總訓練次數",
+    "totalSets": "總組數",
+    "avgDuration": "平均時長",
+    "noData": "暫無資料",
+    "startTracking": "完成訓練以查看進度",
+    "noWorkoutsThisWeek": "本週暫無訓練",
+    "getStarted": "開始訓練以追蹤進度！"
+  },
+  "timer": {
+    "rest": "休息",
+    "skip": "跳過",
+    "addTime": "+30秒",
+    "timeUp": "時間到！",
+    "restComplete": "休息結束"
+  },
+  "units": {
+    "kg": "公斤",
+    "lbs": "磅",
+    "cm": "公分",
+    "in": "英寸",
+    "hours": "時",
+    "minutes": "分",
+    "seconds": "秒"
+  },
+  "time": {
+    "today": "今天",
+    "yesterday": "昨天",
+    "daysAgo": "{{count}}天前",
+    "daysAgo_plural": "{{count}}天前",
+    "thisWeek": "本週",
+    "lastWeek": "上週",
+    "weeksAgo": "{{count}}週前",
+    "weeksAgo_plural": "{{count}}週前"
+  },
+  "languages": {
+    "en": "English",
+    "de": "Deutsch",
+    "es": "Español",
+    "fr": "Français",
+    "it": "Italiano",
+    "ko": "한국어",
+    "pt": "Português",
+    "ru": "Русский",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文"
+  },
+  "plateCalculator": {
+    "title": "每側配重片",
+    "barWeight": "槓鈴：{{weight}}"
+  },
+  "numpad": {
+    "done": "完成",
+    "clear": "C",
+    "delete": "⌫"
+  }
+}

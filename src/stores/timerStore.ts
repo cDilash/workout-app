@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as Haptics from 'expo-haptics';
-import { Audio } from 'expo-av';
+import { playTimerCompleteSound } from '../utils/sounds';
 
 // Rest timer presets in seconds
 export const TIMER_PRESETS = [
@@ -34,32 +34,13 @@ interface TimerStore {
   _cleanup: () => void;
 }
 
-// Play completion sound
-async function playCompletionSound() {
-  try {
-    const { sound } = await Audio.Sound.createAsync(
-      // Use a system-like beep (we'll use haptics as primary feedback)
-      { uri: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
-      { shouldPlay: true, volume: 0.5 }
-    );
-    // Clean up after playing
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && status.didJustFinish) {
-        sound.unloadAsync();
-      }
-    });
-  } catch (error) {
-    console.log('Could not play sound:', error);
-  }
-}
-
-// Trigger completion feedback
+// Trigger completion feedback (haptics always enabled + sound from settings)
 async function triggerCompletionFeedback() {
-  // Heavy haptic impact
+  // Haptic feedback (always enabled per user preference)
   await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-  // Try to play sound (may fail silently)
-  playCompletionSound();
+  // Play sound (respects user's timerSoundEnabled and timerSoundVolume settings)
+  playTimerCompleteSound();
 }
 
 // Trigger tick feedback at certain intervals

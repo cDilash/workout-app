@@ -11,6 +11,8 @@ import Animated, {
 import { YStack, XStack, Text } from 'tamagui';
 import { useNumpadStore, numpadValueToNumber } from '@/src/stores/numpadStore';
 import { useWorkoutStore } from '@/src/stores/workoutStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { toKg } from '@/src/utils/unitConversion';
 import { NumpadGrid } from './NumpadGrid';
 import { QuickAdjustRow } from './QuickAdjustRow';
 import { PlateCalculatorSection } from './PlateCalculatorSection';
@@ -28,6 +30,7 @@ export function NumpadSheet() {
   const insets = useSafeAreaInsets();
   const { isVisible, mode, currentValue, targetInput, hideNumpad } = useNumpadStore();
   const { updateSet } = useWorkoutStore();
+  const weightUnit = useSettingsStore((s) => s.weightUnit);
 
   // Animation values
   const translateY = useSharedValue(SCREEN_HEIGHT);
@@ -66,7 +69,9 @@ export function NumpadSheet() {
     if (targetInput) {
       const numValue = numpadValueToNumber(currentValue);
       if (targetInput.field === 'weight') {
-        updateSet(targetInput.exerciseId, targetInput.setId, { weight: numValue });
+        // Convert from display unit to kg for storage
+        const weightInKg = numValue !== null ? toKg(numValue, weightUnit) : null;
+        updateSet(targetInput.exerciseId, targetInput.setId, { weight: weightInKg });
       } else {
         updateSet(targetInput.exerciseId, targetInput.setId, { reps: numValue });
       }
@@ -121,7 +126,7 @@ export function NumpadSheet() {
             color="rgba(255, 255, 255, 0.5)"
             marginLeft="$2"
           >
-            {mode === 'weight' ? 'kg' : 'reps'}
+            {mode === 'weight' ? weightUnit : 'reps'}
           </Text>
         </XStack>
 

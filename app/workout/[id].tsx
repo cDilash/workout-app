@@ -11,11 +11,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DraggableFlatList, { ScaleDecorator, RenderItemParams } from 'react-native-draggable-flatlist';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Link, LinkBreak, BookmarkSimple, X, Plus, Calculator, Timer, ArrowsClockwise, Check, PencilSimple, Barbell } from 'phosphor-react-native';
+import { Link, LinkBreak, BookmarkSimple, X, Plus, Calculator, Timer, ArrowsClockwise, Check, PencilSimple, Barbell, CaretLeft } from 'phosphor-react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import * as Haptics from 'expo-haptics';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 
 import { useWorkoutStore, type ActiveExercise, type ActiveSet } from '@/src/stores/workoutStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { fromKgDisplay, fromKgVolume } from '@/src/utils/unitConversion';
 import { useExercises } from '@/src/hooks/useExercises';
 import { saveWorkout } from '@/src/hooks/useWorkoutHistory';
 import { saveAsTemplate } from '@/src/hooks/useTemplates';
@@ -57,6 +60,18 @@ function getRpeColor(rpe: number): string {
 }
 
 /**
+ * Weight Unit Label - Displays the user's selected weight unit
+ */
+function WeightUnitLabel() {
+  const weightUnit = useSettingsStore((s) => s.weightUnit);
+  return (
+    <Text fontSize={10} color="rgba(255,255,255,0.4)" textTransform="uppercase">
+      {weightUnit}
+    </Text>
+  );
+}
+
+/**
  * Set Row Component - Premium Monochromatic
  *
  * Clean inputs with elegant completion state.
@@ -82,21 +97,27 @@ function SetRow({
   previousSet?: { weight: number; reps: number } | null;
 }) {
   const { showNumpad, isVisible, targetInput, currentValue } = useNumpadStore();
+  const weightUnit = useSettingsStore((s) => s.weightUnit);
   const swipeableRef = useRef<Swipeable>(null);
+
+  // Convert stored kg to display unit
+  const displayWeight = set.weight ? fromKgDisplay(set.weight, weightUnit) : null;
+  const displayPrevWeight = previousSet?.weight ? fromKgDisplay(previousSet.weight, weightUnit) : null;
 
   const handleToggleWarmup = () => {
     onUpdate({ isWarmup: !set.isWarmup });
   };
 
   const handleWeightPress = () => {
-    showNumpad(exerciseId, set.id, 'weight', set.weight);
+    // Pass the display value (converted from kg) to numpad
+    showNumpad(exerciseId, set.id, 'weight', displayWeight);
   };
 
   const handleRepsPress = () => {
     showNumpad(exerciseId, set.id, 'reps', set.reps);
   };
 
-  // Auto-fill from previous set
+  // Auto-fill from previous set (values are in kg, will be displayed converted)
   const handlePreviousSetPress = () => {
     if (previousSet) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -108,9 +129,9 @@ function SetRow({
   const isWeightFocused = isVisible && targetInput?.exerciseId === exerciseId && targetInput?.setId === set.id && targetInput?.field === 'weight';
   const isRepsFocused = isVisible && targetInput?.exerciseId === exerciseId && targetInput?.setId === set.id && targetInput?.field === 'reps';
 
-  // Display value - show numpad's current value if this input is focused
-  const displayWeight = isWeightFocused ? currentValue : (set.weight?.toString() || '');
-  const displayReps = isRepsFocused ? currentValue : (set.reps?.toString() || '');
+  // Display value - show numpad's current value if focused, otherwise show converted weight
+  const displayWeightStr = isWeightFocused ? currentValue : (displayWeight?.toString() || '');
+  const displayRepsStr = isRepsFocused ? currentValue : (set.reps?.toString() || '');
 
   // Warmup uses orange tint for visual distinction
   const warmupColor = 'rgba(255, 160, 60, 0.12)';
@@ -195,7 +216,7 @@ function SetRow({
           justifyContent: 'center',
           opacity: pressed && previousSet ? 0.6 : 1,
         })}
-        accessibilityLabel={previousSet ? `Previous: ${previousSet.weight}kg × ${previousSet.reps}. Tap to fill` : 'No previous data'}
+        accessibilityLabel={previousSet ? `Previous: ${displayPrevWeight} × ${previousSet.reps}. Tap to fill` : 'No previous data'}
         accessibilityRole="button"
       >
         {previousSet ? (
@@ -206,7 +227,7 @@ function SetRow({
             borderRadius={6}
           >
             <Text fontSize={11} color="rgba(255,255,255,0.5)" fontWeight="500">
-              {previousSet.weight}kg × {previousSet.reps}
+              {displayPrevWeight} × {previousSet.reps}
             </Text>
           </YStack>
         ) : (
@@ -218,7 +239,7 @@ function SetRow({
       <Pressable
         style={{ flex: 1 }}
         onPress={handleWeightPress}
-        accessibilityLabel="Weight in kilograms"
+        accessibilityLabel={`Weight in ${weightUnit}`}
         accessibilityRole="button"
       >
         <XStack
@@ -234,9 +255,9 @@ function SetRow({
           <Text
             fontSize={16}
             fontWeight="600"
-            color={displayWeight ? '#FFFFFF' : 'rgba(255, 255, 255, 0.3)'}
+            color={displayWeightStr ? '#FFFFFF' : 'rgba(255, 255, 255, 0.3)'}
           >
-            {displayWeight || '0'}
+            {displayWeightStr || '0'}
           </Text>
         </XStack>
       </Pressable>
@@ -261,9 +282,9 @@ function SetRow({
           <Text
             fontSize={16}
             fontWeight="600"
-            color={displayReps ? '#FFFFFF' : 'rgba(255, 255, 255, 0.3)'}
+            color={displayRepsStr ? '#FFFFFF' : 'rgba(255, 255, 255, 0.3)'}
           >
-            {displayReps || '0'}
+            {displayRepsStr || '0'}
           </Text>
         </XStack>
       </Pressable>
@@ -471,7 +492,7 @@ function ExerciseCard({
         </Text>
         <XStack flex={1} justifyContent="center" alignItems="center" gap="$1">
           <Barbell size={12} color="rgba(255,255,255,0.4)" />
-          <Text fontSize={10} color="rgba(255,255,255,0.4)" textTransform="uppercase">kg</Text>
+          <WeightUnitLabel />
         </XStack>
         <XStack flex={1} justifyContent="center" alignItems="center">
           <Text fontSize={10} color="rgba(255,255,255,0.4)" textTransform="uppercase">Reps</Text>
@@ -752,6 +773,7 @@ export default function ActiveWorkoutScreen() {
   // Must be called unconditionally (before any early returns)
   const { startTimer } = useTimerStore();
   const checkForPR = useCelebrationStore((s) => s.checkForPR);
+  const keepScreenAwake = useSettingsStore((s) => s.keepScreenAwake);
 
   // Start workout on mount if not already active
   useEffect(() => {
@@ -759,6 +781,20 @@ export default function ActiveWorkoutScreen() {
       startWorkout();
     }
   }, []);
+
+  // Keep screen awake during workout (based on settings)
+  useEffect(() => {
+    const KEEP_AWAKE_TAG = 'active-workout';
+
+    if (keepScreenAwake) {
+      activateKeepAwakeAsync(KEEP_AWAKE_TAG);
+    }
+
+    return () => {
+      // Deactivate when leaving workout or setting disabled
+      deactivateKeepAwake(KEEP_AWAKE_TAG);
+    };
+  }, [keepScreenAwake]);
 
   // Timer
   useEffect(() => {
@@ -781,12 +817,17 @@ export default function ActiveWorkoutScreen() {
     }, 0);
   }, [activeWorkout]);
 
+  // Get weightUnit for volume display
+  const weightUnit = useSettingsStore((s) => s.weightUnit);
+
   // Format volume (e.g., 1234 -> "1.2k", 12345 -> "12.3k")
-  const formatVolume = (volume: number): string => {
-    if (volume >= 1000) {
-      return `${(volume / 1000).toFixed(1)}k`;
+  // Converts from kg to display unit first
+  const formatVolumeDisplay = (volumeKg: number): string => {
+    const converted = fromKgVolume(volumeKg, weightUnit);
+    if (converted >= 1000) {
+      return `${(converted / 1000).toFixed(1)}k`;
     }
-    return volume.toString();
+    return Math.round(converted).toString();
   };
 
   const handleCancel = () => {
@@ -913,89 +954,115 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <YStack flex={1} backgroundColor="#000000">
-      {/* Header - Compact with Actions */}
+      {/* Top Section: Drag Handle + Workout Name */}
+      <YStack alignItems="center" paddingTop="$3" paddingBottom="$2">
+        {/* Drag Handle */}
+        <YStack
+          width={36}
+          height={5}
+          borderRadius={3}
+          backgroundColor="rgba(255, 255, 255, 0.3)"
+          marginBottom="$2"
+        />
+
+        {/* Editable Workout Name */}
+        {isEditingName ? (
+          <XStack alignItems="center" gap="$2" paddingHorizontal="$4">
+            <TextInput
+              style={{
+                fontSize: 18,
+                fontWeight: '600',
+                color: '#FFFFFF',
+                textAlign: 'center',
+                padding: 8,
+                minWidth: 200,
+                borderBottomWidth: 1,
+                borderBottomColor: 'rgba(255,255,255,0.3)',
+              }}
+              value={activeWorkout.name}
+              onChangeText={(text) => updateWorkoutName(text)}
+              onBlur={() => setIsEditingName(false)}
+              onSubmitEditing={() => setIsEditingName(false)}
+              autoFocus
+              selectTextOnFocus
+            />
+            <XStack
+              onPress={() => setIsEditingName(false)}
+              padding="$2"
+              pressStyle={{ opacity: 0.7 }}
+            >
+              <Check size={20} color="#FFFFFF" weight="bold" />
+            </XStack>
+          </XStack>
+        ) : (
+          <XStack
+            alignItems="center"
+            gap="$2"
+            onPress={() => setIsEditingName(true)}
+            pressStyle={{ opacity: 0.7 }}
+            paddingHorizontal="$4"
+          >
+            <Text fontSize={18} fontWeight="600" color="#FFFFFF">
+              {activeWorkout.name}
+            </Text>
+            <PencilSimple size={14} color="rgba(255,255,255,0.4)" />
+          </XStack>
+        )}
+      </YStack>
+
+      {/* Header Bar: Back + Timer | Volume (center) | Actions */}
       <XStack
-        paddingHorizontal="$4"
-        paddingBottom="$3"
-        paddingTop={insets.top + 8}
+        paddingLeft="$1"
+        paddingRight="$4"
+        paddingVertical="$2"
         alignItems="center"
         justifyContent="space-between"
         borderBottomWidth={1}
         borderBottomColor="rgba(255, 255, 255, 0.08)"
-        backgroundColor="#0a0a0a"
+        backgroundColor="#000000"
       >
-        {/* Left: Timer + Volume */}
-        <YStack gap="$1" minWidth={70}>
-          <XStack alignItems="center" gap="$1">
-            <Timer size={14} color="rgba(255,255,255,0.5)" />
+        {/* Left: Back Button + Timer */}
+        <XStack alignItems="center">
+          <XStack
+            padding="$1"
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.back();
+            }}
+            pressStyle={{ opacity: 0.7, scale: 0.95 }}
+            accessibilityLabel="Go back to home (workout continues)"
+            accessibilityRole="button"
+          >
+            <CaretLeft size={24} color="rgba(255,255,255,0.6)" weight="bold" />
+          </XStack>
+
+          <XStack alignItems="center" gap="$1.5">
+            <Timer size={18} color="rgba(255,255,255,0.5)" />
             <Text
-              fontSize={14}
-              fontWeight="500"
-              color="rgba(255,255,255,0.7)"
+              fontSize={18}
+              fontWeight="600"
+              color="#FFFFFF"
               fontVariant={['tabular-nums']}
             >
               {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')}
             </Text>
           </XStack>
-          {totalVolume > 0 && (
-            <XStack alignItems="center" gap="$1">
-              <Barbell size={12} color="rgba(255,255,255,0.4)" />
-              <Text
-                fontSize={12}
-                fontWeight="500"
-                color="rgba(255,255,255,0.5)"
-                fontVariant={['tabular-nums']}
-              >
-                {formatVolume(totalVolume)} kg
-              </Text>
-            </XStack>
-          )}
-        </YStack>
-
-        {/* Center: Editable Workout Name */}
-        <XStack flex={1} justifyContent="center" alignItems="center" paddingHorizontal="$2">
-          {isEditingName ? (
-            <XStack alignItems="center" gap="$2">
-              <TextInput
-                style={{
-                  fontSize: 15,
-                  fontWeight: '600',
-                  color: '#FFFFFF',
-                  textAlign: 'center',
-                  padding: 4,
-                  minWidth: 100,
-                  borderBottomWidth: 1,
-                  borderBottomColor: 'rgba(255,255,255,0.3)',
-                }}
-                value={activeWorkout.name}
-                onChangeText={(text) => updateWorkoutName(text)}
-                onBlur={() => setIsEditingName(false)}
-                onSubmitEditing={() => setIsEditingName(false)}
-                autoFocus
-                selectTextOnFocus
-              />
-              <XStack
-                onPress={() => setIsEditingName(false)}
-                padding="$1"
-                pressStyle={{ opacity: 0.7 }}
-              >
-                <Check size={16} color="#FFFFFF" weight="bold" />
-              </XStack>
-            </XStack>
-          ) : (
-            <XStack
-              alignItems="center"
-              gap="$1"
-              onPress={() => setIsEditingName(true)}
-              pressStyle={{ opacity: 0.7 }}
-            >
-              <Text fontSize={15} fontWeight="600" color="#FFFFFF" numberOfLines={1}>
-                {activeWorkout.name}
-              </Text>
-              <PencilSimple size={12} color="rgba(255,255,255,0.4)" />
-            </XStack>
-          )}
         </XStack>
+
+        {/* Center: Volume */}
+        {totalVolume > 0 && (
+          <XStack alignItems="center" gap="$1.5">
+            <Barbell size={18} color="rgba(255,255,255,0.4)" />
+            <Text
+              fontSize={18}
+              fontWeight="500"
+              color="rgba(255,255,255,0.5)"
+              fontVariant={['tabular-nums']}
+            >
+              {formatVolumeDisplay(totalVolume)} {weightUnit}
+            </Text>
+          </XStack>
+        )}
 
         {/* Right: Action Buttons */}
         <XStack alignItems="center" gap="$2">

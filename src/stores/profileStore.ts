@@ -9,6 +9,10 @@ const PROFILE_ID = 'local_user';
 interface ProfileState {
   username: string | null;
   profilePicturePath: string | null;
+  bio: string | null;
+  dateOfBirth: Date | null;
+  height: number | null; // cm
+  memberSince: Date | null;
   isLoaded: boolean;
 
   // Actions
@@ -16,14 +20,23 @@ interface ProfileState {
   setUsername: (name: string) => Promise<void>;
   setProfilePicture: (uri: string) => Promise<string>;
   removeProfilePicture: () => Promise<void>;
+  setBio: (bio: string) => Promise<void>;
+  setDateOfBirth: (dob: Date | null) => Promise<void>;
+  setHeight: (cm: number | null) => Promise<void>;
 
   // Helpers
   getInitials: () => string;
+  getAge: () => number | null;
+  getMemberDuration: () => string | null;
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
   username: null,
   profilePicturePath: null,
+  bio: null,
+  dateOfBirth: null,
+  height: null,
+  memberSince: null,
   isLoaded: false,
 
   loadProfile: async () => {
@@ -39,19 +52,27 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         set({
           username: profile.username,
           profilePicturePath: profile.profilePicturePath,
+          bio: profile.bio,
+          dateOfBirth: profile.dateOfBirth,
+          height: profile.height,
+          memberSince: profile.memberSince,
           isLoaded: true,
         });
       } else {
-        // Create empty profile
+        // Create empty profile with current date as memberSince
         const now = new Date();
         await db.insert(userProfile).values({
           id: PROFILE_ID,
           username: null,
           profilePicturePath: null,
+          bio: null,
+          dateOfBirth: null,
+          height: null,
+          memberSince: now,
           createdAt: now,
           updatedAt: now,
         });
-        set({ isLoaded: true });
+        set({ memberSince: now, isLoaded: true });
       }
     } catch (error) {
       console.error('Failed to load profile:', error);
@@ -163,5 +184,105 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       return (words[0][0] + words[1][0]).toUpperCase();
     }
     return username.slice(0, 2).toUpperCase();
+  },
+
+  setBio: async (bio: string) => {
+    try {
+      const trimmedBio = bio.trim();
+      // Enforce 150 character limit
+      const limitedBio = trimmedBio.slice(0, 150);
+
+      await db
+        .update(userProfile)
+        .set({
+          bio: limitedBio || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(userProfile.id, PROFILE_ID));
+
+      set({ bio: limitedBio || null });
+    } catch (error) {
+      console.error('Failed to update bio:', error);
+      throw error;
+    }
+  },
+
+  setDateOfBirth: async (dob: Date | null) => {
+    try {
+      await db
+        .update(userProfile)
+        .set({
+          dateOfBirth: dob,
+          updatedAt: new Date(),
+        })
+        .where(eq(userProfile.id, PROFILE_ID));
+
+      set({ dateOfBirth: dob });
+    } catch (error) {
+      console.error('Failed to update date of birth:', error);
+      throw error;
+    }
+  },
+
+  setHeight: async (cm: number | null) => {
+    try {
+      await db
+        .update(userProfile)
+        .set({
+          height: cm,
+          updatedAt: new Date(),
+        })
+        .where(eq(userProfile.id, PROFILE_ID));
+
+      set({ height: cm });
+    } catch (error) {
+      console.error('Failed to update height:', error);
+      throw error;
+    }
+  },
+
+  getAge: () => {
+    const { dateOfBirth } = get();
+    if (!dateOfBirth) return null;
+
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    // Adjust if birthday hasn't occurred this year yet
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return age;
+  },
+
+  getMemberDuration: () => {
+    const { memberSince } = get();
+    if (!memberSince) return null;
+
+    const now = new Date();
+    const startDate = new Date(memberSince);
+    const diffMs = now.getTime() - startDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 30) {
+      return diffDays === 1 ? '1 day' : `${diffDays} days`;
+    }
+
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) {
+      return diffMonths === 1 ? '1 month' : `${diffMonths} months`;
+    }
+
+    const diffYears = Math.floor(diffMonths / 12);
+    const remainingMonths = diffMonths % 12;
+
+    if (remainingMonths === 0) {
+      return diffYears === 1 ? '1 year' : `${diffYears} years`;
+    }
+
+    return `${diffYears} ${diffYears === 1 ? 'year' : 'years'}, ${remainingMonths} ${remainingMonths === 1 ? 'month' : 'months'}`;
   },
 }));

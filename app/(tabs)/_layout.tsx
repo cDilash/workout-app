@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { PlusCircle, ClockCounterClockwise, List, ChartLine } from 'phosphor-react-native';
 import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Tab Layout - Premium Monochromatic
@@ -44,6 +45,8 @@ const styles = StyleSheet.create({
 });
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -55,8 +58,10 @@ export default function TabLayout() {
           borderTopColor: 'rgba(255,255,255,0.08)',
           borderTopWidth: 1,
           paddingTop: 8,
-          paddingBottom: 4,
-          height: 60,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 8,
+          paddingLeft: Math.max(insets.left, 16),
+          paddingRight: Math.max(insets.right, 16),
+          height: Platform.OS === 'ios' ? 60 + insets.bottom : 68,
         },
         tabBarLabelStyle: {
           fontSize: 10,

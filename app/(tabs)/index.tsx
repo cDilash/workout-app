@@ -9,11 +9,18 @@ import { YStack, XStack, Text } from 'tamagui';
 import { useWorkoutHistory } from '@/src/hooks/useWorkoutHistory';
 import { useTemplates, markTemplateUsed, type WorkoutTemplate } from '@/src/hooks/useTemplates';
 import { useWorkoutStore } from '@/src/stores/workoutStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import { TemplatesModal } from '@/src/components/workout/TemplatesModal';
 import { Button, ButtonText, Card, MiniStat, StatNumber } from '@/src/components/ui';
 import { HomeHeader } from '@/src/components/header';
 import { ProfileModal, SettingsModal, BodyMeasurementsModal } from '@/src/components/modals';
-import { WorkoutStreakCard, WorkoutCalendar } from '@/src/components/home';
+import {
+  MuscleRecoveryCard,
+  TodaySuggestionCard,
+  RecentPRsCard,
+  ActiveWorkoutBanner,
+  WeeklyActivityCard,
+} from '@/src/components/home';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -40,8 +47,10 @@ export default function HomeScreen() {
   const { workouts } = useWorkoutHistory();
   const { templates } = useTemplates();
   const { startWorkoutFromTemplate } = useWorkoutStore();
+  const { userName } = useSettingsStore();
 
   const greeting = useMemo(() => getGreeting(), []);
+  const personalizedGreeting = userName ? `${greeting}, ${userName}` : greeting;
   const recentWorkouts = workouts.slice(0, 3);
   const recentTemplates = templates.slice(0, 3);
 
@@ -82,24 +91,22 @@ export default function HomeScreen() {
         contentContainerStyle={{ padding: 24, paddingBottom: 120 }}
       >
         {/* Hero Section */}
-        <YStack marginBottom="$8" marginTop="$6">
+        <YStack marginBottom="$6" marginTop="$4">
+          <Text
+            fontSize={28}
+            fontWeight="300"
+            color="#FFFFFF"
+            letterSpacing={-0.5}
+          >
+            {personalizedGreeting}
+          </Text>
           <Text
             fontSize={14}
             fontWeight="500"
             color="rgba(255,255,255,0.5)"
-            marginBottom="$2"
-            textTransform="uppercase"
-            letterSpacing={1}
+            marginTop="$1"
           >
-            {greeting}
-          </Text>
-          <Text
-            fontSize={42}
-            fontWeight="200"
-            color="#FFFFFF"
-            letterSpacing={-1}
-          >
-            Ready to Train?
+            Ready to train?
           </Text>
         </YStack>
 
@@ -120,7 +127,7 @@ export default function HomeScreen() {
         </Button>
 
         {/* Secondary Actions */}
-        <XStack gap="$3" marginBottom="$8">
+        <XStack gap="$3" marginBottom="$6">
           <Button
             variant="secondary"
             size="lg"
@@ -139,7 +146,7 @@ export default function HomeScreen() {
           </Button>
 
           <Button
-            variant="ghost"
+            variant="secondary"
             size="lg"
             flex={1}
             onPress={() => {
@@ -149,21 +156,45 @@ export default function HomeScreen() {
             accessibilityLabel="View workout history"
             accessibilityRole="button"
           >
-            <Clock size={20} color="rgba(255,255,255,0.6)" />
-            <ButtonText variant="ghost" size="lg">
+            <Clock size={20} color="#FFFFFF" />
+            <ButtonText variant="secondary" size="lg">
               History
             </ButtonText>
           </Button>
         </XStack>
 
-        {/* Workout Streak */}
-        <YStack marginBottom="$6">
-          <WorkoutStreakCard />
+        {/* Active Workout Banner */}
+        <ActiveWorkoutBanner />
+
+        {/* Today's Suggestion */}
+        <YStack marginBottom="$4">
+          <TodaySuggestionCard
+            onStartWorkout={(type) => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              // For now, start empty workout - could filter templates by type later
+              router.push('/workout/new');
+            }}
+          />
         </YStack>
 
-        {/* Activity Calendar */}
-        <YStack marginBottom="$8">
-          <WorkoutCalendar weeks={12} />
+        {/* Muscle Recovery Map */}
+        <YStack marginBottom="$4">
+          <MuscleRecoveryCard />
+        </YStack>
+
+        {/* Weekly Activity (Streak + Stats) */}
+        <YStack marginBottom="$4">
+          <WeeklyActivityCard />
+        </YStack>
+
+        {/* Recent PRs */}
+        <YStack marginBottom="$4">
+          <RecentPRsCard
+            onSeeAll={() => {
+              Haptics.selectionAsync();
+              router.push('/(tabs)/progress');
+            }}
+          />
         </YStack>
 
         {/* Quick Start Templates */}
@@ -212,7 +243,7 @@ export default function HomeScreen() {
                     <YStack
                       width={40}
                       height={40}
-                      borderRadius={20}
+                      borderRadius={10}
                       backgroundColor="rgba(255,255,255,0.08)"
                       alignItems="center"
                       justifyContent="center"

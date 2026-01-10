@@ -1,0 +1,298 @@
+{
+  "common": {
+    "cancel": "キャンセル",
+    "done": "完了",
+    "save": "保存",
+    "delete": "削除",
+    "error": "エラー",
+    "success": "成功",
+    "loading": "読み込み中...",
+    "add": "追加",
+    "edit": "編集",
+    "remove": "削除",
+    "confirm": "確認",
+    "yes": "はい",
+    "no": "いいえ",
+    "ok": "OK",
+    "back": "戻る",
+    "next": "次へ",
+    "close": "閉じる",
+    "search": "検索"
+  },
+  "navigation": {
+    "workout": "ワークアウト",
+    "history": "履歴",
+    "exercises": "種目",
+    "progress": "進捗"
+  },
+  "settings": {
+    "title": "設定",
+    "sections": {
+      "language": "言語",
+      "units": "単位",
+      "workout": "ワークアウト",
+      "soundsFeedback": "サウンドと振動",
+      "notifications": "通知",
+      "data": "データ",
+      "about": "情報"
+    },
+    "language": {
+      "label": "言語",
+      "description": "お好みの言語を選択してください"
+    },
+    "weight": {
+      "label": "重量",
+      "lbs": "ポンド (lbs)",
+      "kg": "キログラム (kg)",
+      "title": "重量単位",
+      "description": "お好みの単位を選択してください"
+    },
+    "measurements": {
+      "label": "測定",
+      "cm": "センチメートル (cm)",
+      "in": "インチ (in)",
+      "title": "測定単位",
+      "description": "お好みの単位を選択してください"
+    },
+    "restTimer": {
+      "label": "デフォルト休憩時間",
+      "title": "デフォルト休憩時間",
+      "description": "デフォルトの休憩時間を選択してください"
+    },
+    "autoStartTimer": {
+      "label": "タイマー自動開始",
+      "description": "セット完了後にタイマーを開始"
+    },
+    "keepScreenAwake": {
+      "label": "画面を常にオン",
+      "description": "ワークアウト中は画面を維持"
+    },
+    "timerSound": {
+      "label": "タイマー音",
+      "description": "タイマー終了時に音を再生"
+    },
+    "hapticFeedback": {
+      "label": "触覚フィードバック",
+      "description": "操作時に振動"
+    },
+    "notifications": {
+      "label": "通知",
+      "description": "休憩タイマーアラートとリマインダー"
+    },
+    "exportData": {
+      "label": "データをエクスポート",
+      "title": "データをエクスポート",
+      "comingSoon": "エクスポート機能は近日公開予定"
+    },
+    "importData": {
+      "label": "データをインポート",
+      "title": "データをインポート",
+      "comingSoon": "インポート機能は近日公開予定"
+    },
+    "appVersion": "アプリバージョン",
+    "footer": "💪 トレーニーのために作られました"
+  },
+  "home": {
+    "greeting": {
+      "morning": "おはようございます",
+      "afternoon": "こんにちは",
+      "evening": "こんばんは"
+    },
+    "startWorkout": "ワークアウト開始",
+    "continueWorkout": "ワークアウト継続",
+    "quickStart": "クイックスタート",
+    "templates": "テンプレート",
+    "recentWorkouts": "最近のワークアウト",
+    "noRecentWorkouts": "最近のワークアウトはありません",
+    "thisWeek": "今週",
+    "personalRecords": "自己記録",
+    "viewAll": "すべて見る"
+  },
+  "workout": {
+    "title": "ワークアウト",
+    "newWorkout": "新規ワークアウト",
+    "addExercise": "種目を追加",
+    "addSet": "セットを追加",
+    "finish": "終了",
+    "finishWorkout": "ワークアウト終了",
+    "cancel": "ワークアウトをキャンセル",
+    "cancelConfirm": {
+      "title": "ワークアウトをキャンセルしますか？",
+      "message": "進捗が失われます。",
+      "confirm": "キャンセル",
+      "cancel": "トレーニング継続"
+    },
+    "discardChanges": "変更を破棄",
+    "set": "セット",
+    "sets": "セット",
+    "warmup": "W",
+    "warmupFull": "ウォームアップ",
+    "working": "メイン",
+    "weight": "重量",
+    "reps": "回数",
+    "previous": "前回",
+    "restTimer": "休憩タイマー",
+    "duration": "時間",
+    "volume": "ボリューム",
+    "exercises": "種目",
+    "exercise": "種目",
+    "noExercises": "種目が追加されていません",
+    "tapToAddExercise": "上のボタンをタップして最初の種目を追加してください",
+    "notes": "メモ",
+    "addNotes": "メモを追加...",
+    "workoutNotes": "ワークアウトメモ",
+    "exerciseNotes": "種目メモ",
+    "superset": "スーパーセット",
+    "saveAsTemplate": "テンプレートとして保存",
+    "templateName": "テンプレート名",
+    "templateSaved": "テンプレートを保存しました！",
+    "loadTemplate": "テンプレートを読み込む",
+    "deleteTemplate": "テンプレートを削除",
+    "deleteTemplateConfirm": "このテンプレートを削除してもよろしいですか？"
+  },
+  "exercises": {
+    "title": "種目",
+    "search": "種目を検索...",
+    "noResults": "種目が見つかりません",
+    "tryDifferentSearch": "別の検索ワードをお試しください",
+    "filters": {
+      "all": "すべて",
+      "muscleGroup": "筋肉群",
+      "equipment": "器具"
+    },
+    "muscleGroups": {
+      "all": "すべての筋肉",
+      "chest": "胸",
+      "back": "背中",
+      "shoulders": "肩",
+      "biceps": "上腕二頭筋",
+      "triceps": "上腕三頭筋",
+      "forearms": "前腕",
+      "quads": "大腿四頭筋",
+      "hamstrings": "ハムストリング",
+      "glutes": "臀部",
+      "core": "体幹",
+      "calves": "ふくらはぎ",
+      "cardio": "有酸素",
+      "fullBody": "全身"
+    },
+    "equipment": {
+      "all": "すべての器具",
+      "barbell": "バーベル",
+      "dumbbell": "ダンベル",
+      "cable": "ケーブル",
+      "machine": "マシン",
+      "bodyweight": "自重",
+      "kettlebell": "ケトルベル",
+      "bands": "バンド",
+      "other": "その他"
+    },
+    "details": {
+      "history": "履歴",
+      "personalRecords": "自己記録",
+      "maxWeight": "最大重量",
+      "estimated1RM": "推定1RM",
+      "maxVolume": "最大ボリューム",
+      "noHistory": "履歴なし",
+      "addToWorkout": "この種目をワークアウトに追加して記録を開始しましょう。"
+    }
+  },
+  "history": {
+    "title": "履歴",
+    "noWorkouts": "ワークアウトの記録がありません",
+    "completeFirst": "ワークアウトを完了するとここに表示されます。",
+    "repeatWorkout": "ワークアウトを繰り返す",
+    "export": "エクスポート",
+    "exporting": "エクスポート中...",
+    "exportTitle": "ワークアウトデータをエクスポート",
+    "exportMessage": "{{count}}件のワークアウトをファイルにエクスポート",
+    "exportMessage_plural": "{{count}}件のワークアウトをファイルにエクスポート",
+    "exportFormats": {
+      "json": "JSON（完全データ）",
+      "csv": "CSV（スプレッドシート）",
+      "analytics": "分析（Webアプリ用）"
+    },
+    "exportError": "エクスポート失敗",
+    "exportErrorMessage": "データのエクスポート中にエラーが発生しました。再試行してください。",
+    "noData": "データなし",
+    "noDataMessage": "データをエクスポートするには、まずワークアウトを完了してください。",
+    "stats": {
+      "exercises": "種目",
+      "sets": "セット",
+      "volume": "ボリューム"
+    },
+    "workoutsLogged": "{{count}}件のワークアウトを記録",
+    "workoutsLogged_plural": "{{count}}件のワークアウトを記録"
+  },
+  "progress": {
+    "title": "進捗",
+    "thisWeek": "今週",
+    "workouts": "ワークアウト",
+    "totalVolume": "総ボリューム",
+    "exercisesPerformed": "種目数",
+    "personalRecords": "自己記録",
+    "prsThisWeek": "今週のPR",
+    "muscleGroups": "筋肉群",
+    "muscleDistribution": "筋肉分布",
+    "strengthProgress": "筋力の進捗",
+    "selectExercise": "進捗を見るには種目を選択してください",
+    "weeklyVolume": "週間ボリューム",
+    "last8Weeks": "過去8週間",
+    "allTimeSummary": "全期間サマリー",
+    "totalWorkouts": "総ワークアウト",
+    "totalSets": "総セット",
+    "avgDuration": "平均時間",
+    "noData": "データなし",
+    "startTracking": "ワークアウトを完了して進捗を確認しましょう",
+    "noWorkoutsThisWeek": "今週のワークアウトはありません",
+    "getStarted": "ワークアウトを開始して記録を始めましょう！"
+  },
+  "timer": {
+    "rest": "休憩",
+    "skip": "スキップ",
+    "addTime": "+30秒",
+    "timeUp": "時間です！",
+    "restComplete": "休憩終了"
+  },
+  "units": {
+    "kg": "kg",
+    "lbs": "lbs",
+    "cm": "cm",
+    "in": "in",
+    "hours": "時間",
+    "minutes": "分",
+    "seconds": "秒"
+  },
+  "time": {
+    "today": "今日",
+    "yesterday": "昨日",
+    "daysAgo": "{{count}}日前",
+    "daysAgo_plural": "{{count}}日前",
+    "thisWeek": "今週",
+    "lastWeek": "先週",
+    "weeksAgo": "{{count}}週間前",
+    "weeksAgo_plural": "{{count}}週間前"
+  },
+  "languages": {
+    "en": "English",
+    "de": "Deutsch",
+    "es": "Español",
+    "fr": "Français",
+    "it": "Italiano",
+    "ja": "日本語",
+    "ko": "한국어",
+    "pt": "Português",
+    "ru": "Русский",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文"
+  },
+  "plateCalculator": {
+    "title": "片側のプレート",
+    "barWeight": "バー：{{weight}}"
+  },
+  "numpad": {
+    "done": "完了",
+    "clear": "C",
+    "delete": "⌫"
+  }
+}

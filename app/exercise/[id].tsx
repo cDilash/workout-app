@@ -1,10 +1,11 @@
-import { ScrollView, Dimensions } from 'react-native';
+import { ScrollView, Dimensions, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CartesianChart, Line } from 'victory-native';
 import { ArrowLeft, Trophy, Barbell } from 'phosphor-react-native';
 import * as Haptics from 'expo-haptics';
 import { YStack, XStack, Text } from 'tamagui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { db } from '@/src/db/client';
 import { exercises, workoutExercises, workouts, sets } from '@/src/db/schema';
@@ -13,6 +14,8 @@ import type { Exercise } from '@/src/db/schema';
 import { calculate1RM } from '@/src/hooks/usePersonalRecords';
 import { format } from 'date-fns';
 import { Card, Section, SectionHeader, EmptyState, StatNumber, MiniStat } from '@/src/components/ui';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { fromKgDisplay, fromKgVolume } from '@/src/utils/unitConversion';
 
 /**
  * Exercise Detail Screen - Premium Monochromatic
@@ -46,11 +49,21 @@ interface PRRecord {
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [history, setHistory] = useState<ExerciseHistory[]>([]);
   const [prs, setPRs] = useState<PRRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [chartData, setChartData] = useState<{ x: number; y: number; label: string }[]>([]);
+  const weightUnit = useSettingsStore((s) => s.weightUnit);
+
+  // Convert chart data to display units when unit changes
+  const convertedChartData = useMemo(() => {
+    return chartData.map(point => ({
+      ...point,
+      y: fromKgDisplay(point.y, weightUnit),
+    }));
+  }, [chartData, weightUnit]);
 
   useEffect(() => {
     if (!id) return;
@@ -245,21 +258,20 @@ export default function ExerciseDetailScreen() {
       {/* Header */}
       <XStack
         alignItems="center"
-        padding="$4"
+        paddingHorizontal="$4"
+        paddingBottom="$4"
+        paddingTop={insets.top + 16}
         borderBottomWidth={1}
         borderBottomColor="rgba(255, 255, 255, 0.08)"
         backgroundColor="#0a0a0a"
       >
-        <XStack
-          padding="$2"
-          marginRight="$3"
+        <Pressable
           onPress={handleBack}
-          pressStyle={{ scale: 0.95, opacity: 0.8 }}
-          accessibilityLabel="Go back"
-          accessibilityRole="button"
+          hitSlop={12}
+          style={{ marginRight: 12 }}
         >
           <ArrowLeft size={22} color="#FFFFFF" weight="bold" />
-        </XStack>
+        </Pressable>
         <XStack alignItems="center" gap="$3" flex={1}>
           <YStack
             width={44}
@@ -301,9 +313,9 @@ export default function ExerciseDetailScreen() {
                   <Trophy size={20} color="#FFFFFF" weight="fill" />
                   <StatNumber
                     value={pr.type === 'max_volume'
-                      ? `${(pr.value / 1000).toFixed(1)}k`
-                      : pr.value}
-                    unit={pr.type !== 'max_volume' ? 'kg' : undefined}
+                      ? `${(fromKgVolume(pr.value, weightUnit) / 1000).toFixed(1)}k`
+                      : fromKgDisplay(pr.value, weightUnit)}
+                    unit={pr.type !== 'max_volume' ? weightUnit : undefined}
                     size="sm"
                   />
                   <Text fontSize="$2" fontWeight="600" color="rgba(255,255,255,0.5)" marginTop="$1">
@@ -319,17 +331,17 @@ export default function ExerciseDetailScreen() {
         )}
 
         {/* Progress Chart */}
-        {chartData.length > 1 && (
+        {convertedChartData.length > 1 && (
           <Section marginBottom="$6">
             <SectionHeader title="Weight Progression" />
             <Card>
               <YStack height={180}>
                 <CartesianChart
-                  data={chartData}
+                  data={convertedChartData}
                   xKey="x"
                   yKeys={["y"]}
                   axisOptions={{
-                    formatXLabel: (value) => chartData[value]?.label || '',
+                    formatXLabel: (value) => convertedChartData[value]?.label || '',
                     labelColor: 'rgba(255, 255, 255, 0.4)',
                     lineColor: 'rgba(255, 255, 255, 0.08)',
                   }}
@@ -347,7 +359,7 @@ export default function ExerciseDetailScreen() {
                 </CartesianChart>
               </YStack>
               <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$3">
-                Max weight (kg) per workout
+                Max weight ({weightUnit}) per workout
               </Text>
             </Card>
           </Section>
@@ -377,20 +389,20 @@ export default function ExerciseDetailScreen() {
 
                 <XStack marginBottom="$3" justifyContent="space-between">
                   <MiniStat
-                    value={`${h.maxWeight}`}
-                    label="max kg"
+                    value={`${fromKgDisplay(h.maxWeight, weightUnit)}`}
+                    label={`max ${weightUnit}`}
                   />
                   <MiniStat
                     value={h.sets.filter(s => !s.isWarmup).length.toString()}
                     label="sets"
                   />
                   <MiniStat
-                    value={`${(h.totalVolume / 1000).toFixed(1)}k`}
+                    value={`${(fromKgVolume(h.totalVolume, weightUnit) / 1000).toFixed(1)}k`}
                     label="volume"
                   />
                   {h.estimated1RM && (
                     <MiniStat
-                      value={h.estimated1RM.toString()}
+                      value={fromKgDisplay(h.estimated1RM, weightUnit).toString()}
                       label="e1rm"
                     />
                   )}
@@ -405,7 +417,7 @@ export default function ExerciseDetailScreen() {
                     <XStack key={idx} justifyContent="space-between" paddingVertical="$1">
                       <Text fontSize="$3" fontWeight="500" color="rgba(255,255,255,0.5)">Set {idx + 1}</Text>
                       <Text fontSize="$3" fontWeight="600" color="#FFFFFF">
-                        {s.weight || '-'} kg × {s.reps || '-'} reps
+                        {s.weight ? fromKgDisplay(s.weight, weightUnit) : '-'} {weightUnit} × {s.reps || '-'} reps
                       </Text>
                     </XStack>
                   ))}

@@ -7,6 +7,9 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+// Initialize i18n before any component renders
+import '@/src/i18n';
+
 import { DatabaseProvider } from '@/src/db/provider';
 import tamaguiConfig from '@/tamagui.config';
 
@@ -76,8 +79,10 @@ function RootLayoutNav() {
           name="workout/[id]"
           options={{
             title: 'Workout',
-            presentation: 'fullScreenModal',
+            presentation: 'modal',
             headerShown: false,
+            gestureEnabled: true,
+            gestureDirection: 'vertical', // Swipe down to dismiss
           }}
         />
         <Stack.Screen
@@ -86,6 +91,16 @@ function RootLayoutNav() {
             title: 'Exercise',
             presentation: 'card',
             headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="workout/history/[id]"
+          options={{
+            title: 'Workout Details',
+            presentation: 'modal',
+            headerShown: false,
+            gestureEnabled: true,
+            gestureDirection: 'vertical',
           }}
         />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />

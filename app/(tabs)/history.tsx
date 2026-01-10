@@ -10,6 +10,8 @@ import { useWorkoutHistory, type WorkoutWithDetails, getWorkoutDetails } from '@
 import { exportToJSON, exportToCSV } from '@/src/utils/exportWorkouts';
 import { exportAnalyticsData } from '@/src/utils/analyticsExport';
 import { useWorkoutStore } from '@/src/stores/workoutStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { fromKgVolume } from '@/src/utils/unitConversion';
 import { Card, Button, ButtonText, EmptyState, MiniStat, Badge, BadgeText } from '@/src/components/ui';
 
 /**
@@ -28,14 +30,24 @@ function formatDuration(seconds: number | null): string {
   return `${mins}m`;
 }
 
-function formatVolume(volume: number): string {
-  if (volume >= 1000) {
-    return `${(volume / 1000).toFixed(1)}k kg`;
+function formatVolume(volumeKg: number, weightUnit: 'kg' | 'lbs'): string {
+  const converted = fromKgVolume(volumeKg, weightUnit);
+  if (converted >= 1000) {
+    return `${(converted / 1000).toFixed(1)}k ${weightUnit}`;
   }
-  return `${volume.toLocaleString()} kg`;
+  return `${Math.round(converted).toLocaleString()} ${weightUnit}`;
 }
 
-function WorkoutCard({ workout, onRepeat }: { workout: WorkoutWithDetails; onRepeat: () => void }) {
+function WorkoutCard({
+  workout,
+  onRepeat,
+  onPress,
+}: {
+  workout: WorkoutWithDetails;
+  onRepeat: () => void;
+  onPress: () => void;
+}) {
+  const weightUnit = useSettingsStore((s) => s.weightUnit);
   const dateStr = format(workout.startedAt, 'EEEE, MMM d');
   const timeAgo = formatDistanceToNow(workout.startedAt, { addSuffix: true });
 
@@ -43,13 +55,24 @@ function WorkoutCard({ workout, onRepeat }: { workout: WorkoutWithDetails; onRep
     ? Math.floor((workout.completedAt.getTime() - workout.startedAt.getTime()) / 1000)
     : null;
 
-  const handleRepeat = () => {
+  const handleRepeat = (e: any) => {
+    e.stopPropagation(); // Prevent card navigation
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onRepeat();
   };
 
+  const handleCardPress = () => {
+    Haptics.selectionAsync();
+    onPress();
+  };
+
   return (
-    <Card marginBottom="$3">
+    <Card
+      marginBottom="$3"
+      onPress={handleCardPress}
+      pressStyle={{ scale: 0.98, opacity: 0.9 }}
+      cursor="pointer"
+    >
       {/* Header with duration badge */}
       <XStack justifyContent="space-between" alignItems="flex-start" marginBottom="$2">
         <YStack flex={1}>
@@ -91,7 +114,7 @@ function WorkoutCard({ workout, onRepeat }: { workout: WorkoutWithDetails; onRep
           label="sets"
         />
         <MiniStat
-          value={formatVolume(workout.totalVolume)}
+          value={formatVolume(workout.totalVolume, weightUnit)}
           label="volume"
         />
       </XStack>
@@ -105,7 +128,7 @@ function WorkoutCard({ workout, onRepeat }: { workout: WorkoutWithDetails; onRep
         paddingTop="$3"
         borderTopWidth={1}
         borderTopColor="rgba(255, 255, 255, 0.08)"
-        onPress={handleRepeat}
+        onPress={(e) => handleRepeat(e)}
         pressStyle={{ scale: 0.98, opacity: 0.8 }}
         cursor="pointer"
         accessibilityLabel={`Repeat ${workout.name || 'workout'}`}
@@ -220,7 +243,11 @@ export default function HistoryScreen() {
         data={workouts}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <WorkoutCard workout={item} onRepeat={() => handleRepeatWorkout(item.id)} />
+          <WorkoutCard
+            workout={item}
+            onRepeat={() => handleRepeatWorkout(item.id)}
+            onPress={() => router.push(`/workout/history/${item.id}`)}
+          />
         )}
         contentContainerStyle={{ padding: 16 }}
         refreshControl={

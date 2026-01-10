@@ -30,6 +30,8 @@ import {
   type ExerciseStats,
 } from '@/src/hooks/usePersonalRecords';
 import { Card, Chip, ChipText, Section, SectionHeader, StatCard, EmptyState, StatNumber } from '@/src/components/ui';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { fromKgDisplay, fromKgVolume } from '@/src/utils/unitConversion';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -204,6 +206,7 @@ function WorkoutCalendar({ frequencyData }: { frequencyData: { date: string; cou
 }
 
 function PRCard({ stat }: { stat: ExerciseStats }) {
+  const weightUnit = useSettingsStore((s) => s.weightUnit);
   return (
     <Card minWidth={150}>
       <XStack alignItems="center" gap="$2" marginBottom="$3">
@@ -216,8 +219,8 @@ function PRCard({ stat }: { stat: ExerciseStats }) {
         {stat.maxWeight && (
           <YStack>
             <StatNumber
-              value={stat.maxWeight}
-              unit="kg"
+              value={fromKgDisplay(stat.maxWeight, weightUnit)}
+              unit={weightUnit}
               size="sm"
             />
             <Text fontSize="$1" color="rgba(255,255,255,0.4)" marginTop="$1">Max Weight</Text>
@@ -226,7 +229,7 @@ function PRCard({ stat }: { stat: ExerciseStats }) {
         {stat.estimated1RM && (
           <YStack>
             <StatNumber
-              value={Math.round(stat.estimated1RM)}
+              value={Math.round(fromKgDisplay(stat.estimated1RM, weightUnit))}
               size="sm"
             />
             <Text fontSize="$1" color="rgba(255,255,255,0.4)" marginTop="$1">Est. 1RM</Text>
@@ -395,6 +398,7 @@ export default function ProgressScreen() {
   const { streaks, isLoading: streaksLoading } = useTrainingStreaks();
   const { analytics: effortAnalytics, isLoading: effortLoading } = useEffortAnalytics();
   const { balance, isLoading: balanceLoading } = useMovementPatternBalance();
+  const weightUnit = useSettingsStore((s) => s.weightUnit);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
 
   const { progressData, isLoading: progressLoading } = useExerciseProgress(
@@ -402,16 +406,18 @@ export default function ProgressScreen() {
   );
 
   // Prepare line chart data for strength progression (Victory Native format)
+  // Convert from kg to display unit
   const lineChartData = progressData.map((point, index) => ({
     x: index,
-    y: point.value,
+    y: fromKgDisplay(point.value, weightUnit),
     label: format(point.date, 'M/d'),
   }));
 
   // Prepare bar chart data for weekly volume (Victory Native format)
+  // Convert from kg to display unit
   const barChartData = weeklyData.map((week, index) => ({
     x: index,
-    y: week.volume / 1000,
+    y: fromKgVolume(week.volume, weightUnit) / 1000,
     label: format(new Date(week.week), 'M/d'),
   }));
 
@@ -495,7 +501,8 @@ export default function ProgressScreen() {
                 '#787878',    // Neutral gray
               ];
 
-              const totalVolume = muscleData.reduce((sum, d) => sum + d.volume, 0);
+              const totalVolumeKg = muscleData.reduce((sum, d) => sum + d.volume, 0);
+              const totalVolumeDisplay = fromKgVolume(totalVolumeKg, weightUnit);
               const pieData = muscleData.slice(0, 6).map((item, index) => ({
                 value: item.volume,
                 color: pieColors[index % pieColors.length],
@@ -514,17 +521,18 @@ export default function ProgressScreen() {
                     centerLabelComponent={() => (
                       <YStack alignItems="center" justifyContent="center">
                         <Text fontSize={20} fontWeight="600" color="#FFFFFF">
-                          {(totalVolume / 1000).toFixed(1)}k
+                          {(totalVolumeDisplay / 1000).toFixed(1)}k
                         </Text>
                         <Text fontSize={11} color="rgba(255,255,255,0.5)">
-                          total kg
+                          total {weightUnit}
                         </Text>
                       </YStack>
                     )}
                   />
                   <YStack flex={1} gap="$3">
                     {muscleData.slice(0, 6).map((item, index) => {
-                      const percent = ((item.volume / totalVolume) * 100).toFixed(0);
+                      const percent = ((item.volume / totalVolumeKg) * 100).toFixed(0);
+                      const itemVolumeDisplay = fromKgVolume(item.volume, weightUnit);
                       return (
                         <XStack key={item.group} alignItems="center" gap="$3">
                           <YStack
@@ -538,7 +546,7 @@ export default function ProgressScreen() {
                               {item.group}
                             </Text>
                             <Text fontSize={12} color="rgba(255,255,255,0.5)">
-                              {(item.volume / 1000).toFixed(1)}k · {percent}%
+                              {(itemVolumeDisplay / 1000).toFixed(1)}k · {percent}%
                             </Text>
                           </YStack>
                         </XStack>
@@ -602,7 +610,7 @@ export default function ProgressScreen() {
               </CartesianChart>
             </YStack>
             <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$3">
-              Weight (kg) over time
+              Weight ({weightUnit}) over time
             </Text>
           </Card>
         )}
@@ -646,7 +654,7 @@ export default function ProgressScreen() {
               </CartesianChart>
             </YStack>
             <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$3">
-              Total volume (thousands of kg) per week
+              Total volume (thousands of {weightUnit}) per week
             </Text>
           </Card>
         )}
@@ -667,11 +675,11 @@ export default function ProgressScreen() {
             <Card flex={1} alignItems="center" paddingVertical="$4">
               <TrendUp size={24} color="#FFFFFF" weight="bold" />
               <StatNumber
-                value={`${Math.round(stats.reduce((sum, s) => sum + s.totalVolume, 0) / 1000)}k`}
+                value={`${Math.round(fromKgVolume(stats.reduce((sum, s) => sum + s.totalVolume, 0), weightUnit) / 1000)}k`}
                 size="md"
               />
               <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$1">
-                Total Volume (kg)
+                Total Volume ({weightUnit})
               </Text>
             </Card>
           </XStack>

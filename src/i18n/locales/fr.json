@@ -1,0 +1,297 @@
+{
+  "common": {
+    "cancel": "Annuler",
+    "done": "Terminé",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "error": "Erreur",
+    "success": "Succès",
+    "loading": "Chargement...",
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "remove": "Retirer",
+    "confirm": "Confirmer",
+    "yes": "Oui",
+    "no": "Non",
+    "ok": "OK",
+    "back": "Retour",
+    "next": "Suivant",
+    "close": "Fermer",
+    "search": "Rechercher"
+  },
+  "navigation": {
+    "workout": "Entraînement",
+    "history": "Historique",
+    "exercises": "Exercices",
+    "progress": "Progrès"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "sections": {
+      "language": "Langue",
+      "units": "Unités",
+      "workout": "Entraînement",
+      "soundsFeedback": "Sons et Vibrations",
+      "notifications": "Notifications",
+      "data": "Données",
+      "about": "À propos"
+    },
+    "language": {
+      "label": "Langue",
+      "description": "Choisissez votre langue préférée"
+    },
+    "weight": {
+      "label": "Poids",
+      "lbs": "Livres (lbs)",
+      "kg": "Kilogrammes (kg)",
+      "title": "Unité de poids",
+      "description": "Choisissez votre unité préférée"
+    },
+    "measurements": {
+      "label": "Mesures",
+      "cm": "Centimètres (cm)",
+      "in": "Pouces (in)",
+      "title": "Unité de mesure",
+      "description": "Choisissez votre unité préférée"
+    },
+    "restTimer": {
+      "label": "Minuteur de repos",
+      "title": "Minuteur de repos",
+      "description": "Choisissez votre temps de repos par défaut"
+    },
+    "autoStartTimer": {
+      "label": "Démarrage auto du minuteur",
+      "description": "Démarrer le minuteur après une série"
+    },
+    "keepScreenAwake": {
+      "label": "Garder l'écran allumé",
+      "description": "Pendant l'entraînement actif"
+    },
+    "timerSound": {
+      "label": "Son du minuteur",
+      "description": "Jouer un son à la fin du minuteur"
+    },
+    "hapticFeedback": {
+      "label": "Retour haptique",
+      "description": "Vibration lors des interactions"
+    },
+    "notifications": {
+      "label": "Notifications",
+      "description": "Alertes de repos et rappels"
+    },
+    "exportData": {
+      "label": "Exporter les données",
+      "title": "Exporter les données",
+      "comingSoon": "Fonction d'export bientôt disponible"
+    },
+    "importData": {
+      "label": "Importer les données",
+      "title": "Importer les données",
+      "comingSoon": "Fonction d'import bientôt disponible"
+    },
+    "appVersion": "Version de l'app",
+    "footer": "Fait avec 💪 pour les sportifs"
+  },
+  "home": {
+    "greeting": {
+      "morning": "Bonjour",
+      "afternoon": "Bon après-midi",
+      "evening": "Bonsoir"
+    },
+    "startWorkout": "Démarrer l'entraînement",
+    "continueWorkout": "Continuer l'entraînement",
+    "quickStart": "Démarrage rapide",
+    "templates": "Modèles",
+    "recentWorkouts": "Entraînements récents",
+    "noRecentWorkouts": "Aucun entraînement récent",
+    "thisWeek": "Cette semaine",
+    "personalRecords": "Records personnels",
+    "viewAll": "Tout voir"
+  },
+  "workout": {
+    "title": "Entraînement",
+    "newWorkout": "Nouvel entraînement",
+    "addExercise": "Ajouter un exercice",
+    "addSet": "Ajouter une série",
+    "finish": "Terminer",
+    "finishWorkout": "Terminer l'entraînement",
+    "cancel": "Annuler l'entraînement",
+    "cancelConfirm": {
+      "title": "Annuler l'entraînement ?",
+      "message": "Votre progression sera perdue.",
+      "confirm": "Annuler l'entraînement",
+      "cancel": "Continuer"
+    },
+    "discardChanges": "Abandonner les modifications",
+    "set": "Série",
+    "sets": "séries",
+    "warmup": "É",
+    "warmupFull": "Échauffement",
+    "working": "Travail",
+    "weight": "Poids",
+    "reps": "Reps",
+    "previous": "Préc",
+    "restTimer": "Minuteur",
+    "duration": "Durée",
+    "volume": "Volume",
+    "exercises": "exercices",
+    "exercise": "exercice",
+    "noExercises": "Aucun exercice ajouté",
+    "tapToAddExercise": "Appuyez sur le bouton ci-dessus pour ajouter votre premier exercice",
+    "notes": "Notes",
+    "addNotes": "Ajouter des notes...",
+    "workoutNotes": "Notes d'entraînement",
+    "exerciseNotes": "Notes d'exercice",
+    "superset": "Super-série",
+    "saveAsTemplate": "Enregistrer comme modèle",
+    "templateName": "Nom du modèle",
+    "templateSaved": "Modèle enregistré !",
+    "loadTemplate": "Charger un modèle",
+    "deleteTemplate": "Supprimer le modèle",
+    "deleteTemplateConfirm": "Êtes-vous sûr de vouloir supprimer ce modèle ?"
+  },
+  "exercises": {
+    "title": "Exercices",
+    "search": "Rechercher des exercices...",
+    "noResults": "Aucun exercice trouvé",
+    "tryDifferentSearch": "Essayez un autre terme de recherche",
+    "filters": {
+      "all": "Tous",
+      "muscleGroup": "Groupe musculaire",
+      "equipment": "Équipement"
+    },
+    "muscleGroups": {
+      "all": "Tous les muscles",
+      "chest": "Pectoraux",
+      "back": "Dos",
+      "shoulders": "Épaules",
+      "biceps": "Biceps",
+      "triceps": "Triceps",
+      "forearms": "Avant-bras",
+      "quads": "Quadriceps",
+      "hamstrings": "Ischio-jambiers",
+      "glutes": "Fessiers",
+      "core": "Abdominaux",
+      "calves": "Mollets",
+      "cardio": "Cardio",
+      "fullBody": "Corps entier"
+    },
+    "equipment": {
+      "all": "Tout l'équipement",
+      "barbell": "Barre",
+      "dumbbell": "Haltère",
+      "cable": "Câble",
+      "machine": "Machine",
+      "bodyweight": "Poids du corps",
+      "kettlebell": "Kettlebell",
+      "bands": "Élastiques",
+      "other": "Autre"
+    },
+    "details": {
+      "history": "Historique",
+      "personalRecords": "Records personnels",
+      "maxWeight": "Poids max",
+      "estimated1RM": "1RM estimé",
+      "maxVolume": "Volume max",
+      "noHistory": "Pas encore d'historique",
+      "addToWorkout": "Ajoutez cet exercice à un entraînement pour commencer le suivi."
+    }
+  },
+  "history": {
+    "title": "Historique",
+    "noWorkouts": "Aucun entraînement enregistré",
+    "completeFirst": "Terminez un entraînement pour le voir ici.",
+    "repeatWorkout": "Répéter l'entraînement",
+    "export": "Exporter",
+    "exporting": "Export en cours...",
+    "exportTitle": "Exporter les données d'entraînement",
+    "exportMessage": "Exporter {{count}} entraînement vers un fichier",
+    "exportMessage_plural": "Exporter {{count}} entraînements vers un fichier",
+    "exportFormats": {
+      "json": "JSON (Données complètes)",
+      "csv": "CSV (Tableur)",
+      "analytics": "Analytics (pour l'app web)"
+    },
+    "exportError": "Échec de l'export",
+    "exportErrorMessage": "Une erreur s'est produite lors de l'export. Veuillez réessayer.",
+    "noData": "Aucune donnée",
+    "noDataMessage": "Terminez d'abord quelques entraînements pour exporter vos données.",
+    "stats": {
+      "exercises": "exercices",
+      "sets": "séries",
+      "volume": "volume"
+    },
+    "workoutsLogged": "{{count}} entraînement enregistré",
+    "workoutsLogged_plural": "{{count}} entraînements enregistrés"
+  },
+  "progress": {
+    "title": "Progrès",
+    "thisWeek": "Cette semaine",
+    "workouts": "Entraînements",
+    "totalVolume": "Volume total",
+    "exercisesPerformed": "Exercices",
+    "personalRecords": "Records personnels",
+    "prsThisWeek": "PRs cette semaine",
+    "muscleGroups": "Groupes musculaires",
+    "muscleDistribution": "Répartition musculaire",
+    "strengthProgress": "Progrès en force",
+    "selectExercise": "Sélectionnez un exercice pour voir les progrès",
+    "weeklyVolume": "Volume hebdomadaire",
+    "last8Weeks": "8 dernières semaines",
+    "allTimeSummary": "Résumé global",
+    "totalWorkouts": "Total entraînements",
+    "totalSets": "Total séries",
+    "avgDuration": "Durée moy.",
+    "noData": "Pas encore de données",
+    "startTracking": "Terminez des entraînements pour voir vos progrès",
+    "noWorkoutsThisWeek": "Aucun entraînement cette semaine",
+    "getStarted": "Commencez un entraînement pour débuter le suivi !"
+  },
+  "timer": {
+    "rest": "Repos",
+    "skip": "Passer",
+    "addTime": "+30s",
+    "timeUp": "Temps écoulé !",
+    "restComplete": "Repos terminé"
+  },
+  "units": {
+    "kg": "kg",
+    "lbs": "lbs",
+    "cm": "cm",
+    "in": "in",
+    "hours": "h",
+    "minutes": "m",
+    "seconds": "s"
+  },
+  "time": {
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "daysAgo": "il y a {{count}} jour",
+    "daysAgo_plural": "il y a {{count}} jours",
+    "thisWeek": "Cette semaine",
+    "lastWeek": "Semaine dernière",
+    "weeksAgo": "il y a {{count}} semaine",
+    "weeksAgo_plural": "il y a {{count}} semaines"
+  },
+  "languages": {
+    "en": "English",
+    "de": "Deutsch",
+    "es": "Español",
+    "fr": "Français",
+    "it": "Italiano",
+    "ko": "한국어",
+    "pt": "Português",
+    "ru": "Русский",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文"
+  },
+  "plateCalculator": {
+    "title": "Disques par côté",
+    "barWeight": "Barre : {{weight}}"
+  },
+  "numpad": {
+    "done": "Terminé",
+    "clear": "C",
+    "delete": "⌫"
+  }
+}

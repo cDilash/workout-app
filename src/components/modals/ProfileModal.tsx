@@ -1,12 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Alert, Image, Pressable } from 'react-native';
-import { Camera, Images, User, Trash, UserCircle } from 'phosphor-react-native';
+import React, { useState } from 'react';
+import { Modal, ScrollView, Pressable, Alert, Image } from 'react-native';
+import { YStack, XStack, Text } from 'tamagui';
+import {
+  User,
+  Calendar,
+  Ruler,
+  SignOut,
+  DownloadSimple,
+  Trash,
+  PencilSimple,
+  PersonSimpleWalk,
+  Plus,
+} from 'phosphor-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { YStack, XStack, Text } from 'tamagui';
 
 import { useProfileStore } from '@/src/stores/profileStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import { Card, Button, ButtonText } from '@/src/components/ui';
+import { EditProfileModal } from './EditProfileModal';
+import { useDataExport } from '@/src/hooks/useDataExport';
 
 interface ProfileModalProps {
   visible: boolean;
@@ -15,38 +28,61 @@ interface ProfileModalProps {
 
 export function ProfileModal({ visible, onClose }: ProfileModalProps) {
   const username = useProfileStore((s) => s.username);
+  const bio = useProfileStore((s) => s.bio);
+  const height = useProfileStore((s) => s.height);
+  const dateOfBirth = useProfileStore((s) => s.dateOfBirth);
   const profilePicturePath = useProfileStore((s) => s.profilePicturePath);
-  const setUsername = useProfileStore((s) => s.setUsername);
-  const setProfilePicture = useProfileStore((s) => s.setProfilePicture);
-  const removeProfilePicture = useProfileStore((s) => s.removeProfilePicture);
   const getInitials = useProfileStore((s) => s.getInitials);
+  const getAge = useProfileStore((s) => s.getAge);
+  const getMemberDuration = useProfileStore((s) => s.getMemberDuration);
+  const setUsername = useProfileStore((s) => s.setUsername);
+  const setBio = useProfileStore((s) => s.setBio);
+  const setProfilePicture = useProfileStore((s) => s.setProfilePicture);
+  const setHeight = useProfileStore((s) => s.setHeight);
+  const setDateOfBirth = useProfileStore((s) => s.setDateOfBirth);
 
-  const [editedUsername, setEditedUsername] = useState(username || '');
-  const [isSaving, setIsSaving] = useState(false);
+  const gender = useSettingsStore((s) => s.gender);
+  const setGender = useSettingsStore((s) => s.setGender);
+  const measurementUnit = useSettingsStore((s) => s.measurementUnit);
+  const formatMeasurement = useSettingsStore((s) => s.formatMeasurement);
 
-  useEffect(() => {
-    if (visible) {
-      setEditedUsername(username || '');
-    }
-  }, [visible, username]);
+  const {
+    exportWorkoutsCSV,
+    exportWorkoutsJSON,
+    exportMeasurementsCSV,
+    exportCompleteBackup,
+    isExporting,
+  } = useDataExport();
+
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const handleClose = () => {
     Haptics.selectionAsync();
     onClose();
   };
 
-  const handleSaveUsername = async () => {
-    if (editedUsername === username) return;
+  const handleEditProfile = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowEditModal(true);
+  };
 
-    setIsSaving(true);
-    try {
-      await setUsername(editedUsername);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save username');
-    } finally {
-      setIsSaving(false);
-    }
+  const handleAddPhoto = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert(
+      'Profile Photo',
+      'Choose an option',
+      [
+        {
+          text: 'Take Photo',
+          onPress: handleTakePhoto,
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: handleChooseFromGallery,
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
   };
 
   const handleTakePhoto = async () => {
@@ -76,7 +112,7 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
   const handleChooseFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Photo library permission is needed to choose photos.');
+      Alert.alert('Permission Required', 'Photo library permission is needed.');
       return;
     }
 
@@ -97,287 +133,577 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
     }
   };
 
-  const handleRemovePhoto = () => {
-    Alert.alert(
-      'Remove Photo',
-      'Are you sure you want to remove your profile photo?',
+  const handleEditName = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.prompt(
+      'Edit Name',
+      'Enter your name',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await removeProfilePicture();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            } catch (error) {
-              Alert.alert('Error', 'Failed to remove photo');
+          text: 'Save',
+          onPress: async (name?: string) => {
+            if (name !== undefined) {
+              try {
+                await setUsername(name);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              } catch (error) {
+                Alert.alert('Error', 'Failed to save name');
+              }
             }
           },
         },
+      ],
+      'plain-text',
+      username || ''
+    );
+  };
+
+  const handleEditBio = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.prompt(
+      'Edit Bio',
+      'Enter a short bio (max 150 characters)',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Save',
+          onPress: async (newBio?: string) => {
+            if (newBio !== undefined) {
+              try {
+                await setBio(newBio.slice(0, 150));
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              } catch (error) {
+                Alert.alert('Error', 'Failed to save bio');
+              }
+            }
+          },
+        },
+      ],
+      'plain-text',
+      bio || ''
+    );
+  };
+
+  const handleEditHeight = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const currentHeight = typeof height === 'number' && height > 0
+      ? formatMeasurement(height).replace(/[^0-9.]/g, '')
+      : '';
+    Alert.prompt(
+      'Edit Height',
+      `Enter your height in ${measurementUnit}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Save',
+          onPress: async (value?: string) => {
+            if (value !== undefined && value.trim()) {
+              const numValue = parseFloat(value);
+              if (!isNaN(numValue) && numValue > 0) {
+                try {
+                  // Convert to cm for storage
+                  const heightCm = measurementUnit === 'in' ? numValue * 2.54 : numValue;
+                  await setHeight(heightCm);
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                } catch (error) {
+                  Alert.alert('Error', 'Failed to save height');
+                }
+              }
+            }
+          },
+        },
+      ],
+      'plain-text',
+      currentHeight
+    );
+  };
+
+  const handleEditGender = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert(
+      'Select Gender',
+      'This affects the body silhouette visualization',
+      [
+        {
+          text: 'Male',
+          onPress: async () => {
+            await setGender('male');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+        {
+          text: 'Female',
+          onPress: async () => {
+            await setGender('female');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
       ]
     );
   };
 
-  const handlePhotoOptions = () => {
+  const handleEditAge = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    const options: { text: string; onPress?: () => void }[] = [
-      { text: 'Take Photo', onPress: handleTakePhoto },
-      { text: 'Choose from Gallery', onPress: handleChooseFromGallery },
-    ];
+    const currentYear = new Date().getFullYear();
+    const currentBirthYear = dateOfBirth ? String(new Date(dateOfBirth).getFullYear()) : '';
 
-    if (profilePicturePath) {
-      options.push({
-        text: 'Remove Photo',
-        onPress: handleRemovePhoto,
-      });
-    }
+    Alert.prompt(
+      'Enter Birth Year',
+      'We\'ll calculate your age from this',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Save',
+          onPress: async (value?: string) => {
+            if (value) {
+              const year = parseInt(value, 10);
+              if (isNaN(year) || year < 1900 || year > currentYear) {
+                Alert.alert('Invalid Year', `Please enter a year between 1900 and ${currentYear}`);
+                return;
+              }
 
-    options.push({ text: 'Cancel' });
+              const date = new Date(year, 0, 1);
+              try {
+                await setDateOfBirth(date);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              } catch (error) {
+                Alert.alert('Error', 'Failed to save. Please restart the app to update database.');
+              }
+            }
+          },
+        },
+      ],
+      'plain-text',
+      currentBirthYear,
+      'number-pad'
+    );
+  };
 
-    Alert.alert('Profile Photo', 'Choose an option', options);
+  const handleExportData = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert(
+      'Export Data',
+      'Choose what to export:',
+      [
+        {
+          text: 'Workouts (CSV)',
+          onPress: async () => {
+            const success = await exportWorkoutsCSV();
+            if (success) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else {
+              Alert.alert('Error', 'Failed to export workouts');
+            }
+          },
+        },
+        {
+          text: 'Measurements (CSV)',
+          onPress: async () => {
+            const success = await exportMeasurementsCSV();
+            if (success) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else {
+              Alert.alert('Error', 'Failed to export measurements');
+            }
+          },
+        },
+        {
+          text: 'Complete Backup (JSON)',
+          onPress: async () => {
+            const success = await exportCompleteBackup();
+            if (success) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else {
+              Alert.alert('Error', 'Failed to export backup');
+            }
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete all your workout data, measurements, and progress. This action cannot be undone.\n\nWould you like to export your data first?',
+      [
+        {
+          text: 'Export First',
+          onPress: handleExportData,
+        },
+        {
+          text: 'Delete Everything',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert('Coming Soon', 'Account deletion will be available soon');
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
   };
 
   const initials = getInitials();
+  const age = getAge();
+  const memberDuration = getMemberDuration();
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <YStack flex={1} backgroundColor="#000000">
-        {/* Header */}
-        <XStack
-          justifyContent="space-between"
-          alignItems="center"
-          paddingHorizontal="$4"
-          paddingVertical="$4"
-          borderBottomWidth={1}
-          borderBottomColor="rgba(255, 255, 255, 0.08)"
-          backgroundColor="#0a0a0a"
-        >
-          <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
-            Profile
-          </Text>
-          <Text
-            fontSize="$4"
-            color="#FFFFFF"
-            fontWeight="600"
-            onPress={handleClose}
-            pressStyle={{ opacity: 0.7 }}
+    <>
+      <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+        <YStack flex={1} backgroundColor="#000000">
+          {/* Header */}
+          <XStack
+            justifyContent="center"
+            alignItems="center"
+            paddingHorizontal="$4"
+            paddingVertical="$4"
+            borderBottomWidth={1}
+            borderBottomColor="rgba(255, 255, 255, 0.08)"
+            backgroundColor="#0a0a0a"
+            position="relative"
           >
-            Done
-          </Text>
-        </XStack>
-
-        <YStack padding="$4" gap="$6">
-          {/* Profile Photo */}
-          <YStack alignItems="center" gap="$3">
-            <Pressable onPress={handlePhotoOptions}>
-              <YStack
-                width={100}
-                height={100}
-                borderRadius={50}
-                backgroundColor="rgba(255,255,255,0.10)"
-                borderWidth={2}
-                borderColor="rgba(255,255,255,0.15)"
-                alignItems="center"
-                justifyContent="center"
-                overflow="hidden"
+            <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
+              Profile
+            </Text>
+            <Pressable
+              onPress={handleClose}
+              hitSlop={8}
+              style={{
+                position: 'absolute',
+                right: 16,
+              }}
+            >
+              <Text
+                fontSize="$4"
+                color="#FFFFFF"
+                fontWeight="600"
               >
-                {profilePicturePath ? (
-                  <Image
-                    source={{ uri: profilePicturePath }}
-                    style={{ width: 100, height: 100 }}
-                    resizeMode="cover"
-                  />
-                ) : initials ? (
-                  <Text fontSize={36} fontWeight="600" color="#FFFFFF">
-                    {initials}
-                  </Text>
-                ) : (
-                  <User size={48} color="rgba(255,255,255,0.5)" weight="regular" />
-                )}
-              </YStack>
+                Done
+              </Text>
             </Pressable>
+          </XStack>
 
-            <XStack gap="$3">
-              <Pressable onPress={handleTakePhoto}>
-                {({ pressed }) => (
-                  <XStack
-                    paddingHorizontal="$3"
-                    paddingVertical="$2"
-                    borderRadius={20}
-                    backgroundColor="rgba(255,255,255,0.1)"
+          <ScrollView style={{ flex: 1 }}>
+            <YStack padding="$4" gap="$4">
+              {/* Profile Header */}
+              <YStack alignItems="center" paddingVertical="$4" gap="$4">
+                {/* Profile Photo with + overlay */}
+                <Pressable onPress={handleAddPhoto}>
+                  <YStack
+                    width={100}
+                    height={100}
+                    borderRadius={50}
+                    backgroundColor="rgba(255,255,255,0.10)"
+                    borderWidth={3}
+                    borderColor="rgba(255,255,255,0.15)"
                     alignItems="center"
-                    gap="$2"
-                    opacity={pressed ? 0.7 : 1}
+                    justifyContent="center"
+                    overflow="hidden"
                   >
-                    <Camera size={16} color="#FFFFFF" weight="regular" />
-                    <Text fontSize={13} color="#FFFFFF" fontWeight="500">
-                      Camera
-                    </Text>
-                  </XStack>
-                )}
-              </Pressable>
-
-              <Pressable onPress={handleChooseFromGallery}>
-                {({ pressed }) => (
-                  <XStack
-                    paddingHorizontal="$3"
-                    paddingVertical="$2"
-                    borderRadius={20}
-                    backgroundColor="rgba(255,255,255,0.1)"
+                    {profilePicturePath ? (
+                      <Image
+                        source={{ uri: profilePicturePath }}
+                        style={{ width: 100, height: 100 }}
+                        resizeMode="cover"
+                      />
+                    ) : initials ? (
+                      <Text fontSize={36} fontWeight="700" color="#FFFFFF">
+                        {initials}
+                      </Text>
+                    ) : (
+                      <User size={40} color="rgba(255,255,255,0.5)" weight="regular" />
+                    )}
+                  </YStack>
+                  {/* + sign overlay */}
+                  <YStack
+                    position="absolute"
+                    bottom={0}
+                    right={0}
+                    width={32}
+                    height={32}
+                    borderRadius={16}
+                    backgroundColor="#FFFFFF"
                     alignItems="center"
-                    gap="$2"
-                    opacity={pressed ? 0.7 : 1}
+                    justifyContent="center"
+                    borderWidth={2}
+                    borderColor="#000000"
                   >
-                    <Images size={16} color="#FFFFFF" weight="regular" />
-                    <Text fontSize={13} color="#FFFFFF" fontWeight="500">
-                      Gallery
-                    </Text>
-                  </XStack>
-                )}
-              </Pressable>
+                    <Plus size={18} color="#000000" weight="bold" />
+                  </YStack>
+                </Pressable>
 
-              {profilePicturePath && (
-                <Pressable onPress={handleRemovePhoto}>
-                  {({ pressed }) => (
-                    <XStack
-                      paddingHorizontal="$3"
-                      paddingVertical="$2"
-                      borderRadius={20}
-                      backgroundColor="rgba(255,255,255,0.1)"
-                      alignItems="center"
-                      gap="$2"
-                      opacity={pressed ? 0.7 : 1}
+                {/* Name with edit button */}
+                <Pressable
+                  onPress={handleEditName}
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <XStack
+                    backgroundColor="rgba(255,255,255,0.05)"
+                    borderRadius={12}
+                    borderWidth={1}
+                    borderColor="rgba(255,255,255,0.1)"
+                    paddingHorizontal="$4"
+                    paddingVertical="$3"
+                    alignItems="center"
+                    gap="$3"
+                    minWidth={200}
+                  >
+                    <Text
+                      fontSize={18}
+                      fontWeight="600"
+                      color={username ? '#FFFFFF' : 'rgba(255,255,255,0.4)'}
+                      flex={1}
+                      textAlign="center"
                     >
-                      <Trash size={16} color="rgba(255,255,255,0.6)" weight="regular" />
+                      {username || 'Add your name'}
+                    </Text>
+                    <PencilSimple size={18} color="rgba(255,255,255,0.5)" weight="regular" />
+                  </XStack>
+                </Pressable>
+
+                {/* Bio */}
+                <Pressable
+                  onPress={handleEditBio}
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Text
+                    fontSize={14}
+                    fontStyle="italic"
+                    color={bio ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)'}
+                    textAlign="center"
+                    paddingHorizontal="$6"
+                    numberOfLines={2}
+                  >
+                    {bio || 'Tap to add a bio...'}
+                  </Text>
+                </Pressable>
+              </YStack>
+
+              {/* About Section - Editable */}
+              <Card>
+                <Text
+                  fontSize={12}
+                  color="rgba(255,255,255,0.5)"
+                  fontWeight="600"
+                  textTransform="uppercase"
+                  letterSpacing={1}
+                  marginBottom="$3"
+                >
+                  About
+                </Text>
+
+                <YStack gap="$2">
+                  {/* Age - Editable */}
+                  <Pressable
+                    onPress={handleEditAge}
+                    style={({ pressed }) => ({
+                      backgroundColor: pressed ? 'rgba(255,255,255,0.08)' : 'transparent',
+                      borderRadius: 8,
+                      paddingVertical: 8,
+                      paddingHorizontal: 8,
+                    })}
+                  >
+                    <XStack alignItems="center" gap="$3">
+                      <Calendar size={20} color="rgba(255,255,255,0.4)" weight="regular" />
+                      <YStack flex={1}>
+                        <Text fontSize={14} color="rgba(255,255,255,0.5)">
+                          Age
+                        </Text>
+                        <Text fontSize={16} color="#FFFFFF" marginTop="$1">
+                          {age ? `${age} years` : 'Tap to set'}
+                        </Text>
+                      </YStack>
+                      <PencilSimple size={16} color="rgba(255,255,255,0.3)" weight="regular" />
+                    </XStack>
+                  </Pressable>
+
+                  {/* Height - Editable */}
+                  <Pressable
+                    onPress={handleEditHeight}
+                    style={({ pressed }) => ({
+                      backgroundColor: pressed ? 'rgba(255,255,255,0.08)' : 'transparent',
+                      borderRadius: 8,
+                      paddingVertical: 8,
+                      paddingHorizontal: 8,
+                    })}
+                  >
+                    <XStack alignItems="center" gap="$3">
+                      <Ruler size={20} color="rgba(255,255,255,0.4)" weight="regular" />
+                      <YStack flex={1}>
+                        <Text fontSize={14} color="rgba(255,255,255,0.5)">
+                          Height
+                        </Text>
+                        <Text fontSize={16} color="#FFFFFF" marginTop="$1">
+                          {typeof height === 'number' && height > 0 ? formatMeasurement(height) : 'Tap to set'}
+                        </Text>
+                      </YStack>
+                      <PencilSimple size={16} color="rgba(255,255,255,0.3)" weight="regular" />
+                    </XStack>
+                  </Pressable>
+
+                  {/* Gender - Editable */}
+                  <Pressable
+                    onPress={handleEditGender}
+                    style={({ pressed }) => ({
+                      backgroundColor: pressed ? 'rgba(255,255,255,0.08)' : 'transparent',
+                      borderRadius: 8,
+                      paddingVertical: 8,
+                      paddingHorizontal: 8,
+                    })}
+                  >
+                    <XStack alignItems="center" gap="$3">
+                      <PersonSimpleWalk size={20} color="rgba(255,255,255,0.4)" weight="regular" />
+                      <YStack flex={1}>
+                        <Text fontSize={14} color="rgba(255,255,255,0.5)">
+                          Gender
+                        </Text>
+                        <Text fontSize={16} color="#FFFFFF" marginTop="$1" textTransform="capitalize">
+                          {gender}
+                        </Text>
+                      </YStack>
+                      <PencilSimple size={16} color="rgba(255,255,255,0.3)" weight="regular" />
+                    </XStack>
+                  </Pressable>
+
+                  {/* Member Since - Not editable, just display */}
+                  {memberDuration && (
+                    <XStack
+                      alignItems="center"
+                      gap="$3"
+                      paddingVertical="$2"
+                      paddingHorizontal="$2"
+                    >
+                      <Calendar size={20} color="rgba(255,255,255,0.4)" weight="regular" />
+                      <YStack flex={1}>
+                        <Text fontSize={14} color="rgba(255,255,255,0.5)">
+                          Member for
+                        </Text>
+                        <Text fontSize={16} color="#FFFFFF" marginTop="$1">
+                          {memberDuration}
+                        </Text>
+                      </YStack>
                     </XStack>
                   )}
-                </Pressable>
-              )}
-            </XStack>
-          </YStack>
+                </YStack>
+              </Card>
 
-          {/* Username */}
-          <Card>
-            <Text
-              fontSize={12}
-              color="rgba(255,255,255,0.5)"
-              fontWeight="600"
-              textTransform="uppercase"
-              letterSpacing={1}
-              marginBottom="$2"
-            >
-              Username
-            </Text>
-            <XStack
-              backgroundColor="rgba(255,255,255,0.05)"
-              borderRadius={12}
-              borderWidth={1}
-              borderColor="rgba(255,255,255,0.1)"
-              paddingHorizontal="$3"
-              paddingVertical="$3"
-              alignItems="center"
-            >
-              <UserCircle size={20} color="rgba(255,255,255,0.4)" weight="regular" />
-              <YStack flex={1} marginLeft="$2">
+              {/* Account Management */}
+              <Card>
                 <Text
-                  fontSize={16}
-                  color="#FFFFFF"
-                  // Using a simple Text with editable-like styling
-                  // In production, use TextInput from react-native
+                  fontSize={12}
+                  color="rgba(255,255,255,0.5)"
+                  fontWeight="600"
+                  textTransform="uppercase"
+                  letterSpacing={1}
+                  marginBottom="$3"
                 >
-                  {editedUsername || 'Enter your name'}
+                  Account
                 </Text>
-              </YStack>
-            </XStack>
-            <Text fontSize={12} color="rgba(255,255,255,0.4)" marginTop="$2">
-              This name will be displayed on your profile
-            </Text>
-          </Card>
 
-          {/* Editable Username Input */}
-          <Card>
-            <Text
-              fontSize={12}
-              color="rgba(255,255,255,0.5)"
-              fontWeight="600"
-              textTransform="uppercase"
-              letterSpacing={1}
-              marginBottom="$3"
-            >
-              Edit Name
-            </Text>
-            <XStack gap="$3" alignItems="center">
-              <YStack
-                flex={1}
-                backgroundColor="rgba(255,255,255,0.05)"
-                borderRadius={12}
-                borderWidth={1}
-                borderColor="rgba(255,255,255,0.1)"
-                paddingHorizontal="$3"
-                paddingVertical="$3"
-              >
+                {/* Email */}
+                <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
+                  <YStack flex={1}>
+                    <Text fontSize={14} color="rgba(255,255,255,0.5)">
+                      Email
+                    </Text>
+                    <Text fontSize={16} color="rgba(255,255,255,0.4)" marginTop="$1">
+                      Not connected
+                    </Text>
+                  </YStack>
+                </XStack>
+
+                {/* Password */}
+                <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
+                  <YStack flex={1}>
+                    <Text fontSize={14} color="rgba(255,255,255,0.5)">
+                      Password
+                    </Text>
+                    <Text fontSize={16} color="rgba(255,255,255,0.4)" marginTop="$1">
+                      ••••••••
+                    </Text>
+                  </YStack>
+                </XStack>
+
+                {/* Sign Out Button */}
+                <Button
+                  variant="secondary"
+                  size="md"
+                  fullWidth
+                  marginTop="$2"
+                  disabled
+                  opacity={0.5}
+                >
+                  <SignOut size={18} color="rgba(255,255,255,0.5)" />
+                  <ButtonText color="rgba(255,255,255,0.5)">Sign Out</ButtonText>
+                </Button>
+
+                <Text fontSize={12} color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$2">
+                  Account features coming soon
+                </Text>
+              </Card>
+
+              {/* Data */}
+              <Card>
                 <Text
-                  fontSize={16}
-                  color={editedUsername ? '#FFFFFF' : 'rgba(255,255,255,0.3)'}
-                  onPress={() => {
-                    // This will be replaced with proper TextInput handling
-                    Alert.prompt(
-                      'Enter Name',
-                      'What should we call you?',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Save',
-                          onPress: async (name?: string) => {
-                            if (name !== undefined) {
-                              setEditedUsername(name);
-                              await setUsername(name);
-                              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            }
-                          },
-                        },
-                      ],
-                      'plain-text',
-                      editedUsername
-                    );
-                  }}
+                  fontSize={12}
+                  color="rgba(255,255,255,0.5)"
+                  fontWeight="600"
+                  textTransform="uppercase"
+                  letterSpacing={1}
+                  marginBottom="$3"
                 >
-                  {editedUsername || 'Tap to enter name'}
+                  Data
                 </Text>
-              </YStack>
-            </XStack>
-          </Card>
 
-          {/* App Account Section (Placeholder) */}
-          <Card>
-            <XStack alignItems="center" gap="$3">
-              <YStack
-                width={40}
-                height={40}
-                borderRadius={20}
-                backgroundColor="rgba(255,255,255,0.08)"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <User size={20} color="rgba(255,255,255,0.5)" weight="regular" />
-              </YStack>
-              <YStack flex={1}>
-                <Text fontSize={15} fontWeight="600" color="#FFFFFF">
-                  App Account
+                {/* Export Data */}
+                <Button
+                  variant="secondary"
+                  size="md"
+                  fullWidth
+                  marginBottom="$3"
+                  onPress={handleExportData}
+                  disabled={isExporting}
+                >
+                  <DownloadSimple size={18} color="#FFFFFF" />
+                  <ButtonText color="#FFFFFF">{isExporting ? 'Exporting...' : 'Export My Data'}</ButtonText>
+                </Button>
+
+                {/* Delete Account */}
+                <Button
+                  variant="ghost"
+                  size="md"
+                  fullWidth
+                  onPress={handleDeleteAccount}
+                >
+                  <Trash size={18} color="#F87171" />
+                  <ButtonText color="#F87171">Delete Account</ButtonText>
+                </Button>
+
+                <Text fontSize={11} color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$2">
+                  Deleting your account will permanently erase all workout data
                 </Text>
-                <Text fontSize={13} color="rgba(255,255,255,0.5)">
-                  Sign in to sync your data
-                </Text>
-              </YStack>
-              <Text fontSize={13} color="rgba(255,255,255,0.4)">
-                Coming soon
-              </Text>
-            </XStack>
-          </Card>
+              </Card>
+            </YStack>
+          </ScrollView>
         </YStack>
-      </YStack>
-    </Modal>
+      </Modal>
+
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <EditProfileModal
+          visible={showEditModal}
+          onClose={() => setShowEditModal(false)}
+        />
+      )}
+    </>
   );
 }

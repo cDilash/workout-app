@@ -3,7 +3,7 @@ import { styled, XStack, Text, GetProps } from 'tamagui';
 /**
  * Button Component - Premium Monochromatic
  *
- * Pill-shaped buttons with white fills and subtle interactions.
+ * Square/rectangular buttons with rounded corners.
  * Clean, minimal aesthetic - no colored variants.
  */
 export const Button = styled(XStack, {
@@ -13,7 +13,7 @@ export const Button = styled(XStack, {
   gap: '$2',
   paddingVertical: '$3',
   paddingHorizontal: '$5',
-  borderRadius: 50, // Full pill shape
+  borderRadius: 12, // Rounded rectangle
   cursor: 'pointer',
 
   pressStyle: {

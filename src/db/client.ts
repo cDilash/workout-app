@@ -142,15 +142,23 @@ export async function initializeDatabase() {
       id TEXT PRIMARY KEY,
       username TEXT,
       profile_picture_path TEXT,
+      bio TEXT,
+      date_of_birth INTEGER,
+      height REAL,
+      member_since INTEGER,
       created_at INTEGER,
       updated_at INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS app_settings (
       id TEXT PRIMARY KEY,
-      weight_unit TEXT NOT NULL DEFAULT 'kg',
+      weight_unit TEXT NOT NULL DEFAULT 'lbs',
       measurement_unit TEXT NOT NULL DEFAULT 'cm',
       default_rest_timer_seconds INTEGER NOT NULL DEFAULT 90,
+      auto_start_rest_timer INTEGER NOT NULL DEFAULT 1,
+      keep_screen_awake INTEGER NOT NULL DEFAULT 1,
+      timer_sound_enabled INTEGER NOT NULL DEFAULT 1,
+      timer_sound_volume REAL NOT NULL DEFAULT 0.7,
       haptics_enabled INTEGER NOT NULL DEFAULT 1,
       theme TEXT NOT NULL DEFAULT 'dark',
       notifications_enabled INTEGER NOT NULL DEFAULT 1,
@@ -233,11 +241,15 @@ export async function initializeDatabase() {
   // User profile migrations
   await addColumnIfNotExists('user_profile', 'username', 'TEXT');
   await addColumnIfNotExists('user_profile', 'profile_picture_path', 'TEXT');
+  await addColumnIfNotExists('user_profile', 'bio', 'TEXT');
+  await addColumnIfNotExists('user_profile', 'date_of_birth', 'INTEGER');
+  await addColumnIfNotExists('user_profile', 'height', 'REAL');
+  await addColumnIfNotExists('user_profile', 'member_since', 'INTEGER');
   await addColumnIfNotExists('user_profile', 'created_at', 'INTEGER');
   await addColumnIfNotExists('user_profile', 'updated_at', 'INTEGER');
 
   // App settings migrations
-  await addColumnIfNotExists('app_settings', 'weight_unit', "TEXT NOT NULL DEFAULT 'kg'");
+  await addColumnIfNotExists('app_settings', 'weight_unit', "TEXT NOT NULL DEFAULT 'kg'"); // Keep kg for existing users
   await addColumnIfNotExists('app_settings', 'measurement_unit', "TEXT NOT NULL DEFAULT 'cm'");
   await addColumnIfNotExists('app_settings', 'default_rest_timer_seconds', 'INTEGER NOT NULL DEFAULT 90');
   await addColumnIfNotExists('app_settings', 'haptics_enabled', 'INTEGER NOT NULL DEFAULT 1');
@@ -245,6 +257,12 @@ export async function initializeDatabase() {
   await addColumnIfNotExists('app_settings', 'notifications_enabled', 'INTEGER NOT NULL DEFAULT 1');
   await addColumnIfNotExists('app_settings', 'created_at', 'INTEGER');
   await addColumnIfNotExists('app_settings', 'updated_at', 'INTEGER');
+  // New settings (added for workout preferences and sound)
+  await addColumnIfNotExists('app_settings', 'auto_start_rest_timer', 'INTEGER NOT NULL DEFAULT 1');
+  await addColumnIfNotExists('app_settings', 'keep_screen_awake', 'INTEGER NOT NULL DEFAULT 1');
+  await addColumnIfNotExists('app_settings', 'timer_sound_enabled', 'INTEGER NOT NULL DEFAULT 1');
+  await addColumnIfNotExists('app_settings', 'timer_sound_volume', 'REAL NOT NULL DEFAULT 0.7');
+  await addColumnIfNotExists('app_settings', 'language_code', "TEXT NOT NULL DEFAULT 'en'");
 
   // Migrate old weight column data to weight_kg if needed
   try {

@@ -12,7 +12,7 @@ import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
  */
 
 // Schema version for migrations
-export const SCHEMA_VERSION = '1.0.0';
+export const SCHEMA_VERSION = '1.1.0'; // Updated: Added bio, dateOfBirth, height, memberSince to userProfile
 
 // ============================================
 // EXERCISE CONSTANTS (for visualization & filtering)
@@ -269,8 +269,17 @@ export const userProfile = sqliteTable('user_profile', {
   id: text('id').primaryKey(), // Always 'local_user'
   username: text('username'),
   profilePicturePath: text('profile_picture_path'), // Local file path via expo-file-system
-  createdAt: integer('created_at', { mode: 'timestamp' }),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }),
+
+  // Personal identity
+  bio: text('bio'), // 150 character max bio
+  dateOfBirth: integer('date_of_birth', { mode: 'timestamp' }), // For age calculation
+  height: real('height'), // Stored in cm, converted at display time
+
+  // Account metadata
+  memberSince: integer('member_since', { mode: 'timestamp' }).notNull(), // First workout or registration date
+
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
 
 // ============================================
@@ -280,18 +289,29 @@ export const appSettings = sqliteTable('app_settings', {
   id: text('id').primaryKey(), // Always 'settings'
 
   // Units
-  weightUnit: text('weight_unit').notNull().default('kg'), // 'kg' | 'lbs'
+  weightUnit: text('weight_unit').notNull().default('lbs'), // 'kg' | 'lbs' - default lbs for US users
   measurementUnit: text('measurement_unit').notNull().default('cm'), // 'cm' | 'in'
 
   // Timer
   defaultRestTimerSeconds: integer('default_rest_timer_seconds').notNull().default(90),
 
-  // Preferences
+  // Workout preferences
+  autoStartRestTimer: integer('auto_start_rest_timer', { mode: 'boolean' }).notNull().default(true),
+  keepScreenAwake: integer('keep_screen_awake', { mode: 'boolean' }).notNull().default(true),
+
+  // Sound settings
+  timerSoundEnabled: integer('timer_sound_enabled', { mode: 'boolean' }).notNull().default(true),
+  timerSoundVolume: real('timer_sound_volume').notNull().default(0.7), // 0.0 - 1.0
+
+  // Preferences (haptics always enabled, removed from UI)
   hapticsEnabled: integer('haptics_enabled', { mode: 'boolean' }).notNull().default(true),
   theme: text('theme').notNull().default('dark'), // 'dark' | 'light' | 'system'
 
   // Notifications (placeholder for future)
   notificationsEnabled: integer('notifications_enabled', { mode: 'boolean' }).notNull().default(true),
+
+  // Language setting
+  languageCode: text('language_code').notNull().default('en'), // ISO 639-1 code
 
   createdAt: integer('created_at', { mode: 'timestamp' }),
   updatedAt: integer('updated_at', { mode: 'timestamp' }),

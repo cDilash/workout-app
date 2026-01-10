@@ -1,0 +1,297 @@
+{
+  "common": {
+    "cancel": "Cancelar",
+    "done": "Concluído",
+    "save": "Salvar",
+    "delete": "Excluir",
+    "error": "Erro",
+    "success": "Sucesso",
+    "loading": "Carregando...",
+    "add": "Adicionar",
+    "edit": "Editar",
+    "remove": "Remover",
+    "confirm": "Confirmar",
+    "yes": "Sim",
+    "no": "Não",
+    "ok": "OK",
+    "back": "Voltar",
+    "next": "Próximo",
+    "close": "Fechar",
+    "search": "Pesquisar"
+  },
+  "navigation": {
+    "workout": "Treino",
+    "history": "Histórico",
+    "exercises": "Exercícios",
+    "progress": "Progresso"
+  },
+  "settings": {
+    "title": "Configurações",
+    "sections": {
+      "language": "Idioma",
+      "units": "Unidades",
+      "workout": "Treino",
+      "soundsFeedback": "Sons e Feedback",
+      "notifications": "Notificações",
+      "data": "Dados",
+      "about": "Sobre"
+    },
+    "language": {
+      "label": "Idioma",
+      "description": "Escolha seu idioma preferido"
+    },
+    "weight": {
+      "label": "Peso",
+      "lbs": "Libras (lbs)",
+      "kg": "Quilogramas (kg)",
+      "title": "Unidade de peso",
+      "description": "Escolha sua unidade preferida"
+    },
+    "measurements": {
+      "label": "Medidas",
+      "cm": "Centímetros (cm)",
+      "in": "Polegadas (in)",
+      "title": "Unidade de medida",
+      "description": "Escolha sua unidade preferida"
+    },
+    "restTimer": {
+      "label": "Timer de descanso padrão",
+      "title": "Timer de descanso padrão",
+      "description": "Escolha seu tempo de descanso padrão"
+    },
+    "autoStartTimer": {
+      "label": "Iniciar timer automaticamente",
+      "description": "Iniciar timer após completar uma série"
+    },
+    "keepScreenAwake": {
+      "label": "Manter tela ligada",
+      "description": "Durante o treino ativo"
+    },
+    "timerSound": {
+      "label": "Som do timer",
+      "description": "Tocar som quando o timer terminar"
+    },
+    "hapticFeedback": {
+      "label": "Feedback tátil",
+      "description": "Vibração nas interações"
+    },
+    "notifications": {
+      "label": "Notificações",
+      "description": "Alertas de descanso e lembretes"
+    },
+    "exportData": {
+      "label": "Exportar dados",
+      "title": "Exportar dados",
+      "comingSoon": "Função de exportação em breve"
+    },
+    "importData": {
+      "label": "Importar dados",
+      "title": "Importar dados",
+      "comingSoon": "Função de importação em breve"
+    },
+    "appVersion": "Versão do app",
+    "footer": "Feito com 💪 para atletas"
+  },
+  "home": {
+    "greeting": {
+      "morning": "Bom dia",
+      "afternoon": "Boa tarde",
+      "evening": "Boa noite"
+    },
+    "startWorkout": "Iniciar treino",
+    "continueWorkout": "Continuar treino",
+    "quickStart": "Início rápido",
+    "templates": "Modelos",
+    "recentWorkouts": "Treinos recentes",
+    "noRecentWorkouts": "Sem treinos recentes",
+    "thisWeek": "Esta semana",
+    "personalRecords": "Recordes pessoais",
+    "viewAll": "Ver tudo"
+  },
+  "workout": {
+    "title": "Treino",
+    "newWorkout": "Novo treino",
+    "addExercise": "Adicionar exercício",
+    "addSet": "Adicionar série",
+    "finish": "Finalizar",
+    "finishWorkout": "Finalizar treino",
+    "cancel": "Cancelar treino",
+    "cancelConfirm": {
+      "title": "Cancelar treino?",
+      "message": "Seu progresso será perdido.",
+      "confirm": "Cancelar treino",
+      "cancel": "Continuar treinando"
+    },
+    "discardChanges": "Descartar alterações",
+    "set": "Série",
+    "sets": "séries",
+    "warmup": "A",
+    "warmupFull": "Aquecimento",
+    "working": "Trabalho",
+    "weight": "Peso",
+    "reps": "Reps",
+    "previous": "Ant",
+    "restTimer": "Timer",
+    "duration": "Duração",
+    "volume": "Volume",
+    "exercises": "exercícios",
+    "exercise": "exercício",
+    "noExercises": "Nenhum exercício adicionado",
+    "tapToAddExercise": "Toque no botão acima para adicionar seu primeiro exercício",
+    "notes": "Notas",
+    "addNotes": "Adicionar notas...",
+    "workoutNotes": "Notas do treino",
+    "exerciseNotes": "Notas do exercício",
+    "superset": "Supersérie",
+    "saveAsTemplate": "Salvar como modelo",
+    "templateName": "Nome do modelo",
+    "templateSaved": "Modelo salvo!",
+    "loadTemplate": "Carregar modelo",
+    "deleteTemplate": "Excluir modelo",
+    "deleteTemplateConfirm": "Tem certeza que deseja excluir este modelo?"
+  },
+  "exercises": {
+    "title": "Exercícios",
+    "search": "Pesquisar exercícios...",
+    "noResults": "Nenhum exercício encontrado",
+    "tryDifferentSearch": "Tente um termo de pesquisa diferente",
+    "filters": {
+      "all": "Todos",
+      "muscleGroup": "Grupo muscular",
+      "equipment": "Equipamento"
+    },
+    "muscleGroups": {
+      "all": "Todos os músculos",
+      "chest": "Peito",
+      "back": "Costas",
+      "shoulders": "Ombros",
+      "biceps": "Bíceps",
+      "triceps": "Tríceps",
+      "forearms": "Antebraços",
+      "quads": "Quadríceps",
+      "hamstrings": "Isquiotibiais",
+      "glutes": "Glúteos",
+      "core": "Core",
+      "calves": "Panturrilhas",
+      "cardio": "Cardio",
+      "fullBody": "Corpo inteiro"
+    },
+    "equipment": {
+      "all": "Todo equipamento",
+      "barbell": "Barra",
+      "dumbbell": "Haltere",
+      "cable": "Cabo",
+      "machine": "Máquina",
+      "bodyweight": "Peso corporal",
+      "kettlebell": "Kettlebell",
+      "bands": "Elásticos",
+      "other": "Outro"
+    },
+    "details": {
+      "history": "Histórico",
+      "personalRecords": "Recordes pessoais",
+      "maxWeight": "Peso máx",
+      "estimated1RM": "1RM estimado",
+      "maxVolume": "Volume máx",
+      "noHistory": "Sem histórico ainda",
+      "addToWorkout": "Adicione este exercício a um treino para começar a rastrear."
+    }
+  },
+  "history": {
+    "title": "Histórico",
+    "noWorkouts": "Nenhum treino registrado",
+    "completeFirst": "Complete um treino para vê-lo aqui.",
+    "repeatWorkout": "Repetir treino",
+    "export": "Exportar",
+    "exporting": "Exportando...",
+    "exportTitle": "Exportar dados de treino",
+    "exportMessage": "Exportar {{count}} treino para um arquivo",
+    "exportMessage_plural": "Exportar {{count}} treinos para um arquivo",
+    "exportFormats": {
+      "json": "JSON (Dados completos)",
+      "csv": "CSV (Planilha)",
+      "analytics": "Analytics (para app web)"
+    },
+    "exportError": "Falha na exportação",
+    "exportErrorMessage": "Ocorreu um erro ao exportar seus dados. Por favor, tente novamente.",
+    "noData": "Sem dados",
+    "noDataMessage": "Complete alguns treinos primeiro para exportar seus dados.",
+    "stats": {
+      "exercises": "exercícios",
+      "sets": "séries",
+      "volume": "volume"
+    },
+    "workoutsLogged": "{{count}} treino registrado",
+    "workoutsLogged_plural": "{{count}} treinos registrados"
+  },
+  "progress": {
+    "title": "Progresso",
+    "thisWeek": "Esta semana",
+    "workouts": "Treinos",
+    "totalVolume": "Volume total",
+    "exercisesPerformed": "Exercícios",
+    "personalRecords": "Recordes pessoais",
+    "prsThisWeek": "PRs esta semana",
+    "muscleGroups": "Grupos musculares",
+    "muscleDistribution": "Distribuição muscular",
+    "strengthProgress": "Progresso de força",
+    "selectExercise": "Selecione um exercício para ver o progresso",
+    "weeklyVolume": "Volume semanal",
+    "last8Weeks": "Últimas 8 semanas",
+    "allTimeSummary": "Resumo geral",
+    "totalWorkouts": "Total de treinos",
+    "totalSets": "Total de séries",
+    "avgDuration": "Duração média",
+    "noData": "Sem dados ainda",
+    "startTracking": "Complete treinos para ver seu progresso",
+    "noWorkoutsThisWeek": "Nenhum treino esta semana",
+    "getStarted": "Inicie um treino para começar a rastrear!"
+  },
+  "timer": {
+    "rest": "Descanso",
+    "skip": "Pular",
+    "addTime": "+30s",
+    "timeUp": "Tempo esgotado!",
+    "restComplete": "Descanso concluído"
+  },
+  "units": {
+    "kg": "kg",
+    "lbs": "lbs",
+    "cm": "cm",
+    "in": "in",
+    "hours": "h",
+    "minutes": "m",
+    "seconds": "s"
+  },
+  "time": {
+    "today": "Hoje",
+    "yesterday": "Ontem",
+    "daysAgo": "há {{count}} dia",
+    "daysAgo_plural": "há {{count}} dias",
+    "thisWeek": "Esta semana",
+    "lastWeek": "Semana passada",
+    "weeksAgo": "há {{count}} semana",
+    "weeksAgo_plural": "há {{count}} semanas"
+  },
+  "languages": {
+    "en": "English",
+    "de": "Deutsch",
+    "es": "Español",
+    "fr": "Français",
+    "it": "Italiano",
+    "ko": "한국어",
+    "pt": "Português",
+    "ru": "Русский",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文"
+  },
+  "plateCalculator": {
+    "title": "Anilhas por lado",
+    "barWeight": "Barra: {{weight}}"
+  },
+  "numpad": {
+    "done": "Concluído",
+    "clear": "C",
+    "delete": "⌫"
+  }
+}

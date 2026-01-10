@@ -1,0 +1,297 @@
+{
+  "common": {
+    "cancel": "취소",
+    "done": "완료",
+    "save": "저장",
+    "delete": "삭제",
+    "error": "오류",
+    "success": "성공",
+    "loading": "로딩 중...",
+    "add": "추가",
+    "edit": "수정",
+    "remove": "제거",
+    "confirm": "확인",
+    "yes": "예",
+    "no": "아니오",
+    "ok": "확인",
+    "back": "뒤로",
+    "next": "다음",
+    "close": "닫기",
+    "search": "검색"
+  },
+  "navigation": {
+    "workout": "운동",
+    "history": "기록",
+    "exercises": "운동 목록",
+    "progress": "진행"
+  },
+  "settings": {
+    "title": "설정",
+    "sections": {
+      "language": "언어",
+      "units": "단위",
+      "workout": "운동",
+      "soundsFeedback": "소리 및 피드백",
+      "notifications": "알림",
+      "data": "데이터",
+      "about": "정보"
+    },
+    "language": {
+      "label": "언어",
+      "description": "선호하는 언어를 선택하세요"
+    },
+    "weight": {
+      "label": "무게",
+      "lbs": "파운드 (lbs)",
+      "kg": "킬로그램 (kg)",
+      "title": "무게 단위",
+      "description": "선호하는 단위를 선택하세요"
+    },
+    "measurements": {
+      "label": "측정",
+      "cm": "센티미터 (cm)",
+      "in": "인치 (in)",
+      "title": "측정 단위",
+      "description": "선호하는 단위를 선택하세요"
+    },
+    "restTimer": {
+      "label": "기본 휴식 타이머",
+      "title": "기본 휴식 타이머",
+      "description": "기본 휴식 시간을 선택하세요"
+    },
+    "autoStartTimer": {
+      "label": "타이머 자동 시작",
+      "description": "세트 완료 후 타이머 시작"
+    },
+    "keepScreenAwake": {
+      "label": "화면 켜짐 유지",
+      "description": "운동 중 화면 유지"
+    },
+    "timerSound": {
+      "label": "타이머 소리",
+      "description": "타이머 종료 시 소리 재생"
+    },
+    "hapticFeedback": {
+      "label": "햅틱 피드백",
+      "description": "상호작용 시 진동"
+    },
+    "notifications": {
+      "label": "알림",
+      "description": "휴식 타이머 알림 및 리마인더"
+    },
+    "exportData": {
+      "label": "데이터 내보내기",
+      "title": "데이터 내보내기",
+      "comingSoon": "내보내기 기능 곧 출시 예정"
+    },
+    "importData": {
+      "label": "데이터 가져오기",
+      "title": "데이터 가져오기",
+      "comingSoon": "가져오기 기능 곧 출시 예정"
+    },
+    "appVersion": "앱 버전",
+    "footer": "운동하는 사람들을 위해 💪"
+  },
+  "home": {
+    "greeting": {
+      "morning": "좋은 아침이에요",
+      "afternoon": "좋은 오후예요",
+      "evening": "좋은 저녁이에요"
+    },
+    "startWorkout": "운동 시작",
+    "continueWorkout": "운동 계속하기",
+    "quickStart": "빠른 시작",
+    "templates": "템플릿",
+    "recentWorkouts": "최근 운동",
+    "noRecentWorkouts": "최근 운동 없음",
+    "thisWeek": "이번 주",
+    "personalRecords": "개인 기록",
+    "viewAll": "모두 보기"
+  },
+  "workout": {
+    "title": "운동",
+    "newWorkout": "새 운동",
+    "addExercise": "운동 추가",
+    "addSet": "세트 추가",
+    "finish": "완료",
+    "finishWorkout": "운동 완료",
+    "cancel": "운동 취소",
+    "cancelConfirm": {
+      "title": "운동을 취소하시겠습니까?",
+      "message": "진행 상황이 삭제됩니다.",
+      "confirm": "운동 취소",
+      "cancel": "계속 운동"
+    },
+    "discardChanges": "변경사항 삭제",
+    "set": "세트",
+    "sets": "세트",
+    "warmup": "W",
+    "warmupFull": "워밍업",
+    "working": "본운동",
+    "weight": "무게",
+    "reps": "횟수",
+    "previous": "이전",
+    "restTimer": "휴식 타이머",
+    "duration": "시간",
+    "volume": "볼륨",
+    "exercises": "운동",
+    "exercise": "운동",
+    "noExercises": "추가된 운동이 없습니다",
+    "tapToAddExercise": "위 버튼을 눌러 첫 번째 운동을 추가하세요",
+    "notes": "메모",
+    "addNotes": "메모 추가...",
+    "workoutNotes": "운동 메모",
+    "exerciseNotes": "운동 종목 메모",
+    "superset": "슈퍼세트",
+    "saveAsTemplate": "템플릿으로 저장",
+    "templateName": "템플릿 이름",
+    "templateSaved": "템플릿이 저장되었습니다!",
+    "loadTemplate": "템플릿 불러오기",
+    "deleteTemplate": "템플릿 삭제",
+    "deleteTemplateConfirm": "이 템플릿을 삭제하시겠습니까?"
+  },
+  "exercises": {
+    "title": "운동 목록",
+    "search": "운동 검색...",
+    "noResults": "운동을 찾을 수 없습니다",
+    "tryDifferentSearch": "다른 검색어를 시도해보세요",
+    "filters": {
+      "all": "전체",
+      "muscleGroup": "근육 그룹",
+      "equipment": "장비"
+    },
+    "muscleGroups": {
+      "all": "모든 근육",
+      "chest": "가슴",
+      "back": "등",
+      "shoulders": "어깨",
+      "biceps": "이두근",
+      "triceps": "삼두근",
+      "forearms": "전완",
+      "quads": "대퇴사두근",
+      "hamstrings": "햄스트링",
+      "glutes": "둔근",
+      "core": "코어",
+      "calves": "종아리",
+      "cardio": "유산소",
+      "fullBody": "전신"
+    },
+    "equipment": {
+      "all": "모든 장비",
+      "barbell": "바벨",
+      "dumbbell": "덤벨",
+      "cable": "케이블",
+      "machine": "머신",
+      "bodyweight": "맨몸",
+      "kettlebell": "케틀벨",
+      "bands": "밴드",
+      "other": "기타"
+    },
+    "details": {
+      "history": "기록",
+      "personalRecords": "개인 기록",
+      "maxWeight": "최대 무게",
+      "estimated1RM": "예상 1RM",
+      "maxVolume": "최대 볼륨",
+      "noHistory": "기록 없음",
+      "addToWorkout": "이 운동을 추가하여 기록을 시작하세요."
+    }
+  },
+  "history": {
+    "title": "기록",
+    "noWorkouts": "기록된 운동이 없습니다",
+    "completeFirst": "운동을 완료하면 여기에 표시됩니다.",
+    "repeatWorkout": "운동 반복",
+    "export": "내보내기",
+    "exporting": "내보내는 중...",
+    "exportTitle": "운동 데이터 내보내기",
+    "exportMessage": "{{count}}개의 운동을 파일로 내보내기",
+    "exportMessage_plural": "{{count}}개의 운동을 파일로 내보내기",
+    "exportFormats": {
+      "json": "JSON (전체 데이터)",
+      "csv": "CSV (스프레드시트)",
+      "analytics": "분석 (웹 앱용)"
+    },
+    "exportError": "내보내기 실패",
+    "exportErrorMessage": "데이터 내보내기 중 오류가 발생했습니다. 다시 시도해주세요.",
+    "noData": "데이터 없음",
+    "noDataMessage": "데이터를 내보내려면 먼저 운동을 완료하세요.",
+    "stats": {
+      "exercises": "운동",
+      "sets": "세트",
+      "volume": "볼륨"
+    },
+    "workoutsLogged": "{{count}}개 운동 기록됨",
+    "workoutsLogged_plural": "{{count}}개 운동 기록됨"
+  },
+  "progress": {
+    "title": "진행",
+    "thisWeek": "이번 주",
+    "workouts": "운동",
+    "totalVolume": "총 볼륨",
+    "exercisesPerformed": "운동 종목",
+    "personalRecords": "개인 기록",
+    "prsThisWeek": "이번 주 PRs",
+    "muscleGroups": "근육 그룹",
+    "muscleDistribution": "근육 분포",
+    "strengthProgress": "근력 진행",
+    "selectExercise": "진행 상황을 보려면 운동을 선택하세요",
+    "weeklyVolume": "주간 볼륨",
+    "last8Weeks": "최근 8주",
+    "allTimeSummary": "전체 요약",
+    "totalWorkouts": "총 운동",
+    "totalSets": "총 세트",
+    "avgDuration": "평균 시간",
+    "noData": "데이터 없음",
+    "startTracking": "운동을 완료하면 진행 상황을 볼 수 있습니다",
+    "noWorkoutsThisWeek": "이번 주 운동 없음",
+    "getStarted": "운동을 시작하여 기록을 시작하세요!"
+  },
+  "timer": {
+    "rest": "휴식",
+    "skip": "건너뛰기",
+    "addTime": "+30초",
+    "timeUp": "시간 종료!",
+    "restComplete": "휴식 완료"
+  },
+  "units": {
+    "kg": "kg",
+    "lbs": "lbs",
+    "cm": "cm",
+    "in": "in",
+    "hours": "시간",
+    "minutes": "분",
+    "seconds": "초"
+  },
+  "time": {
+    "today": "오늘",
+    "yesterday": "어제",
+    "daysAgo": "{{count}}일 전",
+    "daysAgo_plural": "{{count}}일 전",
+    "thisWeek": "이번 주",
+    "lastWeek": "지난 주",
+    "weeksAgo": "{{count}}주 전",
+    "weeksAgo_plural": "{{count}}주 전"
+  },
+  "languages": {
+    "en": "English",
+    "de": "Deutsch",
+    "es": "Español",
+    "fr": "Français",
+    "it": "Italiano",
+    "ko": "한국어",
+    "pt": "Português",
+    "ru": "Русский",
+    "zh-CN": "简体中文",
+    "zh-TW": "繁體中文"
+  },
+  "plateCalculator": {
+    "title": "한쪽 플레이트",
+    "barWeight": "바: {{weight}}"
+  },
+  "numpad": {
+    "done": "완료",
+    "clear": "C",
+    "delete": "⌫"
+  }
+}
