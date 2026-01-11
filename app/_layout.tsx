@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Initialize i18n before any component renders
 import '@/src/i18n';
@@ -61,11 +62,13 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <TamaguiProvider config={tamaguiConfig}>
-        <DatabaseProvider>
-          <RootLayoutNav />
-        </DatabaseProvider>
-      </TamaguiProvider>
+      <SafeAreaProvider>
+        <TamaguiProvider config={tamaguiConfig}>
+          <DatabaseProvider>
+            <RootLayoutNav />
+          </DatabaseProvider>
+        </TamaguiProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

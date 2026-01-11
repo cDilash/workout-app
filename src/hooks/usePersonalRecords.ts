@@ -30,6 +30,7 @@ export interface ExerciseStats {
   estimated1RM: number | null;
   totalVolume: number;
   lastPerformed: Date | null;
+  sessionCount: number;  // Number of times exercise was performed
 }
 
 export interface ProgressDataPoint {
@@ -40,6 +41,7 @@ export interface ProgressDataPoint {
 
 export function useExerciseProgress(exerciseId: string | null) {
   const [progressData, setProgressData] = useState<ProgressDataPoint[]>([]);
+  const [e1rmData, setE1rmData] = useState<ProgressDataPoint[]>([]);
   const [volumeData, setVolumeData] = useState<ProgressDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -69,6 +71,7 @@ export function useExerciseProgress(exerciseId: string | null) {
           );
 
         const dataPoints: ProgressDataPoint[] = [];
+        const e1rmPoints: ProgressDataPoint[] = [];
         const volumePoints: ProgressDataPoint[] = [];
 
         for (const we of workoutExerciseResults) {
@@ -97,13 +100,21 @@ export function useExerciseProgress(exerciseId: string | null) {
               )
             );
 
-          // Find max weight and calculate volume (computed at read time per DATA_HANDLING.md)
+          // Find max weight, best e1RM, and calculate volume (computed at read time per DATA_HANDLING.md)
           let maxWeight = 0;
+          let bestE1rm = 0;
           let totalVolume = 0;
 
           for (const s of setsResult) {
             if (s.weightKg && s.weightKg > maxWeight) {
               maxWeight = s.weightKg;
+            }
+            // Calculate e1RM for this set and track the best one
+            if (s.weightKg && s.reps && s.reps > 0) {
+              const setE1rm = calculate1RM(s.weightKg, s.reps);
+              if (setE1rm > bestE1rm) {
+                bestE1rm = setE1rm;
+              }
             }
             totalVolume += (s.weightKg || 0) * (s.reps || 0);
           }
@@ -113,6 +124,14 @@ export function useExerciseProgress(exerciseId: string | null) {
               date: workoutResult[0].startedAt,
               value: maxWeight,
               label: `${maxWeight} kg`,
+            });
+          }
+
+          if (bestE1rm > 0) {
+            e1rmPoints.push({
+              date: workoutResult[0].startedAt,
+              value: bestE1rm,
+              label: `${Math.round(bestE1rm)} kg`,
             });
           }
 
@@ -127,9 +146,11 @@ export function useExerciseProgress(exerciseId: string | null) {
 
         // Sort by date
         dataPoints.sort((a, b) => a.date.getTime() - b.date.getTime());
+        e1rmPoints.sort((a, b) => a.date.getTime() - b.date.getTime());
         volumePoints.sort((a, b) => a.date.getTime() - b.date.getTime());
 
         setProgressData(dataPoints);
+        setE1rmData(e1rmPoints);
         setVolumeData(volumePoints);
       } catch (error) {
         console.error('Error fetching exercise progress:', error);
@@ -141,7 +162,7 @@ export function useExerciseProgress(exerciseId: string | null) {
     fetchProgress();
   }, [exerciseId]);
 
-  return { progressData, volumeData, isLoading };
+  return { progressData, e1rmData, volumeData, isLoading };
 }
 
 export function useExerciseStats() {
@@ -235,16 +256,13 @@ export function useExerciseStats() {
             estimated1RM: maxWeight && maxReps ? calculate1RM(maxWeight, maxReps) : null,
             totalVolume,
             lastPerformed,
+            sessionCount: weResults.length,  // Track how many times exercise was performed
           });
         }
       }
 
-      // Sort by last performed
-      exerciseStats.sort((a, b) => {
-        if (!a.lastPerformed) return 1;
-        if (!b.lastPerformed) return -1;
-        return b.lastPerformed.getTime() - a.lastPerformed.getTime();
-      });
+      // Sort by session count (most done exercises first)
+      exerciseStats.sort((a, b) => b.sessionCount - a.sessionCount);
 
       setStats(exerciseStats);
     } catch (error) {

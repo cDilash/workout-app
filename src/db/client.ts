@@ -193,6 +193,9 @@ export async function initializeDatabase() {
   // Template exercises migrations
   await addColumnIfNotExists('template_exercises', 'is_deleted', 'INTEGER NOT NULL DEFAULT 0');
   await addColumnIfNotExists('template_exercises', 'target_weight_kg', 'REAL');
+  await addColumnIfNotExists('template_exercises', 'rest_seconds', 'INTEGER DEFAULT 90');
+  await addColumnIfNotExists('template_exercises', 'notes', 'TEXT');
+  await addColumnIfNotExists('template_exercises', 'sets_json', 'TEXT');
 
   // Workouts table migrations
   await addColumnIfNotExists('workouts', 'created_at', 'INTEGER');

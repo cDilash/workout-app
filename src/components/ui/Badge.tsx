@@ -115,6 +115,7 @@ export const Chip = styled(XStack, {
   borderRadius: 50, // Full pill
   gap: '$1',
   cursor: 'pointer',
+  flexShrink: 0,
 
   pressStyle: {
     opacity: 0.8,
@@ -159,6 +160,9 @@ export const ChipText = styled(Text, {
   name: 'ChipText',
   fontWeight: '500',
   fontSize: 14,
+  numberOfLines: 1,
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
 
   variants: {
     selected: {

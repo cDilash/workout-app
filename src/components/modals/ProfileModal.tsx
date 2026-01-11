@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Modal, ScrollView, Pressable, Alert, Image } from 'react-native';
-import { YStack, XStack, Text } from 'tamagui';
+import { Modal, ScrollView, Pressable, Alert, Image, Platform } from 'react-native';
+import { YStack, XStack, Text, Button as TamaguiButton } from 'tamagui';
 import {
   User,
   Calendar,
@@ -14,6 +14,8 @@ import {
 } from 'phosphor-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { format } from 'date-fns';
 
 import { useProfileStore } from '@/src/stores/profileStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
@@ -55,6 +57,8 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
   } = useDataExport();
 
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDOBPicker, setShowDOBPicker] = useState(false);
+  const [tempDOB, setTempDOB] = useState(dateOfBirth || new Date(1990, 0, 1));
 
   const handleClose = () => {
     Haptics.selectionAsync();
@@ -246,40 +250,22 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
 
   const handleEditAge = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowDOBPicker(true);
+  };
 
-    const currentYear = new Date().getFullYear();
-    const currentBirthYear = dateOfBirth ? String(new Date(dateOfBirth).getFullYear()) : '';
+  const handleSaveDOB = async () => {
+    try {
+      await setDateOfBirth(tempDOB);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowDOBPicker(false);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save date of birth');
+    }
+  };
 
-    Alert.prompt(
-      'Enter Birth Year',
-      'We\'ll calculate your age from this',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Save',
-          onPress: async (value?: string) => {
-            if (value) {
-              const year = parseInt(value, 10);
-              if (isNaN(year) || year < 1900 || year > currentYear) {
-                Alert.alert('Invalid Year', `Please enter a year between 1900 and ${currentYear}`);
-                return;
-              }
-
-              const date = new Date(year, 0, 1);
-              try {
-                await setDateOfBirth(date);
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              } catch (error) {
-                Alert.alert('Error', 'Failed to save. Please restart the app to update database.');
-              }
-            }
-          },
-        },
-      ],
-      'plain-text',
-      currentBirthYear,
-      'number-pad'
-    );
+  const handleCancelDOB = () => {
+    setShowDOBPicker(false);
+    setTempDOB(dateOfBirth || new Date(1990, 0, 1));
   };
 
   const handleExportData = () => {
@@ -694,6 +680,94 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
               </Card>
             </YStack>
           </ScrollView>
+
+          {/* Date of Birth Picker Overlay */}
+          {showDOBPicker && (
+            <Pressable
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+              onPress={handleCancelDOB}
+            >
+              <Pressable onPress={(e) => e.stopPropagation()}>
+                <YStack
+                  backgroundColor="#1A1A1A"
+                  borderRadius={16}
+                  padding="$4"
+                  width="90%"
+                  maxWidth={380}
+                  borderWidth={1}
+                  borderColor="rgba(255,255,255,0.1)"
+                  gap="$3"
+                >
+                  <Text fontSize="$5" fontWeight="600" color="#FFFFFF">
+                    Select Date of Birth
+                  </Text>
+
+                  <DateTimePicker
+                    value={tempDOB}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(event, date) => {
+                      if (date) setTempDOB(date);
+                    }}
+                    maximumDate={new Date()}
+                    minimumDate={new Date(1900, 0, 1)}
+                    themeVariant="dark"
+                  />
+
+                  {/* Selected Date Summary */}
+                  <YStack
+                    backgroundColor="rgba(255,255,255,0.06)"
+                    padding="$3"
+                    borderRadius={8}
+                    borderWidth={1}
+                    borderColor="rgba(255,255,255,0.1)"
+                  >
+                    <Text fontSize={11} color="rgba(255,255,255,0.5)" marginBottom={4}>
+                      Selected Date
+                    </Text>
+                    <Text fontSize="$3" color="#FFFFFF" fontWeight="600">
+                      {format(tempDOB, 'MMMM d, yyyy')}
+                    </Text>
+                  </YStack>
+
+                  {/* Action Buttons */}
+                  <XStack gap="$2" marginTop="$2">
+                    <TamaguiButton
+                      flex={1}
+                      onPress={handleCancelDOB}
+                      backgroundColor="rgba(255,255,255,0.1)"
+                      borderWidth={1}
+                      borderColor="rgba(255,255,255,0.2)"
+                      pressStyle={{ opacity: 0.7 }}
+                    >
+                      <Text color="#FFFFFF" fontWeight="600">
+                        Cancel
+                      </Text>
+                    </TamaguiButton>
+                    <TamaguiButton
+                      flex={1}
+                      onPress={handleSaveDOB}
+                      backgroundColor="#FFFFFF"
+                      pressStyle={{ opacity: 0.7 }}
+                    >
+                      <Text color="#000000" fontWeight="600">
+                        Save
+                      </Text>
+                    </TamaguiButton>
+                  </XStack>
+                </YStack>
+              </Pressable>
+            </Pressable>
+          )}
         </YStack>
       </Modal>
 

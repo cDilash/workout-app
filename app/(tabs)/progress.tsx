@@ -1,7 +1,6 @@
 import { ScrollView, Dimensions } from 'react-native';
 import { useState } from 'react';
 import { CartesianChart, Line, Bar } from 'victory-native';
-import { PieChart } from 'react-native-gifted-charts';
 import {
   format,
   subDays,
@@ -14,9 +13,10 @@ import {
   isSameDay,
   isSameMonth,
   addMonths,
+  differenceInDays,
 } from 'date-fns';
-import { Fire, TrendUp, Scales, Trophy, Barbell, CaretLeft, CaretRight } from 'phosphor-react-native';
-import { YStack, XStack, Text } from 'tamagui';
+import { Fire, TrendUp, Scales, Trophy, Barbell, CaretLeft, CaretRight, Rocket, CalendarCheck, Medal, Lightning } from 'phosphor-react-native';
+import { YStack, XStack, Text, Input } from 'tamagui';
 
 import {
   useExerciseStats,
@@ -29,9 +29,23 @@ import {
   useMovementPatternBalance,
   type ExerciseStats,
 } from '@/src/hooks/usePersonalRecords';
-import { Card, Chip, ChipText, Section, SectionHeader, StatCard, EmptyState, StatNumber } from '@/src/components/ui';
+import { Card, Chip, ChipText, Section, SectionHeader, StatCard, EmptyState, StatNumber, MetricHelpModal, type MetricKey } from '@/src/components/ui';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { fromKgDisplay, fromKgVolume } from '@/src/utils/unitConversion';
+import {
+  TimeRangeSelector,
+  PRCard as EnhancedPRCard,
+  BalanceGauge,
+  TrainingLoadCard,
+  MuscleRecoveryList,
+  StrengthProgressChart,
+  StrengthLeaderboard,
+  WeeklyVolumeChart,
+  MuscleGroupsCard,
+  type PRCardData,
+} from '@/src/components/analytics';
+import { useAnalyticsTimeRange } from '@/src/hooks/useAnalyticsTimeRange';
+import { useTrainingLoad } from '@/src/hooks/useTrainingLoad';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -166,10 +180,10 @@ function WorkoutCalendar({ frequencyData }: { frequencyData: { date: string; cou
                   height={cellSize}
                   alignItems="center"
                   justifyContent="center"
-                  borderRadius={cellSize / 2}
-                  backgroundColor={bgColor}
-                  borderWidth={isToday ? 2 : 0}
-                  borderColor={isToday ? '#FFFFFF' : 'transparent'}
+                  borderRadius={10}
+                  backgroundColor={isToday && !hasWorkout ? 'rgba(255,255,255,0.06)' : bgColor}
+                  borderWidth={isToday ? 2 : 1}
+                  borderColor={isToday ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.1)'}
                 >
                   <Text
                     fontSize={16}
@@ -178,6 +192,17 @@ function WorkoutCalendar({ frequencyData }: { frequencyData: { date: string; cou
                   >
                     {format(day, 'd')}
                   </Text>
+                  {/* Green dot indicator for workout days */}
+                  {hasWorkout && isCurrentMonth && (
+                    <YStack
+                      position="absolute"
+                      bottom={4}
+                      width={5}
+                      height={5}
+                      borderRadius={3}
+                      backgroundColor="#51CF66"
+                    />
+                  )}
                 </YStack>
               );
             })}
@@ -188,15 +213,15 @@ function WorkoutCalendar({ frequencyData }: { frequencyData: { date: string; cou
       {/* Legend */}
       <XStack alignItems="center" justifyContent="center" gap="$3" marginTop="$5" paddingTop="$3" borderTopWidth={1} borderTopColor="rgba(255,255,255,0.1)">
         <XStack alignItems="center" gap="$2">
-          <YStack width={12} height={12} borderRadius={6} backgroundColor="rgba(255,255,255,0.15)" />
+          <YStack width={12} height={12} borderRadius={4} backgroundColor="rgba(255,255,255,0.15)" />
           <Text fontSize={11} color="rgba(255,255,255,0.5)">1</Text>
         </XStack>
         <XStack alignItems="center" gap="$2">
-          <YStack width={12} height={12} borderRadius={6} backgroundColor="rgba(255,255,255,0.35)" />
+          <YStack width={12} height={12} borderRadius={4} backgroundColor="rgba(255,255,255,0.35)" />
           <Text fontSize={11} color="rgba(255,255,255,0.5)">2</Text>
         </XStack>
         <XStack alignItems="center" gap="$2">
-          <YStack width={12} height={12} borderRadius={6} backgroundColor="#FFFFFF" />
+          <YStack width={12} height={12} borderRadius={4} backgroundColor="#FFFFFF" />
           <Text fontSize={11} color="rgba(255,255,255,0.5)">3+</Text>
         </XStack>
         <Text fontSize={11} color="rgba(255,255,255,0.4)" marginLeft="$2">workouts/day</Text>
@@ -205,40 +230,6 @@ function WorkoutCalendar({ frequencyData }: { frequencyData: { date: string; cou
   );
 }
 
-function PRCard({ stat }: { stat: ExerciseStats }) {
-  const weightUnit = useSettingsStore((s) => s.weightUnit);
-  return (
-    <Card minWidth={150}>
-      <XStack alignItems="center" gap="$2" marginBottom="$3">
-        <Trophy size={18} color="#FFFFFF" weight="fill" />
-        <Text fontSize="$3" fontWeight="600" color="#FFFFFF" numberOfLines={1} flex={1}>
-          {stat.exercise.name}
-        </Text>
-      </XStack>
-      <XStack gap="$4">
-        {stat.maxWeight && (
-          <YStack>
-            <StatNumber
-              value={fromKgDisplay(stat.maxWeight, weightUnit)}
-              unit={weightUnit}
-              size="sm"
-            />
-            <Text fontSize="$1" color="rgba(255,255,255,0.4)" marginTop="$1">Max Weight</Text>
-          </YStack>
-        )}
-        {stat.estimated1RM && (
-          <YStack>
-            <StatNumber
-              value={Math.round(fromKgDisplay(stat.estimated1RM, weightUnit))}
-              size="sm"
-            />
-            <Text fontSize="$1" color="rgba(255,255,255,0.4)" marginTop="$1">Est. 1RM</Text>
-          </YStack>
-        )}
-      </XStack>
-    </Card>
-  );
-}
 
 function ExerciseSelector({
   exercises,
@@ -249,27 +240,50 @@ function ExerciseSelector({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const [search, setSearch] = useState('');
+
+  // Filter exercises by search term
+  const filteredExercises = exercises.filter((stat) =>
+    stat.exercise.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={{ marginBottom: 16, maxHeight: 40 }}
-      contentContainerStyle={{ gap: 8 }}
-    >
-      {exercises.map((stat) => (
-        <Chip
-          key={stat.exerciseId}
-          selected={selectedId === stat.exerciseId}
-          onPress={() => onSelect(stat.exerciseId)}
-          accessibilityLabel={`Select ${stat.exercise.name}`}
-          accessibilityRole="button"
-        >
-          <ChipText selected={selectedId === stat.exerciseId}>
-            {stat.exercise.name}
-          </ChipText>
-        </Chip>
-      ))}
-    </ScrollView>
+    <YStack gap="$2" marginBottom="$3">
+      {/* Search Input */}
+      <Input
+        placeholder="Search exercises..."
+        value={search}
+        onChangeText={setSearch}
+        backgroundColor="rgba(255,255,255,0.06)"
+        borderColor="rgba(255,255,255,0.1)"
+        color="#FFFFFF"
+        height={40}
+        // @ts-ignore - placeholderTextColor typing issue
+        placeholderTextColor="rgba(255,255,255,0.4)"
+      />
+
+      {/* Exercise Chips */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ maxHeight: 40 }}
+        contentContainerStyle={{ gap: 8 }}
+      >
+        {filteredExercises.map((stat) => (
+          <Chip
+            key={stat.exerciseId}
+            selected={selectedId === stat.exerciseId}
+            onPress={() => onSelect(stat.exerciseId)}
+            accessibilityLabel={`Select ${stat.exercise.name}`}
+            accessibilityRole="button"
+          >
+            <ChipText selected={selectedId === stat.exerciseId}>
+              {stat.exercise.name}
+            </ChipText>
+          </Chip>
+        ))}
+      </ScrollView>
+    </YStack>
   );
 }
 
@@ -291,99 +305,130 @@ function TrainingOverview({
 
   const pushPullStatus = balance ? getBalanceStatus(balance.ratios.pushPull) : null;
   const streakValue = streaks?.currentStreak ?? 0;
-  const hasStreak = streakValue >= 3;
+  const hasStreak = streakValue >= 1;
+
+  // Color scheme for effort levels
+  const effortColorMap: Record<string, string> = {
+    'Easy': '#51CF66',
+    'Moderate': '#FFD43B',
+    'Hard': '#FF922B',
+    'Very Hard': '#FF6B6B',
+  };
+  const effortColor = effort?.effortLevel ? effortColorMap[effort.effortLevel] || '#FFFFFF' : '#FFFFFF';
+
+  // Fire icon color - orange when active
+  const fireColor = hasStreak ? '#FF6B35' : 'rgba(255,255,255,0.3)';
+
+  // Balance icon color
+  const balanceColor = pushPullStatus?.isBalanced ? '#51CF66' : '#FFD43B';
+
+  // Calculate push/pull percentages for mini bar
+  const totalVolume = balance ? balance.pushVolume + balance.pullVolume : 0;
+  const pushPercent = totalVolume > 0 ? (balance!.pushVolume / totalVolume) * 100 : 50;
+  const pullPercent = totalVolume > 0 ? (balance!.pullVolume / totalVolume) * 100 : 50;
+
+  // Progress toward weekly target
+  const workoutsThisWeek = streaks?.workoutsThisWeek ?? 0;
+  const weeklyTarget = streaks?.weeklyTarget ?? 3;
+  const progressPercent = Math.min((workoutsThisWeek / weeklyTarget) * 100, 100);
 
   return (
     <XStack gap="$3">
       {/* Training Streak */}
-      <Card flex={1} alignItems="center" minHeight={110} padding="$3">
+      <Card flex={1} alignItems="center" minHeight={130} padding="$3">
         <YStack
           width={40}
           height={40}
           borderRadius={20}
-          backgroundColor="rgba(255, 255, 255, 0.08)"
+          backgroundColor={`${fireColor}15`}
           alignItems="center"
           justifyContent="center"
           marginBottom="$2"
         >
-          <Fire size={22} color={hasStreak ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} weight="fill" />
+          <Fire size={22} color={fireColor} weight="fill" />
         </YStack>
         <StatNumber value={streakValue} size="sm" />
         <Text fontSize="$1" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$1">
           Week Streak
         </Text>
-        {streaks?.isOnTrack && (
+        {/* Progress bar */}
+        <XStack width="100%" height={3} backgroundColor="rgba(255,255,255,0.1)" borderRadius={2} marginTop="$2">
           <YStack
-            backgroundColor="rgba(255, 255, 255, 0.15)"
-            paddingHorizontal="$2"
-            paddingVertical={2}
-            borderRadius={10}
-            marginTop="$1"
-          >
-            <Text fontSize={9} color="#FFFFFF" fontWeight="600">On Track</Text>
-          </YStack>
-        )}
+            width={`${progressPercent}%`}
+            height="100%"
+            backgroundColor={streaks?.isOnTrack ? '#51CF66' : '#FFD43B'}
+            borderRadius={2}
+          />
+        </XStack>
+        <Text fontSize={9} color="rgba(255,255,255,0.4)" marginTop="$1">
+          {workoutsThisWeek}/{weeklyTarget} this week
+        </Text>
       </Card>
 
       {/* Effort Level */}
-      <Card flex={1} alignItems="center" minHeight={110} padding="$3">
+      <Card flex={1} alignItems="center" minHeight={130} padding="$3">
         <YStack
           width={40}
           height={40}
           borderRadius={20}
-          backgroundColor="rgba(255, 255, 255, 0.08)"
+          backgroundColor={`${effortColor}15`}
           alignItems="center"
           justifyContent="center"
           marginBottom="$2"
         >
-          <TrendUp size={22} color="#FFFFFF" weight="bold" />
+          <TrendUp size={22} color={effortColor} weight="bold" />
         </YStack>
         <Text
           fontSize="$5"
           fontWeight="300"
-          color="#FFFFFF"
-          marginBottom={2}
+          color={effortColor}
         >
           {effort?.effortLevel ?? '—'}
         </Text>
-        <Text fontSize="$1" color="rgba(255,255,255,0.4)" textAlign="center">
+        <Text fontSize="$1" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$1">
           Effort Level
         </Text>
         {effort?.avgRPE !== null && effort?.avgRPE !== undefined && (
-          <Text fontSize={10} color="rgba(255,255,255,0.5)" marginTop={2}>
+          <Text fontSize={10} color="rgba(255,255,255,0.5)" marginTop="$2">
             RPE {effort.avgRPE.toFixed(1)}
           </Text>
         )}
       </Card>
 
       {/* Push/Pull Balance */}
-      <Card flex={1} alignItems="center" minHeight={110} padding="$3">
+      <Card flex={1} alignItems="center" minHeight={130} padding="$3">
         <YStack
           width={40}
           height={40}
           borderRadius={20}
-          backgroundColor="rgba(255, 255, 255, 0.08)"
+          backgroundColor={`${balanceColor}15`}
           alignItems="center"
           justifyContent="center"
           marginBottom="$2"
         >
-          <Scales size={22} color="#FFFFFF" weight="bold" />
+          <Scales size={22} color={balanceColor} weight="bold" />
         </YStack>
         <Text
-          fontSize={pushPullStatus ? 14 : '$5'}
+          fontSize={14}
           fontWeight="300"
-          color="#FFFFFF"
-          marginBottom={2}
+          color={balanceColor}
         >
           {pushPullStatus?.text ?? '—'}
         </Text>
-        <Text fontSize="$1" color="rgba(255,255,255,0.4)" textAlign="center">
+        <Text fontSize="$1" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$1">
           Push/Pull
         </Text>
+        {/* Mini push/pull bar */}
         {balance && (
-          <Text fontSize={10} color="rgba(255,255,255,0.5)" marginTop={2}>
-            {balance.ratios.pushPull.toFixed(1)}:1
-          </Text>
+          <YStack width="100%" marginTop="$2">
+            <XStack width="100%" height={4} borderRadius={2} overflow="hidden">
+              <YStack width={`${pushPercent}%`} height="100%" backgroundColor="#FFFFFF" />
+              <YStack width={`${pullPercent}%`} height="100%" backgroundColor="rgba(255,255,255,0.25)" />
+            </XStack>
+            <Text fontSize={9} color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$1">
+              {balance.ratios.pushPull.toFixed(1)}:1 ratio
+            </Text>
+          </YStack>
         )}
       </Card>
     </XStack>
@@ -400,29 +445,22 @@ export default function ProgressScreen() {
   const { balance, isLoading: balanceLoading } = useMovementPatternBalance();
   const weightUnit = useSettingsStore((s) => s.weightUnit);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
+  const [helpMetric, setHelpMetric] = useState<MetricKey | null>(null);
 
-  const { progressData, isLoading: progressLoading } = useExerciseProgress(
+  // New analytics hooks
+  const { range, setRange, days, customDateRange, setCustomDateRange } = useAnalyticsTimeRange();
+  const { load: trainingLoad, isLoading: loadLoading } = useTrainingLoad(days ? Math.ceil(days / 7) : 4);
+
+  const { progressData, e1rmData, volumeData, isLoading: progressLoading } = useExerciseProgress(
     selectedExerciseId || (stats.length > 0 ? stats[0].exerciseId : null)
   );
 
-  // Prepare line chart data for strength progression (Victory Native format)
-  // Convert from kg to display unit
-  const lineChartData = progressData.map((point, index) => ({
-    x: index,
-    y: fromKgDisplay(point.value, weightUnit),
-    label: format(point.date, 'M/d'),
-  }));
-
-  // Prepare bar chart data for weekly volume (Victory Native format)
-  // Convert from kg to display unit
-  const barChartData = weeklyData.map((week, index) => ({
-    x: index,
-    y: fromKgVolume(week.volume, weightUnit) / 1000,
-    label: format(new Date(week.week), 'M/d'),
-  }));
+  // Get selected exercise name for chart
+  const selectedExercise = stats.find(
+    (s) => s.exerciseId === (selectedExerciseId || stats[0]?.exerciseId)
+  );
 
   const hasData = stats.length > 0;
-  const hasWeeklyData = weeklyData.length > 0;
   const hasMuscleData = muscleData.length > 0;
 
   return (
@@ -431,9 +469,92 @@ export default function ProgressScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
       >
-      {/* Training Overview - Quick stats */}
+      {/* Global Time Range Selector */}
+      <YStack marginBottom="$5">
+        <TimeRangeSelector
+          value={range}
+          onChange={setRange}
+          options={['1W', '4W', '8W', '3M', '6M', 'ALL']}
+          customDateRange={customDateRange || undefined}
+          onCustomDateChange={setCustomDateRange}
+        />
+      </YStack>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          PRIMARY: Core Progress Metrics - Most essential for tracking gains
+          ═══════════════════════════════════════════════════════════════════ */}
+
+      {/* Weekly Volume - Progressive overload tracking */}
       <Section marginBottom="$6">
-        <SectionHeader title="This Week" />
+        <SectionHeader title="Weekly Volume" onInfoPress={() => setHelpMetric('weeklyVolume')} />
+        <WeeklyVolumeChart data={weeklyData} isLoading={volumeLoading} />
+      </Section>
+
+      {/* Strength Progress - Per-exercise progress chart */}
+      <Section marginBottom="$6">
+        <SectionHeader title="Strength Progress" onInfoPress={() => setHelpMetric('strengthProgress')} />
+
+        {hasData && (
+          <ExerciseSelector
+            exercises={stats}
+            selectedId={selectedExerciseId || stats[0]?.exerciseId}
+            onSelect={setSelectedExerciseId}
+          />
+        )}
+
+        <StrengthProgressChart
+          weightData={progressData}
+          e1rmData={e1rmData}
+          volumeData={volumeData}
+          isLoading={progressLoading}
+          exerciseName={selectedExercise?.exercise.name}
+        />
+      </Section>
+
+      {/* Personal Records - Celebrate achievements */}
+      <Section marginBottom="$6">
+        <SectionHeader title="Personal Records" onInfoPress={() => setHelpMetric('personalRecords')} />
+        {statsLoading ? (
+          <Text color="rgba(255,255,255,0.5)" fontSize="$3">Loading...</Text>
+        ) : stats.length === 0 ? (
+          <Text color="rgba(255,255,255,0.5)" fontSize="$3">Complete workouts to track your PRs</Text>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 12, paddingRight: 16 }}
+          >
+            {stats.slice(0, 10).map((stat) => {
+              const prData: PRCardData = {
+                exerciseId: stat.exerciseId,
+                exerciseName: stat.exercise.name,
+                maxWeight: stat.maxWeight,
+                estimated1RM: stat.estimated1RM,
+                previousMax: null,
+                prDate: stat.lastPerformed,
+                isRecent: stat.lastPerformed
+                  ? differenceInDays(new Date(), stat.lastPerformed) <= 7
+                  : false,
+              };
+              return <EnhancedPRCard key={stat.exerciseId} data={prData} />;
+            })}
+          </ScrollView>
+        )}
+      </Section>
+
+      {/* Strongest Lifts - Leaderboard */}
+      <Section marginBottom="$6">
+        <SectionHeader title="Strongest Lifts" onInfoPress={() => setHelpMetric('strongestLifts')} />
+        <StrengthLeaderboard stats={stats} isLoading={statsLoading} limit={5} />
+      </Section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          SECONDARY: Consistency & Training Load
+          ═══════════════════════════════════════════════════════════════════ */}
+
+      {/* This Week - Quick snapshot */}
+      <Section marginBottom="$6">
+        <SectionHeader title="This Week" onInfoPress={() => setHelpMetric('thisWeek')} />
         {streaksLoading || effortLoading || balanceLoading ? (
           <Text color="rgba(255,255,255,0.5)" fontSize="$3">Loading...</Text>
         ) : (
@@ -445,9 +566,9 @@ export default function ProgressScreen() {
         )}
       </Section>
 
-      {/* Workout Frequency Calendar */}
+      {/* Workout Frequency - Calendar view */}
       <Section marginBottom="$6">
-        <SectionHeader title="Workout Frequency" />
+        <SectionHeader title="Workout Frequency" onInfoPress={() => setHelpMetric('workoutFrequency')} />
         {frequencyLoading ? (
           <Text color="rgba(255,255,255,0.5)" fontSize="$3">Loading...</Text>
         ) : (
@@ -455,237 +576,204 @@ export default function ProgressScreen() {
         )}
       </Section>
 
-      {/* Personal Records Section */}
+      {/* Training Load - Detailed metrics */}
       <Section marginBottom="$6">
-        <SectionHeader title="Personal Records" />
-        {statsLoading ? (
+        <SectionHeader title="Training Load" onInfoPress={() => setHelpMetric('trainingLoad')} />
+        {loadLoading ? (
           <Text color="rgba(255,255,255,0.5)" fontSize="$3">Loading...</Text>
-        ) : stats.length === 0 ? (
-          <Text color="rgba(255,255,255,0.5)" fontSize="$3">Complete workouts to track your PRs</Text>
+        ) : trainingLoad ? (
+          <TrainingLoadCard load={trainingLoad} />
         ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 12, paddingRight: 16 }}
-          >
-            {stats.slice(0, 10).map((stat) => (
-              <PRCard key={stat.exerciseId} stat={stat} />
-            ))}
-          </ScrollView>
-        )}
-      </Section>
-
-      {/* Muscle Group Breakdown - Pie Chart */}
-      <Section marginBottom="$6">
-        <SectionHeader title="Muscle Groups" />
-        {muscleLoading ? (
-          <Card alignItems="center" justifyContent="center" padding="$6">
-            <Text color="rgba(255,255,255,0.5)">Loading...</Text>
-          </Card>
-        ) : !hasMuscleData ? (
-          <Card alignItems="center" justifyContent="center" padding="$6">
-            <Text color="rgba(255,255,255,0.5)">Complete workouts to see muscle breakdown</Text>
-          </Card>
-        ) : (
-          <Card>
-            {(() => {
-              // High contrast grayscale - no pure white
-              const pieColors = [
-                '#D0D0D0',    // Light gray
-                '#1A1A1A',    // Near black
-                '#909090',    // Medium gray
-                '#4D4D4D',    // Dark gray
-                '#B8B8B8',    // Silver
-                '#606060',    // Gray
-                '#383838',    // Charcoal
-                '#787878',    // Neutral gray
-              ];
-
-              const totalVolumeKg = muscleData.reduce((sum, d) => sum + d.volume, 0);
-              const totalVolumeDisplay = fromKgVolume(totalVolumeKg, weightUnit);
-              const pieData = muscleData.slice(0, 6).map((item, index) => ({
-                value: item.volume,
-                color: pieColors[index % pieColors.length],
-                text: '',
-              }));
-
-              return (
-                <XStack alignItems="center" gap="$4">
-                  <PieChart
-                    data={pieData}
-                    donut
-                    radius={80}
-                    innerRadius={50}
-                    strokeWidth={2}
-                    strokeColor="#000000"
-                    centerLabelComponent={() => (
-                      <YStack alignItems="center" justifyContent="center">
-                        <Text fontSize={20} fontWeight="600" color="#FFFFFF">
-                          {(totalVolumeDisplay / 1000).toFixed(1)}k
-                        </Text>
-                        <Text fontSize={11} color="rgba(255,255,255,0.5)">
-                          total {weightUnit}
-                        </Text>
-                      </YStack>
-                    )}
-                  />
-                  <YStack flex={1} gap="$3">
-                    {muscleData.slice(0, 6).map((item, index) => {
-                      const percent = ((item.volume / totalVolumeKg) * 100).toFixed(0);
-                      const itemVolumeDisplay = fromKgVolume(item.volume, weightUnit);
-                      return (
-                        <XStack key={item.group} alignItems="center" gap="$3">
-                          <YStack
-                            width={14}
-                            height={14}
-                            borderRadius={4}
-                            backgroundColor={pieColors[index % pieColors.length]}
-                          />
-                          <YStack flex={1}>
-                            <Text fontSize={14} fontWeight="600" color="#FFFFFF">
-                              {item.group}
-                            </Text>
-                            <Text fontSize={12} color="rgba(255,255,255,0.5)">
-                              {(itemVolumeDisplay / 1000).toFixed(1)}k · {percent}%
-                            </Text>
-                          </YStack>
-                        </XStack>
-                      );
-                    })}
-                  </YStack>
-                </XStack>
-              );
-            })()}
-          </Card>
-        )}
-      </Section>
-
-      {/* Strength Progress Section */}
-      <Section marginBottom="$6">
-        <SectionHeader title="Strength Progress" />
-
-        {hasData && (
-          <ExerciseSelector
-            exercises={stats}
-            selectedId={selectedExerciseId || stats[0]?.exerciseId}
-            onSelect={setSelectedExerciseId}
-          />
-        )}
-
-        {progressLoading ? (
-          <Card height={200} alignItems="center" justifyContent="center">
-            <Text color="rgba(255,255,255,0.5)">Loading chart...</Text>
-          </Card>
-        ) : progressData.length < 2 ? (
-          <Card height={200} alignItems="center" justifyContent="center">
-            <Text color="rgba(255,255,255,0.5)">
-              {hasData
-                ? 'Log more workouts to see progress'
-                : 'Complete workouts to see progress charts'}
+          <Card padding="$4">
+            <Text color="rgba(255,255,255,0.5)" textAlign="center">
+              Complete workouts to see training load
             </Text>
           </Card>
-        ) : (
-          <Card>
-            <YStack height={200}>
-              <CartesianChart
-                data={lineChartData}
-                xKey="x"
-                yKeys={["y"]}
-                axisOptions={{
-                  formatXLabel: (value) => lineChartData[value]?.label || '',
-                  labelColor: 'rgba(255, 255, 255, 0.4)',
-                  lineColor: 'rgba(255, 255, 255, 0.08)',
-                }}
-                domainPadding={{ left: 20, right: 20, top: 20 }}
-              >
-                {({ points }) => (
-                  <Line
-                    points={points.y}
-                    color="#FFFFFF"
-                    strokeWidth={2}
-                    curveType="natural"
-                    animate={{ type: "timing", duration: 500 }}
-                  />
-                )}
-              </CartesianChart>
+        )}
+      </Section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          TERTIARY: Balance & Recovery
+          ═══════════════════════════════════════════════════════════════════ */}
+
+      {/* Muscle Groups - Horizontal bars with balance score */}
+      <Section marginBottom="$6">
+        <SectionHeader title="Muscle Groups" onInfoPress={() => setHelpMetric('muscleGroups')} />
+        <MuscleGroupsCard data={muscleData} isLoading={muscleLoading} />
+      </Section>
+
+      {/* Movement Balance - Push/Pull, Upper/Lower */}
+      {balance && (
+        <Section marginBottom="$6">
+          <SectionHeader title="Movement Balance" onInfoPress={() => setHelpMetric('movementBalance')} />
+          <Card padding="$4">
+            <YStack gap="$4">
+              <BalanceGauge
+                label1="Push"
+                label2="Pull"
+                value1={balance.pushVolume}
+                value2={balance.pullVolume}
+                targetRatio={1}
+              />
+              <BalanceGauge
+                label1="Upper"
+                label2="Lower"
+                value1={balance.upperVolume}
+                value2={balance.lowerVolume}
+                targetRatio={1}
+              />
             </YStack>
-            <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$3">
-              Weight ({weightUnit}) over time
-            </Text>
           </Card>
-        )}
-      </Section>
+        </Section>
+      )}
 
-      {/* Volume Trends Section */}
+      {/* Recovery Status - Which muscles are ready */}
       <Section marginBottom="$6">
-        <SectionHeader title="Weekly Volume" />
-
-        {volumeLoading ? (
-          <Card height={200} alignItems="center" justifyContent="center">
-            <Text color="rgba(255,255,255,0.5)">Loading...</Text>
-          </Card>
-        ) : !hasWeeklyData ? (
-          <Card height={200} alignItems="center" justifyContent="center">
-            <Text color="rgba(255,255,255,0.5)">Log more workouts to see volume trends</Text>
-          </Card>
-        ) : (
-          <Card>
-            <YStack height={200}>
-              <CartesianChart
-                data={barChartData}
-                xKey="x"
-                yKeys={["y"]}
-                axisOptions={{
-                  formatXLabel: (value) => barChartData[value]?.label || '',
-                  labelColor: 'rgba(255, 255, 255, 0.4)',
-                  lineColor: 'rgba(255, 255, 255, 0.08)',
-                }}
-                domainPadding={{ left: 30, right: 30, top: 20 }}
-              >
-                {({ points, chartBounds }) => (
-                  <Bar
-                    points={points.y}
-                    chartBounds={chartBounds}
-                    color="#FFFFFF"
-                    roundedCorners={{ topLeft: 6, topRight: 6 }}
-                    animate={{ type: "timing", duration: 500 }}
-                  />
-                )}
-              </CartesianChart>
-            </YStack>
-            <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$3">
-              Total volume (thousands of {weightUnit}) per week
-            </Text>
-          </Card>
-        )}
+        <SectionHeader title="Recovery Status" onInfoPress={() => setHelpMetric('recoveryStatus')} />
+        <MuscleRecoveryList />
       </Section>
 
-      {/* Summary Stats */}
+      {/* All-Time Summary - Engaging Stats */}
       {hasData && (
         <Section>
-          <SectionHeader title="All-Time Summary" />
-          <XStack gap="$3">
-            <Card flex={1} alignItems="center" paddingVertical="$4">
-              <Barbell size={24} color="#FFFFFF" weight="duotone" />
-              <StatNumber value={stats.length} size="md" />
-              <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$1">
-                Exercises Tracked
-              </Text>
-            </Card>
-            <Card flex={1} alignItems="center" paddingVertical="$4">
-              <TrendUp size={24} color="#FFFFFF" weight="bold" />
-              <StatNumber
-                value={`${Math.round(fromKgVolume(stats.reduce((sum, s) => sum + s.totalVolume, 0), weightUnit) / 1000)}k`}
-                size="md"
-              />
-              <Text fontSize="$2" color="rgba(255,255,255,0.4)" textAlign="center" marginTop="$1">
-                Total Volume ({weightUnit})
-              </Text>
-            </Card>
-          </XStack>
+          <SectionHeader title="All-Time Summary" onInfoPress={() => setHelpMetric('allTimeSummary')} />
+
+          {/* Hero Card - Total Volume */}
+          {(() => {
+            const totalVolumeKg = stats.reduce((sum, s) => sum + s.totalVolume, 0);
+            const totalVolumeDisplay = fromKgVolume(totalVolumeKg, weightUnit);
+            const totalWorkouts = frequencyData.reduce((sum, d) => sum + d.count, 0);
+
+            // Fun comparison - elephants weigh ~5000kg, cars ~1500kg
+            const elephants = Math.floor(totalVolumeKg / 5000);
+            const cars = Math.floor(totalVolumeKg / 1500);
+
+            // Format large numbers nicely
+            const formatVolume = (vol: number) => {
+              if (vol >= 1000000) return `${(vol / 1000000).toFixed(1)}M`;
+              if (vol >= 1000) return `${(vol / 1000).toFixed(0)}k`;
+              return Math.round(vol).toString();
+            };
+
+            return (
+              <YStack gap="$3">
+                {/* Main Hero Stat */}
+                <Card>
+                  <YStack alignItems="center" paddingVertical="$2">
+                    <XStack alignItems="center" gap="$2" marginBottom="$2">
+                      <Rocket size={20} color="#FFD700" weight="fill" />
+                      <Text fontSize={11} fontWeight="600" color="rgba(255,255,255,0.5)" textTransform="uppercase" letterSpacing={1}>
+                        Total Weight Lifted
+                      </Text>
+                    </XStack>
+                    <Text fontSize={48} fontWeight="200" color="#FFFFFF">
+                      {formatVolume(totalVolumeDisplay)}
+                    </Text>
+                    <Text fontSize={16} color="rgba(255,255,255,0.5)" marginTop={-4}>
+                      {weightUnit}
+                    </Text>
+
+                    {/* Fun comparison */}
+                    {totalVolumeKg >= 5000 && (
+                      <XStack
+                        marginTop="$3"
+                        paddingHorizontal="$3"
+                        paddingVertical="$2"
+                        backgroundColor="rgba(255, 215, 0, 0.1)"
+                        borderRadius={20}
+                        alignItems="center"
+                        gap="$2"
+                      >
+                        <Text fontSize={14}>🐘</Text>
+                        <Text fontSize={12} color="#FFD700" fontWeight="500">
+                          {elephants} elephant{elephants !== 1 ? 's' : ''} worth of weight!
+                        </Text>
+                      </XStack>
+                    )}
+                    {totalVolumeKg >= 1500 && totalVolumeKg < 5000 && (
+                      <XStack
+                        marginTop="$3"
+                        paddingHorizontal="$3"
+                        paddingVertical="$2"
+                        backgroundColor="rgba(255, 215, 0, 0.1)"
+                        borderRadius={20}
+                        alignItems="center"
+                        gap="$2"
+                      >
+                        <Text fontSize={14}>🚗</Text>
+                        <Text fontSize={12} color="#FFD700" fontWeight="500">
+                          {cars} car{cars !== 1 ? 's' : ''} worth of weight!
+                        </Text>
+                      </XStack>
+                    )}
+                  </YStack>
+                </Card>
+
+                {/* Stats Grid */}
+                <XStack gap="$3">
+                  <Card flex={1} padding="$3">
+                    <YStack alignItems="center" gap="$1">
+                      <CalendarCheck size={20} color="#51CF66" weight="duotone" />
+                      <Text fontSize={24} fontWeight="300" color="#FFFFFF">
+                        {totalWorkouts}
+                      </Text>
+                      <Text fontSize={10} color="rgba(255,255,255,0.4)" textAlign="center">
+                        Workouts
+                      </Text>
+                    </YStack>
+                  </Card>
+
+                  <Card flex={1} padding="$3">
+                    <YStack alignItems="center" gap="$1">
+                      <Barbell size={20} color="#4DABF7" weight="duotone" />
+                      <Text fontSize={24} fontWeight="300" color="#FFFFFF">
+                        {stats.length}
+                      </Text>
+                      <Text fontSize={10} color="rgba(255,255,255,0.4)" textAlign="center">
+                        Exercises
+                      </Text>
+                    </YStack>
+                  </Card>
+
+                  <Card flex={1} padding="$3">
+                    <YStack alignItems="center" gap="$1">
+                      <Trophy size={20} color="#FFD700" weight="fill" />
+                      <Text fontSize={24} fontWeight="300" color="#FFFFFF">
+                        {stats.filter(s => s.maxWeight !== null).length}
+                      </Text>
+                      <Text fontSize={10} color="rgba(255,255,255,0.4)" textAlign="center">
+                        PRs Set
+                      </Text>
+                    </YStack>
+                  </Card>
+                </XStack>
+
+                {/* Motivational Footer */}
+                <XStack
+                  justifyContent="center"
+                  alignItems="center"
+                  paddingVertical="$3"
+                  gap="$2"
+                >
+                  <Lightning size={14} color="rgba(255,255,255,0.3)" weight="fill" />
+                  <Text fontSize={11} color="rgba(255,255,255,0.3)" fontStyle="italic">
+                    Every rep counts. Keep pushing!
+                  </Text>
+                  <Lightning size={14} color="rgba(255,255,255,0.3)" weight="fill" />
+                </XStack>
+              </YStack>
+            );
+          })()}
         </Section>
       )}
       </ScrollView>
+
+      {/* Metric Help Modal */}
+      <MetricHelpModal
+        visible={helpMetric !== null}
+        metricKey={helpMetric}
+        onClose={() => setHelpMetric(null)}
+      />
     </YStack>
   );
 }

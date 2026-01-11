@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FlatList, RefreshControl, Alert, ActionSheetIOS, Platform } from 'react-native';
 import { format, formatDistanceToNow } from 'date-fns';
 import { router } from 'expo-router';
-import { ArrowsClockwise, DownloadSimple, Clock } from 'phosphor-react-native';
+import { ArrowsClockwise, DownloadSimple, Clock, ClockCounterClockwise, Barbell } from 'phosphor-react-native';
 import * as Haptics from 'expo-haptics';
 import { YStack, XStack, Text } from 'tamagui';
 
@@ -56,7 +56,7 @@ function WorkoutCard({
     : null;
 
   const handleRepeat = (e: any) => {
-    e.stopPropagation(); // Prevent card navigation
+    e.stopPropagation();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onRepeat();
   };
@@ -73,38 +73,58 @@ function WorkoutCard({
       pressStyle={{ scale: 0.98, opacity: 0.9 }}
       cursor="pointer"
     >
-      {/* Header with duration badge */}
-      <XStack justifyContent="space-between" alignItems="flex-start" marginBottom="$2">
-        <YStack flex={1}>
-          <Text fontSize="$5" fontWeight="600" color="#FFFFFF">
-            {workout.name || 'Workout'}
-          </Text>
-          <Text fontSize="$2" color="rgba(255,255,255,0.5)" marginTop="$1">
+      {/* Header */}
+      <XStack alignItems="flex-start" gap="$3" marginBottom="$3">
+        {/* Workout Icon */}
+        <YStack
+          width={44}
+          height={44}
+          borderRadius={12}
+          backgroundColor="rgba(255,255,255,0.08)"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Barbell size={22} color="#FFFFFF" weight="duotone" />
+        </YStack>
+
+        {/* Workout Info */}
+        <YStack flex={1} marginRight="$2">
+          <XStack justifyContent="space-between" alignItems="flex-start">
+            <Text fontSize="$4" fontWeight="600" color="#FFFFFF" numberOfLines={1} flex={1} marginRight="$2">
+              {workout.name || 'Workout'}
+            </Text>
+            {/* Duration Badge */}
+            <XStack
+              backgroundColor="rgba(255, 255, 255, 0.10)"
+              paddingHorizontal={10}
+              paddingVertical={6}
+              borderRadius={8}
+              alignItems="center"
+              gap={4}
+              flexShrink={0}
+            >
+              <Clock size={14} color="#FFFFFF" weight="bold" />
+              <Text fontSize="$2" fontWeight="600" color="#FFFFFF">
+                {formatDuration(durationSecs)}
+              </Text>
+            </XStack>
+          </XStack>
+          <Text fontSize="$2" color="rgba(255,255,255,0.5)" marginTop={2}>
             {dateStr}
           </Text>
-        </YStack>
-        <YStack alignItems="flex-end">
-          <XStack
-            backgroundColor="rgba(255, 255, 255, 0.10)"
-            paddingHorizontal="$2"
-            paddingVertical={4}
-            borderRadius={50}
-            alignItems="center"
-            gap="$1"
-          >
-            <Clock size={12} color="#FFFFFF" weight="bold" />
-            <Text fontSize="$2" fontWeight="600" color="#FFFFFF">
-              {formatDuration(durationSecs)}
-            </Text>
-          </XStack>
-          <Text fontSize="$1" color="rgba(255,255,255,0.4)" marginTop="$1">
+          <Text fontSize="$1" color="rgba(255,255,255,0.4)" marginTop={2}>
             {timeAgo}
           </Text>
         </YStack>
       </XStack>
 
       {/* Stats Row */}
-      <XStack justifyContent="space-between" marginTop="$3" marginBottom="$1">
+      <XStack
+        justifyContent="space-between"
+        backgroundColor="rgba(255,255,255,0.03)"
+        borderRadius={10}
+        padding="$3"
+      >
         <MiniStat
           value={workout.exerciseCount.toString()}
           label="exercises"
@@ -124,12 +144,12 @@ function WorkoutCard({
         justifyContent="center"
         alignItems="center"
         gap="$2"
-        marginTop="$4"
-        paddingTop="$3"
-        borderTopWidth={1}
-        borderTopColor="rgba(255, 255, 255, 0.08)"
+        marginTop="$3"
+        paddingVertical="$3"
+        backgroundColor="rgba(255, 255, 255, 0.06)"
+        borderRadius={10}
         onPress={(e) => handleRepeat(e)}
-        pressStyle={{ scale: 0.98, opacity: 0.8 }}
+        pressStyle={{ scale: 0.98, opacity: 0.7, backgroundColor: 'rgba(255,255,255,0.1)' }}
         cursor="pointer"
         accessibilityLabel={`Repeat ${workout.name || 'workout'}`}
         accessibilityRole="button"
@@ -230,6 +250,7 @@ export default function HistoryScreen() {
     return (
       <YStack flex={1} backgroundColor="#000000">
         <EmptyState
+          icon={<ClockCounterClockwise size={48} color="rgba(255,255,255,0.3)" weight="duotone" />}
           title="No workouts logged yet"
           description="Complete a workout to see it here."
         />
@@ -239,6 +260,45 @@ export default function HistoryScreen() {
 
   return (
     <YStack flex={1} backgroundColor="#000000">
+      {/* Page Header */}
+      <XStack
+        justifyContent="space-between"
+        alignItems="center"
+        paddingHorizontal="$4"
+        paddingTop="$4"
+        paddingBottom="$3"
+      >
+        <YStack>
+          <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
+            History
+          </Text>
+          <Text fontSize="$2" color="rgba(255,255,255,0.5)" marginTop={2}>
+            {workouts.length} workout{workouts.length !== 1 ? 's' : ''} logged
+          </Text>
+        </YStack>
+        <XStack
+          paddingHorizontal="$3"
+          paddingVertical="$2"
+          backgroundColor="rgba(255,255,255,0.08)"
+          borderRadius={10}
+          alignItems="center"
+          gap="$2"
+          onPress={() => {
+            Haptics.selectionAsync();
+            handleExport();
+          }}
+          pressStyle={{ opacity: 0.7, scale: 0.98 }}
+          opacity={isExporting ? 0.6 : 1}
+          accessibilityLabel="Export workout data"
+          accessibilityRole="button"
+        >
+          <DownloadSimple size={16} color="#FFFFFF" weight="bold" />
+          <Text fontSize="$2" fontWeight="600" color="#FFFFFF">
+            {isExporting ? 'Exporting...' : 'Export'}
+          </Text>
+        </XStack>
+      </XStack>
+
       <FlatList
         data={workouts}
         keyExtractor={(item) => item.id}
@@ -249,37 +309,9 @@ export default function HistoryScreen() {
             onPress={() => router.push(`/workout/history/${item.id}`)}
           />
         )}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={refresh} />
-        }
-        ListHeaderComponent={
-          <XStack
-            justifyContent="space-between"
-            alignItems="center"
-            marginBottom="$4"
-          >
-            <Text fontSize="$3" fontWeight="500" color="rgba(255,255,255,0.5)">
-              {workouts.length} workout{workouts.length !== 1 ? 's' : ''} logged
-            </Text>
-            <Button
-              variant="secondary"
-              size="sm"
-              onPress={() => {
-                Haptics.selectionAsync();
-                handleExport();
-              }}
-              disabled={isExporting}
-              opacity={isExporting ? 0.6 : 1}
-              accessibilityLabel="Export workout data"
-              accessibilityRole="button"
-            >
-              <DownloadSimple size={14} color="#FFFFFF" weight="bold" />
-              <ButtonText variant="secondary" size="sm">
-                {isExporting ? 'Exporting...' : 'Export'}
-              </ButtonText>
-            </Button>
-          </XStack>
         }
       />
     </YStack>

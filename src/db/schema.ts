@@ -158,6 +158,10 @@ export const templateExercises = sqliteTable('template_exercises', {
   targetSets: integer('target_sets'),
   targetReps: text('target_reps'),
   targetWeightKg: real('target_weight_kg'),
+  // Enhanced template fields
+  restSeconds: integer('rest_seconds').default(90),
+  notes: text('notes'),
+  setsJson: text('sets_json'), // JSON array: [{ reps: "12", weightKg: null }, ...]
   isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
 });
 

@@ -1,7 +1,7 @@
 import { db } from './client';
 import { exercises } from './schema';
 import exerciseData from '../constants/exercises.json';
-import { count } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 import type { ExerciseType, EquipmentType, MovementPattern } from './schema';
 
 // Type for the enhanced exercise data
@@ -18,13 +18,10 @@ interface ExerciseDataItem {
 }
 
 export async function seedExercises() {
-  // Check if exercises already exist
-  const existingCount = await db.select({ count: count() }).from(exercises);
+  console.log('Syncing exercises with JSON data...');
 
-  if (existingCount[0].count > 0) {
-    console.log(`Database already has ${existingCount[0].count} exercises, skipping seed`);
-    return;
-  }
+  // Delete only default (non-custom) exercises to allow reseeding
+  await db.delete(exercises).where(eq(exercises.isCustom, false));
 
   console.log('Seeding exercises with full muscle group data...');
 

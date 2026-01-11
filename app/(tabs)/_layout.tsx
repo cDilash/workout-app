@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
-import { PlusCircle, ClockCounterClockwise, List, ChartLine } from 'phosphor-react-native';
+import { House, ClockCounterClockwise, List, ChartLine, Crown } from 'phosphor-react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,7 +16,7 @@ function TabIcon({
   color,
   focused,
 }: {
-  icon: typeof PlusCircle;
+  icon: typeof House;
   color: string;
   focused: boolean;
 }) {
@@ -85,10 +85,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Workout',
+          title: 'Home',
           headerShown: false,
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon={PlusCircle} color={color} focused={focused} />
+            <TabIcon icon={House} color={color} focused={focused} />
           ),
         }}
       />
@@ -116,6 +116,15 @@ export default function TabLayout() {
           title: 'Progress',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon icon={ChartLine} color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="pricing"
+        options={{
+          title: 'Premium',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon icon={Crown} color={color} focused={focused} />
           ),
         }}
       />

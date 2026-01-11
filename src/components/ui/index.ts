@@ -16,6 +16,9 @@ export { Button, ButtonText, IconButton } from './Button';
 // Input components
 export { Input, SearchInput, NumberInput } from './Input';
 
+// Form components
+export { FormLabel } from './Form';
+
 // Badge & Chip components
 export { Badge, BadgeText, Chip, ChipText } from './Badge';
 
@@ -34,3 +37,6 @@ export { SetCompletionBadge, WarmupBadge, SetNumberBadge } from './SetCompletion
 // Activity indicators
 export { PRBadge } from './PRBadge';
 export { TrendIndicator, TrendBadge } from './TrendIndicator';
+
+// Help modal
+export { MetricHelpModal, METRIC_HELP, type MetricKey, type MetricHelp } from './MetricHelpModal';

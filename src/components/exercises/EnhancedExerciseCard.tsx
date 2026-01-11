@@ -1,11 +1,16 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
+import { Pressable } from 'react-native';
 import { router } from 'expo-router';
-import { CaretRight, Barbell } from 'phosphor-react-native';
+import { CaretRight, Barbell, Star, Fire, Lightning } from 'phosphor-react-native';
 import * as Haptics from 'expo-haptics';
 import { YStack, XStack, Text } from 'tamagui';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 import { Card, Badge, BadgeText, PRBadge, TrendIndicator } from '@/src/components/ui';
+import { useFavoritesStore } from '@/src/stores/favoritesStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { fromKg } from '@/src/utils/unitConversion';
 import type { Exercise } from '@/src/db/schema';
 import type { ExerciseActivityStat } from '@/src/hooks/useExerciseActivityStats';
 
@@ -29,6 +34,11 @@ function EnhancedExerciseCardComponent({
   stats,
   onPress,
 }: EnhancedExerciseCardProps) {
+  const { t } = useTranslation();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite(exercise.id));
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const weightUnit = useSettingsStore((s) => s.weightUnit);
+
   const handlePress = () => {
     Haptics.selectionAsync();
     if (onPress) {
@@ -37,6 +47,26 @@ function EnhancedExerciseCardComponent({
       router.push(`/exercise/${exercise.id}`);
     }
   };
+
+  const handleFavoritePress = (e: any) => {
+    e.stopPropagation(); // Prevent card press from triggering
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleFavorite(exercise.id);
+  };
+
+  // Calculate frequency badge based on this week's usage
+  const frequencyBadge = useMemo(() => {
+    if (!stats?.timesPerformedThisWeek) return null;
+
+    const thisWeek = stats.timesPerformedThisWeek;
+
+    if (thisWeek >= 3) {
+      return { icon: Fire, text: `${thisWeek}x`, color: '#FF6B6B' };
+    } else if (thisWeek >= 1) {
+      return { icon: Lightning, text: `${thisWeek}x`, color: '#51CF66' };
+    }
+    return null;
+  }, [stats?.timesPerformedThisWeek]);
 
   const hasStats = stats && (stats.maxWeight || stats.lastPerformed);
 
@@ -61,17 +91,41 @@ function EnhancedExerciseCardComponent({
           >
             <Barbell size={18} color="#FFFFFF" weight="duotone" />
           </YStack>
-          <YStack flex={1}>
-            <XStack alignItems="center" gap="$2" marginBottom="$1">
-              <Text
-                fontSize="$4"
-                fontWeight="600"
-                color="#FFFFFF"
-                numberOfLines={1}
-                flex={1}
-              >
-                {exercise.name}
+          <YStack flex={1} gap="$1">
+            {/* Exercise Name */}
+            <Text
+              fontSize="$4"
+              fontWeight="600"
+              color="#FFFFFF"
+              numberOfLines={1}
+            >
+              {exercise.name}
+            </Text>
+
+            {/* Equipment + Badges Row */}
+            <XStack alignItems="center" gap="$2" flexWrap="wrap">
+              <Text fontSize="$2" fontWeight="500" color="rgba(255,255,255,0.5)">
+                {exercise.equipment}
               </Text>
+
+              {frequencyBadge && (
+                <XStack
+                  backgroundColor={frequencyBadge.color}
+                  paddingHorizontal={6}
+                  paddingVertical={2}
+                  borderRadius={10}
+                  alignItems="center"
+                  gap={2}
+                >
+                  <frequencyBadge.icon size={12} color="#FFFFFF" weight="fill" />
+                  <Text fontSize={10} fontWeight="600" color="#FFFFFF" lineHeight={12}>
+                    {frequencyBadge.text}
+                  </Text>
+                </XStack>
+              )}
+
+              {stats?.hasRecentPR && <PRBadge size="sm" />}
+
               {exercise.isCustom && (
                 <Badge variant="subtle" size="sm">
                   <BadgeText variant="subtle" size="sm">
@@ -79,18 +133,26 @@ function EnhancedExerciseCardComponent({
                   </BadgeText>
                 </Badge>
               )}
-              {stats?.hasRecentPR && <PRBadge size="sm" />}
             </XStack>
-            <Text fontSize="$2" fontWeight="500" color="rgba(255,255,255,0.5)">
-              {exercise.equipment}
-            </Text>
           </YStack>
         </XStack>
-        <XStack alignItems="center" gap="$2">
+        <XStack alignItems="center" gap="$3">
           {stats?.progressTrend && stats.progressTrend !== 'none' && (
             <TrendIndicator trend={stats.progressTrend} size="sm" showBackground />
           )}
-          <CaretRight size={16} color="rgba(255,255,255,0.4)" />
+          <Pressable
+            onPress={handleFavoritePress}
+            hitSlop={12}
+            accessibilityLabel={isFavorite ? t('exercises.favoriteButton.remove') : t('exercises.favoriteButton.add')}
+            accessibilityRole="button"
+          >
+            <Star
+              size={20}
+              weight={isFavorite ? 'fill' : 'regular'}
+              color={isFavorite ? '#FFD700' : 'rgba(255,255,255,0.3)'}
+            />
+          </Pressable>
+          <CaretRight size={16} color="rgba(255,255,255,0.4)" style={{ marginLeft: 4 }} />
         </XStack>
       </XStack>
 
@@ -115,10 +177,10 @@ function EnhancedExerciseCardComponent({
                 Best
               </Text>
               <Text fontSize="$3" fontWeight="600" color="rgba(255,255,255,0.9)">
-                {stats.maxWeight}
+                {Math.round(fromKg(stats.maxWeight, weightUnit))}
                 <Text fontSize="$2" color="rgba(255,255,255,0.5)">
                   {' '}
-                  kg
+                  {weightUnit}
                 </Text>
               </Text>
             </YStack>
@@ -136,10 +198,10 @@ function EnhancedExerciseCardComponent({
                 e1RM
               </Text>
               <Text fontSize="$3" fontWeight="600" color="rgba(255,255,255,0.7)">
-                {stats.estimated1RM}
+                {Math.round(fromKg(stats.estimated1RM, weightUnit))}
                 <Text fontSize="$2" color="rgba(255,255,255,0.4)">
                   {' '}
-                  kg
+                  {weightUnit}
                 </Text>
               </Text>
             </YStack>
@@ -176,6 +238,8 @@ function formatRelativeDate(date: Date): string {
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
+  // Handle future dates or negative values
+  if (diffDays < 0) return 'Today';
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return '1d ago';
   if (diffDays < 7) return `${diffDays}d ago`;

@@ -8,11 +8,21 @@ import * as Crypto from 'expo-crypto';
 
 const uuid = () => Crypto.randomUUID();
 
+// Per-set target in template
+export interface TemplateSetTarget {
+  reps: string;           // e.g., "12" or "8-10"
+  weightKg: number | null; // Optional weight target
+}
+
 export interface TemplateExerciseData {
   exercise: Exercise;
+  sets: TemplateSetTarget[];   // Array of per-set targets
+  restSeconds: number;          // Rest timer (default: 90)
+  notes: string | null;         // Form cues
+  // Legacy fields for backwards compatibility
   targetSets: number;
   targetReps: string | null;
-  targetWeightKg: number | null; // Explicit unit per DATA_HANDLING.md
+  targetWeightKg: number | null;
 }
 
 export interface WorkoutTemplate {
@@ -59,8 +69,35 @@ export function useTemplates() {
                 .where(eq(exercises.id, te.exerciseId))
                 .limit(1);
 
+              // Parse setsJson or create default from legacy fields
+              let sets: TemplateSetTarget[];
+              if (te.setsJson) {
+                try {
+                  sets = JSON.parse(te.setsJson);
+                } catch (e) {
+                  // Invalid JSON - fall back to legacy fields
+                  console.warn('Invalid setsJson, falling back to legacy fields:', e);
+                  const numSets = te.targetSets || 3;
+                  sets = Array.from({ length: numSets }, () => ({
+                    reps: te.targetReps || '8-12',
+                    weightKg: te.targetWeightKg,
+                  }));
+                }
+              } else {
+                // Backwards compatibility: create sets from legacy fields
+                const numSets = te.targetSets || 3;
+                sets = Array.from({ length: numSets }, () => ({
+                  reps: te.targetReps || '8-12',
+                  weightKg: te.targetWeightKg,
+                }));
+              }
+
               return {
                 exercise: exerciseInfo[0],
+                sets,
+                restSeconds: te.restSeconds ?? 90,
+                notes: te.notes ?? null,
+                // Legacy fields
                 targetSets: te.targetSets || 3,
                 targetReps: te.targetReps,
                 targetWeightKg: te.targetWeightKg,
@@ -155,18 +192,124 @@ export async function deleteTemplate(templateId: string): Promise<void> {
 }
 
 /**
+ * Update an existing template.
+ * Strategy: Update name, soft-delete old exercises, insert new exercises.
+ * This avoids complex diffing logic and ensures data integrity.
+ */
+export async function updateTemplate(
+  templateId: string,
+  name: string,
+  exercises: CreateTemplateExercise[]
+): Promise<void> {
+  // Update template name
+  await db
+    .update(workoutTemplates)
+    .set({ name })
+    .where(eq(workoutTemplates.id, templateId));
+
+  // Soft-delete all existing exercises for this template
+  await db
+    .update(templateExercises)
+    .set({ isDeleted: true })
+    .where(eq(templateExercises.templateId, templateId));
+
+  // Insert new exercises
+  for (let i = 0; i < exercises.length; i++) {
+    const ex = exercises[i];
+    await db.insert(templateExercises).values({
+      id: uuid(),
+      templateId,
+      exerciseId: ex.exerciseId,
+      order: i,
+      // Legacy fields (for backwards compatibility)
+      targetSets: ex.sets.length,
+      targetReps: ex.sets[0]?.reps || '8-12',
+      targetWeightKg: ex.sets[0]?.weightKg || null,
+      // New enhanced fields
+      restSeconds: ex.restSeconds,
+      notes: ex.notes,
+      setsJson: JSON.stringify(ex.sets),
+      isDeleted: false,
+    });
+  }
+}
+
+/**
+ * Create a template directly (without an active workout).
+ * For building templates from scratch in the Templates modal.
+ */
+export interface CreateTemplateExercise {
+  exerciseId: string;
+  sets: TemplateSetTarget[];
+  restSeconds: number;
+  notes: string | null;
+}
+
+export async function createTemplate(
+  name: string,
+  exercises: CreateTemplateExercise[]
+): Promise<string> {
+  const templateId = uuid();
+  const now = new Date();
+
+  await db.insert(workoutTemplates).values({
+    id: templateId,
+    name,
+    createdAt: now,
+    lastUsedAt: null,
+    isDeleted: false,
+  });
+
+  for (let i = 0; i < exercises.length; i++) {
+    const ex = exercises[i];
+    await db.insert(templateExercises).values({
+      id: uuid(),
+      templateId,
+      exerciseId: ex.exerciseId,
+      order: i,
+      // Legacy fields (for backwards compatibility)
+      targetSets: ex.sets.length,
+      targetReps: ex.sets[0]?.reps || '8-12',
+      targetWeightKg: ex.sets[0]?.weightKg || null,
+      // New enhanced fields
+      restSeconds: ex.restSeconds,
+      notes: ex.notes,
+      setsJson: JSON.stringify(ex.sets),
+      isDeleted: false,
+    });
+  }
+
+  return templateId;
+}
+
+/**
  * Convert template to exercise data for starting a workout.
  * Returns weight in generic "weight" for in-memory use (converted to kg on save).
+ * Now supports per-set targets from enhanced templates.
  */
 export function templateToExerciseData(
   template: WorkoutTemplate
-): { exercise: Exercise; sets: { weight: number | null; reps: number | null; isWarmup: boolean }[] }[] {
+): {
+  exercise: Exercise;
+  sets: { weight: number | null; reps: number | null; isWarmup: boolean }[];
+  restSeconds: number;
+  notes: string | null;
+}[] {
   return template.exercises.map((te) => ({
     exercise: te.exercise,
-    sets: Array.from({ length: te.targetSets }, () => ({
-      weight: te.targetWeightKg, // Template stores kg, workout uses generic "weight"
-      reps: te.targetReps ? parseInt(te.targetReps, 10) : null,
-      isWarmup: false,
-    })),
+    // Use per-set targets if available, otherwise fall back to legacy
+    sets: te.sets && te.sets.length > 0
+      ? te.sets.map((setTarget) => ({
+          weight: setTarget.weightKg,
+          reps: setTarget.reps ? parseInt(setTarget.reps, 10) : null,
+          isWarmup: false,
+        }))
+      : Array.from({ length: te.targetSets }, () => ({
+          weight: te.targetWeightKg,
+          reps: te.targetReps ? parseInt(te.targetReps, 10) : null,
+          isWarmup: false,
+        })),
+    restSeconds: te.restSeconds ?? 90,
+    notes: te.notes ?? null,
   }));
 }

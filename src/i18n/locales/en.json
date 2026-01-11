@@ -155,6 +155,15 @@
     "search": "Search exercises...",
     "noResults": "No exercises found",
     "tryDifferentSearch": "Try a different search term",
+    "sections": {
+      "favorites": "Favorites",
+      "recent": "Recent (Last {{days}} Days)",
+      "custom": "Custom Exercises"
+    },
+    "favoriteButton": {
+      "add": "Add to favorites",
+      "remove": "Remove from favorites"
+    },
     "filters": {
       "all": "All",
       "muscleGroup": "Muscle Group",

@@ -5,20 +5,24 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ScrollView as RNScrollView,
+  Pressable,
 } from 'react-native';
 import { useState, useMemo, useEffect } from 'react';
 import { router } from 'expo-router';
-import { Plus, Check } from 'phosphor-react-native';
+import { Plus, Check, Star, Clock, PencilSimple, Barbell } from 'phosphor-react-native';
 import * as Haptics from 'expo-haptics';
 import { YStack, XStack, Text } from 'tamagui';
+import { useTranslation } from 'react-i18next';
 
 import { useExercises } from '@/src/hooks/useExercises';
 import { useExerciseActivityStats } from '@/src/hooks/useExerciseActivityStats';
+import { useFavoritesStore } from '@/src/stores/favoritesStore';
 import { db } from '@/src/db/client';
 import { exercises } from '@/src/db/schema';
 import * as Crypto from 'expo-crypto';
 import type { Exercise, ExerciseType, EquipmentType, MuscleGroup } from '@/src/db/schema';
-import { Button, ButtonText, Chip, ChipText, SearchInput, EmptyState } from '@/src/components/ui';
+import { Button, ButtonText, Chip, ChipText, SearchInput, Input, EmptyState } from '@/src/components/ui';
 import { EnhancedExerciseCard } from '@/src/components/exercises';
 
 /**
@@ -27,21 +31,16 @@ import { EnhancedExerciseCard } from '@/src/components/exercises';
  * Clean exercise library with white/gray filter chips and elegant cards.
  */
 
-// Filter options for the exercise list
-const MUSCLE_GROUP_FILTERS = [
+// Filter options - simplified muscle groups
+const FILTER_OPTIONS = [
   { key: null, label: 'All' },
-  { key: 'Chest', label: 'Chest' },
-  { key: 'Back', label: 'Back' },
-  { key: 'Shoulders', label: 'Shoulders' },
-  { key: 'Biceps', label: 'Biceps' },
-  { key: 'Triceps', label: 'Triceps' },
-  { key: 'Quads', label: 'Quads' },
-  { key: 'Hamstrings', label: 'Hamstrings' },
-  { key: 'Glutes', label: 'Glutes' },
-  { key: 'Core', label: 'Core' },
-  { key: 'Calves', label: 'Calves' },
-  { key: 'Cardio', label: 'Cardio' },
-];
+  { key: 'chest', label: 'Chest' },
+  { key: 'back', label: 'Back' },
+  { key: 'shoulders', label: 'Shoulders' },
+  { key: 'arms', label: 'Arms' },
+  { key: 'legs', label: 'Legs' },
+  { key: 'core', label: 'Core' },
+] as const;
 
 // Equipment options for creating exercises (display-friendly labels)
 const EQUIPMENT_OPTIONS: { value: EquipmentType; label: string }[] = [
@@ -238,10 +237,13 @@ function CreateExerciseModal({ visible, onClose, onCreated }: CreateExerciseModa
         </XStack>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
-          <Text fontSize="$3" fontWeight="600" color="#FFFFFF" marginBottom="$2" marginTop="$4">
+          <Text fontSize="$3" fontWeight="600" color="#FFFFFF" marginBottom="$1" marginTop="$4">
             Exercise Name
           </Text>
-          <SearchInput
+          <Text fontSize="$1" color="rgba(255,255,255,0.5)" marginBottom="$2">
+            Give your exercise a descriptive name
+          </Text>
+          <Input
             placeholder="e.g., Incline Hammer Curl"
             value={name}
             onChangeText={setName}
@@ -251,33 +253,35 @@ function CreateExerciseModal({ visible, onClose, onCreated }: CreateExerciseModa
           <Text fontSize="$3" fontWeight="600" color="#FFFFFF" marginBottom="$2" marginTop="$4">
             Exercise Type
           </Text>
-          <XStack gap="$2" flexWrap="wrap">
+          <XStack gap="$3" flexWrap="wrap">
             {EXERCISE_TYPE_OPTIONS.map((option) => (
               <YStack
                 key={option.value}
                 flex={1}
                 minWidth={140}
                 paddingHorizontal="$4"
-                paddingVertical="$3"
+                paddingVertical="$4"
                 borderRadius={16}
-                backgroundColor={exerciseType === option.value ? '#FFFFFF' : 'rgba(255, 255, 255, 0.08)'}
+                borderWidth={2}
+                borderColor={exerciseType === option.value ? '#FFFFFF' : 'rgba(255, 255, 255, 0.10)'}
+                backgroundColor={exerciseType === option.value ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.03)'}
                 alignItems="center"
                 onPress={() => setExerciseType(option.value)}
-                pressStyle={{ opacity: 0.7 }}
+                pressStyle={{ opacity: 0.8, scale: 0.98 }}
                 cursor="pointer"
                 accessibilityLabel={`Select ${option.label} exercise type`}
                 accessibilityRole="button"
               >
                 <Text
-                  fontSize="$3"
-                  color={exerciseType === option.value ? '#000000' : '#FFFFFF'}
-                  fontWeight={exerciseType === option.value ? '600' : '400'}
+                  fontSize="$4"
+                  color="#FFFFFF"
+                  fontWeight={exerciseType === option.value ? '600' : '500'}
                 >
                   {option.label}
                 </Text>
                 <Text
-                  fontSize="$1"
-                  color={exerciseType === option.value ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.5)'}
+                  fontSize="$2"
+                  color="rgba(255,255,255,0.5)"
                   marginTop="$1"
                 >
                   {option.description}
@@ -295,8 +299,10 @@ function CreateExerciseModal({ visible, onClose, onCreated }: CreateExerciseModa
                 key={equip.value}
                 selected={equipment === equip.value}
                 onPress={() => setEquipment(equip.value)}
-                accessibilityLabel={`Select ${equip.label} equipment`}
+                accessibilityLabel={`${equip.label}`}
                 accessibilityRole="button"
+                accessibilityState={{ selected: equipment === equip.value }}
+                accessibilityHint="Double tap to select"
               >
                 <ChipText selected={equipment === equip.value}>{equip.label}</ChipText>
               </Chip>
@@ -318,8 +324,10 @@ function CreateExerciseModal({ visible, onClose, onCreated }: CreateExerciseModa
                 key={muscle.value}
                 selected={primaryMuscles.includes(muscle.value)}
                 onPress={() => toggleMuscle(muscle.value, primaryMuscles, setPrimaryMuscles)}
-                accessibilityLabel={`${primaryMuscles.includes(muscle.value) ? 'Deselect' : 'Select'} ${muscle.label} as primary muscle`}
+                accessibilityLabel={`${muscle.label}`}
                 accessibilityRole="button"
+                accessibilityState={{ selected: primaryMuscles.includes(muscle.value) }}
+                accessibilityHint="Double tap to toggle selection"
               >
                 <XStack alignItems="center" gap="$1">
                   {primaryMuscles.includes(muscle.value) && (
@@ -342,31 +350,22 @@ function CreateExerciseModal({ visible, onClose, onCreated }: CreateExerciseModa
           </Text>
           <XStack gap="$2" flexWrap="wrap">
             {PRIMARY_MUSCLE_OPTIONS.map((muscle) => (
-              <XStack
+              <Chip
                 key={muscle.value}
-                paddingHorizontal="$3"
-                paddingVertical="$2"
-                borderRadius={50}
-                backgroundColor={secondaryMuscles.includes(muscle.value) ? 'rgba(255, 255, 255, 0.30)' : 'rgba(255, 255, 255, 0.08)'}
-                alignItems="center"
-                gap="$1"
+                selected={secondaryMuscles.includes(muscle.value)}
                 onPress={() => toggleMuscle(muscle.value, secondaryMuscles, setSecondaryMuscles)}
-                pressStyle={{ opacity: 0.7 }}
-                cursor="pointer"
-                accessibilityLabel={`${secondaryMuscles.includes(muscle.value) ? 'Deselect' : 'Select'} ${muscle.label} as secondary muscle`}
+                accessibilityLabel={`${muscle.label}`}
                 accessibilityRole="button"
+                accessibilityState={{ selected: secondaryMuscles.includes(muscle.value) }}
+                accessibilityHint="Double tap to toggle selection"
               >
-                {secondaryMuscles.includes(muscle.value) && (
-                  <Check size={12} color="#FFFFFF" weight="bold" />
-                )}
-                <Text
-                  fontSize="$2"
-                  fontWeight="500"
-                  color="#FFFFFF"
-                >
-                  {muscle.label}
-                </Text>
-              </XStack>
+                <XStack alignItems="center" gap="$1">
+                  {secondaryMuscles.includes(muscle.value) && (
+                    <Check size={12} color="#000000" weight="bold" />
+                  )}
+                  <ChipText selected={secondaryMuscles.includes(muscle.value)}>{muscle.label}</ChipText>
+                </XStack>
+              </Chip>
             ))}
           </XStack>
 
@@ -393,41 +392,154 @@ function CreateExerciseModal({ visible, onClose, onCreated }: CreateExerciseModa
   );
 }
 
+const RECENT_DAYS_THRESHOLD = 7;
+
 export default function ExercisesScreen() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const { exercises: allExercises, isLoading, totalCount } = useExercises(searchQuery, null);
   const { stats: activityStats, refresh: refreshStats } = useExerciseActivityStats();
+  const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
+  const loadFavorites = useFavoritesStore((s) => s.loadFavorites);
 
-  // Filter by muscle group
+  // Load favorites on mount
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+
+  // Filter exercises by muscle group
   const filteredExercises = useMemo(() => {
-    if (!selectedMuscle) return allExercises;
-    return allExercises.filter((ex) =>
-      ex.muscleGroup?.toLowerCase().includes(selectedMuscle.toLowerCase())
-    );
-  }, [allExercises, selectedMuscle]);
+    if (!selectedFilter) return allExercises;
 
-  // Group exercises by muscle group
+    return allExercises.filter((ex) => {
+      const muscleGroup = ex.muscleGroup?.toLowerCase() || '';
+      const category = ex.category?.toLowerCase() || '';
+      const primaryMuscles = ex.primaryMuscleGroups?.toLowerCase() || '';
+
+      // Map filter to matching terms
+      const filterMap: Record<string, string[]> = {
+        chest: ['chest'],
+        back: ['back', 'lats', 'rhomboids', 'traps'],
+        shoulders: ['shoulder', 'delt'],
+        arms: ['bicep', 'tricep', 'forearm', 'arm'],
+        legs: ['quad', 'hamstring', 'glute', 'calf', 'leg'],
+        core: ['core', 'ab', 'oblique'],
+      };
+
+      const terms = filterMap[selectedFilter] || [];
+      return terms.some(term =>
+        muscleGroup.includes(term) ||
+        category.includes(term) ||
+        primaryMuscles.includes(term)
+      );
+    });
+  }, [allExercises, selectedFilter]);
+
+  // Smart sections: Favorites → Recent → Custom → Muscle Groups
   const sections = useMemo(() => {
-    const groups: Record<string, Exercise[]> = {};
+    const now = new Date();
+    const recentCutoff = new Date(now.getTime() - RECENT_DAYS_THRESHOLD * 24 * 60 * 60 * 1000);
 
-    for (const exercise of filteredExercises) {
-      const muscle = exercise.muscleGroup?.split(',')[0].trim() || 'Other';
-      if (!groups[muscle]) {
-        groups[muscle] = [];
+    // Track IDs to prevent duplicates
+    const usedIds = new Set<string>();
+
+    // 1. Favorites section
+    const favorites = filteredExercises.filter(e => {
+      if (favoriteIds.has(e.id)) {
+        usedIds.add(e.id);
+        return true;
       }
-      groups[muscle].push(exercise);
+      return false;
+    }).sort((a, b) => a.name.localeCompare(b.name));
+
+    // 2. Recent section (exercises used in last 7 days, excluding favorites)
+    const recent = filteredExercises.filter(e => {
+      if (usedIds.has(e.id)) return false;
+      const stats = activityStats.get(e.id);
+      if (stats?.lastPerformed && stats.lastPerformed >= recentCutoff) {
+        usedIds.add(e.id);
+        return true;
+      }
+      return false;
+    }).sort((a, b) => {
+      const aLast = activityStats.get(a.id)?.lastPerformed?.getTime() || 0;
+      const bLast = activityStats.get(b.id)?.lastPerformed?.getTime() || 0;
+      return bLast - aLast; // Most recent first
+    });
+
+    // 3. Custom section (user-created exercises, excluding already shown)
+    const custom = filteredExercises.filter(e => {
+      if (usedIds.has(e.id)) return false;
+      if (e.isCustom) {
+        usedIds.add(e.id);
+        return true;
+      }
+      return false;
+    }).sort((a, b) => {
+      const aCreated = a.createdAt?.getTime() || 0;
+      const bCreated = b.createdAt?.getTime() || 0;
+      return bCreated - aCreated; // Newest first
+    });
+
+    // 4. Remaining exercises grouped by muscle group
+    const remaining = filteredExercises.filter(e => !usedIds.has(e.id));
+    const muscleGroups: Record<string, Exercise[]> = {};
+
+    for (const exercise of remaining) {
+      const muscle = exercise.muscleGroup?.split(',')[0].trim() || 'Other';
+      if (!muscleGroups[muscle]) {
+        muscleGroups[muscle] = [];
+      }
+      muscleGroups[muscle].push(exercise);
     }
 
-    return Object.entries(groups)
-      .map(([title, data]) => ({
-        title,
-        data: data.sort((a, b) => a.name.localeCompare(b.name)),
-      }))
-      .sort((a, b) => a.title.localeCompare(b.title));
-  }, [filteredExercises]);
+    // Build final sections array
+    const result = [];
+
+    if (favorites.length > 0) {
+      result.push({
+        title: t('exercises.sections.favorites').toUpperCase(),
+        count: favorites.length,
+        data: favorites,
+        icon: 'star',
+      });
+    }
+
+    if (recent.length > 0) {
+      result.push({
+        title: t('exercises.sections.recent', { days: RECENT_DAYS_THRESHOLD }).toUpperCase(),
+        count: recent.length,
+        data: recent,
+        icon: 'clock',
+      });
+    }
+
+    if (custom.length > 0) {
+      result.push({
+        title: t('exercises.sections.custom').toUpperCase(),
+        count: custom.length,
+        data: custom,
+        icon: 'pencil',
+      });
+    }
+
+    // Add muscle group sections (alphabetically)
+    Object.entries(muscleGroups)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([muscle, exs]) => {
+        result.push({
+          title: muscle.toUpperCase(),
+          count: exs.length,
+          data: exs.sort((a, b) => a.name.localeCompare(b.name)),
+          icon: null,
+        });
+      });
+
+    return result;
+  }, [filteredExercises, favoriteIds, activityStats]);
 
   const handleRefresh = () => {
     // Force re-fetch by clearing search and re-setting
@@ -460,27 +572,50 @@ export default function ExercisesScreen() {
         </Button>
       </XStack>
 
-      {/* Chip Filters */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginTop: 12, marginBottom: 4 }}
-        contentContainerStyle={{ paddingLeft: 16, paddingRight: 16, alignItems: 'center' }}
-      >
-        <XStack gap="$2" alignItems="center">
-          {MUSCLE_GROUP_FILTERS.map((item) => (
-            <Chip
-              key={item.key ?? 'all'}
-              selected={selectedMuscle === item.key}
-              onPress={() => setSelectedMuscle(item.key)}
-              accessibilityLabel={`Filter by ${item.label}`}
-              accessibilityRole="button"
-            >
-              <ChipText selected={selectedMuscle === item.key}>{item.label}</ChipText>
-            </Chip>
-          ))}
-        </XStack>
-      </ScrollView>
+      {/* Filter Chips - Horizontal Scroll */}
+      <YStack height={56} justifyContent="center">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          scrollIndicatorInsets={{ bottom: -10 }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            gap: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+          }}
+          style={{ overflow: 'visible' }}
+        >
+          {FILTER_OPTIONS.map((filter) => {
+            const isSelected = selectedFilter === filter.key;
+            return (
+              <Pressable
+                key={filter.key ?? 'all'}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setSelectedFilter(filter.key);
+                }}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 20,
+                  backgroundColor: isSelected ? '#FFFFFF' : 'rgba(255,255,255,0.06)',
+                  borderWidth: 1,
+                  borderColor: isSelected ? '#FFFFFF' : 'rgba(255,255,255,0.12)',
+                }}
+              >
+                <Text
+                  fontSize={13}
+                  fontWeight="600"
+                  color={isSelected ? '#000000' : '#FFFFFF'}
+                >
+                  {filter.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </YStack>
 
       {isLoading ? (
         <YStack flex={1} alignItems="center" justifyContent="center">
@@ -496,34 +631,46 @@ export default function ExercisesScreen() {
               stats={activityStats.get(item.id)}
             />
           )}
-          renderSectionHeader={({ section: { title, data } }) => (
-            <XStack alignItems="center" paddingVertical="$2" marginTop="$4" marginBottom="$2">
-              <Text fontSize="$5" fontWeight="600" color="#FFFFFF">
-                {title}
-              </Text>
+          renderSectionHeader={({ section }) => {
+            const IconComponent =
+              section.icon === 'star' ? Star :
+              section.icon === 'clock' ? Clock :
+              section.icon === 'pencil' ? PencilSimple :
+              null;
+
+            return (
               <XStack
-                backgroundColor="rgba(255, 255, 255, 0.10)"
-                paddingHorizontal="$2"
-                paddingVertical={2}
-                borderRadius={50}
-                marginLeft="$2"
+                alignItems="center"
+                paddingVertical="$3"
+                marginTop="$2"
+                gap="$2"
+                borderBottomWidth={1}
+                borderBottomColor="rgba(255,255,255,0.06)"
               >
-                <Text fontSize="$2" fontWeight="600" color="#FFFFFF">
-                  {data.length}
+                {IconComponent && (
+                  <IconComponent size={16} color="rgba(255,255,255,0.6)" weight="duotone" />
+                )}
+                <Text fontSize="$2" fontWeight="600" color="rgba(255,255,255,0.6)" letterSpacing={0.5}>
+                  {section.title}
+                </Text>
+                <Text fontSize="$2" fontWeight="500" color="rgba(255,255,255,0.4)">
+                  ({section.count})
                 </Text>
               </XStack>
-            </XStack>
-          )}
-          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+            );
+          }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 100 }}
           stickySectionHeadersEnabled={false}
           ListHeaderComponent={
-            <Text fontSize="$2" fontWeight="500" color="rgba(255,255,255,0.5)" marginBottom="$3">
+            <Text fontSize="$2" fontWeight="500" color="rgba(255,255,255,0.5)" marginBottom="$4">
               {filteredExercises.length} of {totalCount} exercises
             </Text>
           }
           ListEmptyComponent={
             <EmptyState
+              icon={<Barbell size={48} color="rgba(255,255,255,0.3)" weight="duotone" />}
               title="No exercises found"
+              description="Try adjusting your search or filter"
               action={
                 <Button
                   variant="primary"

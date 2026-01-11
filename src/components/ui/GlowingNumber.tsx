@@ -9,6 +9,12 @@ import { YStack, Text } from 'tamagui';
 
 // Size configurations - larger for premium feel
 const SIZES = {
+  xs: {
+    value: 22,
+    unit: 11,
+    label: 10,
+    weight: '400' as const,
+  },
   sm: {
     value: 32,
     unit: 14,

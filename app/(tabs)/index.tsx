@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
-import { ScrollView } from 'react-native';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { ScrollView, Modal, Pressable, Dimensions } from 'react-native';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import { router } from 'expo-router';
-import { Plus, Folder, Clock, Barbell } from 'phosphor-react-native';
+import { Plus, Folder, Clock, Barbell, Star, Gift } from 'phosphor-react-native';
 import { formatDistanceToNow } from 'date-fns';
 import * as Haptics from 'expo-haptics';
 import { YStack, XStack, Text } from 'tamagui';
@@ -9,7 +10,8 @@ import { YStack, XStack, Text } from 'tamagui';
 import { useWorkoutHistory } from '@/src/hooks/useWorkoutHistory';
 import { useTemplates, markTemplateUsed, type WorkoutTemplate } from '@/src/hooks/useTemplates';
 import { useWorkoutStore } from '@/src/stores/workoutStore';
-import { useSettingsStore } from '@/src/stores/settingsStore';
+import { useProfileStore } from '@/src/stores/profileStore';
+import { useTemplateFavoritesStore } from '@/src/stores/templateFavoritesStore';
 import { TemplatesModal } from '@/src/components/workout/TemplatesModal';
 import { Button, ButtonText, Card, MiniStat, StatNumber } from '@/src/components/ui';
 import { HomeHeader } from '@/src/components/header';
@@ -21,6 +23,8 @@ import {
   ActiveWorkoutBanner,
   WeeklyActivityCard,
 } from '@/src/components/home';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -39,23 +43,70 @@ function formatDuration(seconds: number | null): string {
   return `${mins}m`;
 }
 
+function isBirthday(dob: Date | null): boolean {
+  if (!dob) return false;
+  const today = new Date();
+  return today.getMonth() === dob.getMonth() && today.getDate() === dob.getDate();
+}
+
 export default function HomeScreen() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(false);
+  const [showBirthdayModal, setShowBirthdayModal] = useState(false);
+  const confettiRef = useRef<ConfettiCannon>(null);
   const { workouts } = useWorkoutHistory();
   const { templates } = useTemplates();
   const { startWorkoutFromTemplate } = useWorkoutStore();
-  const { userName } = useSettingsStore();
+  const { username, dateOfBirth } = useProfileStore();
+  const { favoriteIds, loadFavorites, isFavorite } = useTemplateFavoritesStore();
+
+  // Load favorites on mount
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+
+  // Fire confetti when birthday modal opens
+  useEffect(() => {
+    if (showBirthdayModal && confettiRef.current) {
+      confettiRef.current.start();
+    }
+  }, [showBirthdayModal]);
 
   const greeting = useMemo(() => getGreeting(), []);
-  const personalizedGreeting = userName ? `${greeting}, ${userName}` : greeting;
+  // Extract first name only for greeting
+  const firstName = username ? username.split(' ')[0] : null;
+  const personalizedGreeting = firstName ? `${greeting}, ${firstName}!` : greeting;
   const recentWorkouts = workouts.slice(0, 3);
-  const recentTemplates = templates.slice(0, 3);
+
+  // Sort templates: favorites first, then by last used
+  const sortedTemplates = useMemo(() => {
+    return [...templates].sort((a, b) => {
+      const aFav = favoriteIds.has(a.id);
+      const bFav = favoriteIds.has(b.id);
+      if (aFav && !bFav) return -1;
+      if (!aFav && bFav) return 1;
+      return 0; // Keep original order (by lastUsedAt) for same favorite status
+    });
+  }, [templates, favoriteIds]);
+
+  const quickStartTemplates = sortedTemplates.slice(0, 3);
 
   const handleStartEmpty = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Check if it's the user's birthday
+    if (isBirthday(dateOfBirth)) {
+      setShowBirthdayModal(true);
+    } else {
+      router.push('/workout/new');
+    }
+  };
+
+  const handleBirthdayDismiss = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowBirthdayModal(false);
     router.push('/workout/new');
   };
 
@@ -198,7 +249,7 @@ export default function HomeScreen() {
         </YStack>
 
         {/* Quick Start Templates */}
-        {recentTemplates.length > 0 && (
+        {quickStartTemplates.length > 0 && (
           <YStack marginBottom="$8">
             <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
               <Text
@@ -230,42 +281,50 @@ export default function HomeScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ gap: 12 }}
             >
-              {recentTemplates.map((template) => (
-                <Card
-                  key={template.id}
-                  pressable
-                  width={160}
-                  onPress={() => handleQuickStartTemplate(template)}
-                  accessibilityLabel={`Start ${template.name} workout`}
-                  accessibilityRole="button"
-                >
-                  <YStack gap="$3">
-                    <YStack
-                      width={40}
-                      height={40}
-                      borderRadius={10}
-                      backgroundColor="rgba(255,255,255,0.08)"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Barbell size={20} color="#FFFFFF" />
+              {quickStartTemplates.map((template) => {
+                const isTemplateFavorite = isFavorite(template.id);
+                return (
+                  <Card
+                    key={template.id}
+                    pressable
+                    width={160}
+                    onPress={() => handleQuickStartTemplate(template)}
+                    accessibilityLabel={`Start ${template.name} workout`}
+                    accessibilityRole="button"
+                  >
+                    <YStack gap="$3">
+                      <XStack justifyContent="space-between" alignItems="flex-start">
+                        <YStack
+                          width={40}
+                          height={40}
+                          borderRadius={10}
+                          backgroundColor="rgba(255,255,255,0.08)"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <Barbell size={20} color="#FFFFFF" />
+                        </YStack>
+                        {isTemplateFavorite && (
+                          <Star size={16} weight="fill" color="#FFD700" />
+                        )}
+                      </XStack>
+                      <YStack>
+                        <Text
+                          fontSize={16}
+                          fontWeight="600"
+                          color="#FFFFFF"
+                          numberOfLines={1}
+                        >
+                          {template.name}
+                        </Text>
+                        <Text fontSize={13} fontWeight="400" color="rgba(255,255,255,0.5)" marginTop={4}>
+                          {template.exercises.length} exercises
+                        </Text>
+                      </YStack>
                     </YStack>
-                    <YStack>
-                      <Text
-                        fontSize={16}
-                        fontWeight="600"
-                        color="#FFFFFF"
-                        numberOfLines={1}
-                      >
-                        {template.name}
-                      </Text>
-                      <Text fontSize={13} fontWeight="400" color="rgba(255,255,255,0.5)" marginTop={4}>
-                        {template.exercises.length} exercises
-                      </Text>
-                    </YStack>
-                  </YStack>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </ScrollView>
           </YStack>
         )}
@@ -364,6 +423,90 @@ export default function HomeScreen() {
         visible={showMeasurements}
         onClose={() => setShowMeasurements(false)}
       />
+
+      {/* Birthday Celebration Modal */}
+      <Modal
+        visible={showBirthdayModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowBirthdayModal(false)}
+      >
+        {/* Confetti */}
+        <ConfettiCannon
+          ref={confettiRef}
+          count={150}
+          origin={{ x: SCREEN_WIDTH / 2, y: -20 }}
+          fadeOut
+          autoStart={false}
+          explosionSpeed={300}
+          fallSpeed={2500}
+          colors={['#FFD700', '#FFA500', '#FF6B6B', '#FFFFFF', '#E0E0E0']}
+        />
+
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          onPress={() => setShowBirthdayModal(false)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <YStack
+              backgroundColor="#1A1A1A"
+              borderRadius={20}
+              padding="$5"
+              width={300}
+              alignItems="center"
+              borderWidth={1}
+              borderColor="rgba(255, 215, 0, 0.3)"
+            >
+              {/* Gift Icon */}
+              <YStack
+                width={64}
+                height={64}
+                borderRadius={32}
+                backgroundColor="rgba(255, 215, 0, 0.15)"
+                alignItems="center"
+                justifyContent="center"
+                marginBottom="$4"
+              >
+                <Gift size={32} color="#FFD700" weight="fill" />
+              </YStack>
+
+              {/* Header */}
+              <Text fontSize="$6" fontWeight="700" color="#FFD700" marginBottom="$3">
+                Happy Birthday!
+              </Text>
+
+              {/* Message */}
+              <Text
+                fontSize="$3"
+                color="rgba(255,255,255,0.7)"
+                textAlign="center"
+                lineHeight={22}
+                marginBottom="$5"
+              >
+                Choosing to train today says a lot about your dedication. You're doing
+                something powerful for yourself—keep going.
+              </Text>
+
+              {/* CTA Button */}
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                onPress={handleBirthdayDismiss}
+              >
+                <ButtonText variant="primary" size="lg">
+                  Let's Go!
+                </ButtonText>
+              </Button>
+            </YStack>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </YStack>
   );
 }

@@ -516,15 +516,15 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                     Alert.alert(
                       'Seed Test Data',
-                      'This will add 500 test workouts with all exercises to the database. This may take a moment. Continue?',
+                      'This will add 100 test workouts with all exercises to the database. This may take a moment. Continue?',
                       [
                         { text: 'Cancel', style: 'cancel' },
                         {
                           text: 'Seed Data',
                           onPress: async () => {
                             try {
-                              const count = await seedTestWorkouts(500);
-                              Alert.alert('Success', `Created ${count} test workouts!`);
+                              const count = await seedTestWorkouts(100);
+                              Alert.alert('Success', `Created ${count} test workouts with realistic progression!`);
                             } catch (error) {
                               Alert.alert('Error', 'Failed to seed workouts');
                               console.error(error);

@@ -1,4 +1,5 @@
 import { styled, YStack, XStack, Text, GetProps } from 'tamagui';
+import { Info } from 'phosphor-react-native';
 
 /**
  * Section Component - Premium Monochromatic
@@ -31,27 +32,43 @@ export const Section = styled(YStack, {
 /**
  * Section Header - Premium Monochromatic
  *
- * Title row with optional action button.
+ * Title row with optional action button and info tooltip.
  */
 interface SectionHeaderProps {
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
+  /** Callback when info icon is pressed - shows info icon when provided */
+  onInfoPress?: () => void;
 }
 
-export function SectionHeader({ title, subtitle, action }: SectionHeaderProps) {
+export function SectionHeader({ title, subtitle, action, onInfoPress }: SectionHeaderProps) {
   return (
     <XStack justifyContent="space-between" alignItems="center">
-      <YStack gap="$1">
-        <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
-          {title}
-        </Text>
-        {subtitle && (
-          <Text fontSize="$2" color="rgba(255, 255, 255, 0.5)">
-            {subtitle}
+      <XStack alignItems="center" gap="$2">
+        <YStack gap="$1">
+          <Text fontSize="$6" fontWeight="600" color="#FFFFFF">
+            {title}
           </Text>
+          {subtitle && (
+            <Text fontSize="$2" color="rgba(255, 255, 255, 0.5)">
+              {subtitle}
+            </Text>
+          )}
+        </YStack>
+        {onInfoPress && (
+          <XStack
+            onPress={onInfoPress}
+            padding={6}
+            borderRadius={12}
+            backgroundColor="rgba(255,255,255,0.08)"
+            pressStyle={{ opacity: 0.7, scale: 0.95 }}
+            hitSlop={8}
+          >
+            <Info size={14} color="rgba(255,255,255,0.5)" />
+          </XStack>
         )}
-      </YStack>
+      </XStack>
       {action}
     </XStack>
   );
