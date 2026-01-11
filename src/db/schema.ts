@@ -12,7 +12,7 @@ import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
  */
 
 // Schema version for migrations
-export const SCHEMA_VERSION = '1.1.0'; // Updated: Added bio, dateOfBirth, height, memberSince to userProfile
+export const SCHEMA_VERSION = '1.2.0'; // Updated: Added userId for multi-user auth support
 
 // ============================================
 // EXERCISE CONSTANTS (for visualization & filtering)
@@ -95,6 +95,7 @@ export type MuscleGroup = (typeof MUSCLE_GROUPS)[number];
 // ============================================
 export const exercises = sqliteTable('exercises', {
   id: text('id').primaryKey(),
+  userId: text('user_id'), // Owner if custom exercise, null for system exercises
   name: text('name').notNull(),
 
   // Exercise classification
@@ -140,6 +141,7 @@ export const exercises = sqliteTable('exercises', {
 // ============================================
 export const workoutTemplates = sqliteTable('workout_templates', {
   id: text('id').primaryKey(),
+  userId: text('user_id').notNull(), // Owner of this template (Firebase UID or guest ID)
   name: text('name').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
@@ -170,6 +172,7 @@ export const templateExercises = sqliteTable('template_exercises', {
 // ============================================
 export const workouts = sqliteTable('workouts', {
   id: text('id').primaryKey(),
+  userId: text('user_id').notNull(), // Owner of this workout (Firebase UID or guest ID)
   templateId: text('template_id').references(() => workoutTemplates.id),
   name: text('name'),
 
@@ -270,7 +273,8 @@ export const workoutSnapshots = sqliteTable('workout_snapshots', {
 // USER PROFILE (Single row - local user)
 // ============================================
 export const userProfile = sqliteTable('user_profile', {
-  id: text('id').primaryKey(), // Always 'local_user'
+  id: text('id').primaryKey(), // Firebase UID or guest ID
+  firebaseUid: text('firebase_uid'), // Links to Firebase account, null for guests
   username: text('username'),
   profilePicturePath: text('profile_picture_path'), // Local file path via expo-file-system
 
@@ -326,6 +330,7 @@ export const appSettings = sqliteTable('app_settings', {
 // ============================================
 export const bodyMeasurements = sqliteTable('body_measurements', {
   id: text('id').primaryKey(),
+  userId: text('user_id').notNull(), // Owner of this measurement (Firebase UID or guest ID)
   date: integer('date', { mode: 'timestamp' }).notNull(),
 
   // Core measurements

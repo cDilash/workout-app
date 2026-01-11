@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 
 import { useBodyMeasurements, type NewBodyMeasurement } from '@/src/hooks/useBodyMeasurements';
 import { useSettingsStore } from '@/src/stores/settingsStore';
+import { useAuth } from '@/src/auth/AuthProvider';
 import { Card } from '@/src/components/ui';
 
 interface BodyMeasurementsModalProps {
@@ -258,7 +259,8 @@ function HistoryCard({
 }
 
 export function BodyMeasurementsModal({ visible, onClose }: BodyMeasurementsModalProps) {
-  const { measurements, isLoading, addMeasurement, deleteMeasurement, refresh } = useBodyMeasurements();
+  const { userId } = useAuth();
+  const { measurements, isLoading, addMeasurement, deleteMeasurement, refresh } = useBodyMeasurements(userId);
   const weightUnit = useSettingsStore((s) => s.weightUnit);
   const measurementUnit = useSettingsStore((s) => s.measurementUnit);
   const toKg = useSettingsStore((s) => s.toKg);

@@ -267,6 +267,31 @@ export async function initializeDatabase() {
   await addColumnIfNotExists('app_settings', 'timer_sound_volume', 'REAL NOT NULL DEFAULT 0.7');
   await addColumnIfNotExists('app_settings', 'language_code', "TEXT NOT NULL DEFAULT 'en'");
 
+  // ============================================
+  // AUTH MIGRATIONS: Add userId columns for multi-user support
+  // ============================================
+
+  // Add user_id columns (using 'legacy_user' as default for existing data)
+  // This will be migrated to the actual guest ID during migrateExistingDataToUserId()
+  await addColumnIfNotExists('workouts', 'user_id', "TEXT NOT NULL DEFAULT 'legacy_user'");
+  await addColumnIfNotExists('workout_templates', 'user_id', "TEXT NOT NULL DEFAULT 'legacy_user'");
+  await addColumnIfNotExists('body_measurements', 'user_id', "TEXT NOT NULL DEFAULT 'legacy_user'");
+  await addColumnIfNotExists('exercises', 'user_id', 'TEXT'); // NULL for system exercises
+
+  // Add firebase_uid to user_profile for account linking
+  await addColumnIfNotExists('user_profile', 'firebase_uid', 'TEXT');
+
+  // Create indexes for userId queries
+  try {
+    await expo.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_workouts_user_id ON workouts(user_id);
+      CREATE INDEX IF NOT EXISTS idx_workout_templates_user_id ON workout_templates(user_id);
+      CREATE INDEX IF NOT EXISTS idx_body_measurements_user_id ON body_measurements(user_id);
+    `);
+  } catch {
+    // Indexes may already exist
+  }
+
   // Migrate old weight column data to weight_kg if needed
   try {
     await expo.execAsync(`
@@ -280,4 +305,65 @@ export async function initializeDatabase() {
   // Already handled in CREATE TABLE IF NOT EXISTS above
 
   console.log('Database initialized successfully');
+}
+
+/**
+ * Migrate existing data from 'legacy_user' or 'local_user' to the current userId
+ *
+ * This should be called after authentication is initialized and we have a userId.
+ * It migrates any pre-auth data that was created before the multi-user system was added.
+ *
+ * @param userId - The current user's ID (Firebase UID or guest ID)
+ */
+export async function migrateExistingDataToUserId(userId: string): Promise<void> {
+  try {
+    // Migrate workouts with legacy user IDs
+    await expo.runAsync(`
+      UPDATE workouts
+      SET user_id = ?
+      WHERE user_id IN ('legacy_user', 'local_user', '')
+    `, [userId]);
+
+    // Migrate workout templates
+    await expo.runAsync(`
+      UPDATE workout_templates
+      SET user_id = ?
+      WHERE user_id IN ('legacy_user', 'local_user', '')
+    `, [userId]);
+
+    // Migrate body measurements
+    await expo.runAsync(`
+      UPDATE body_measurements
+      SET user_id = ?
+      WHERE user_id IN ('legacy_user', 'local_user', '')
+    `, [userId]);
+
+    // Migrate user profile
+    await expo.runAsync(`
+      UPDATE user_profile
+      SET id = ?
+      WHERE id = 'local_user'
+    `, [userId]);
+
+    console.log('Migrated existing data to user:', userId);
+  } catch (error) {
+    console.error('Failed to migrate existing data:', error);
+    // Don't throw - migration failure shouldn't block the app
+  }
+}
+
+/**
+ * Check if there is existing legacy data that needs migration
+ */
+export async function hasLegacyData(): Promise<boolean> {
+  try {
+    const result = await expo.getFirstAsync<{ count: number }>(`
+      SELECT COUNT(*) as count
+      FROM workouts
+      WHERE user_id IN ('legacy_user', 'local_user', '')
+    `);
+    return (result?.count ?? 0) > 0;
+  } catch {
+    return false;
+  }
 }

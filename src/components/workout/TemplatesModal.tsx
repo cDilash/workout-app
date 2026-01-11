@@ -16,6 +16,7 @@ import {
   type CreateTemplateExercise,
 } from '@/src/hooks/useTemplates';
 import { useExercises } from '@/src/hooks/useExercises';
+import { useAuth } from '@/src/auth/AuthProvider';
 import { Card, SearchInput, Input, Button, ButtonText, EmptyState, IconButton } from '@/src/components/ui';
 import { useTemplateFavoritesStore } from '@/src/stores/templateFavoritesStore';
 import type { Exercise } from '@/src/db/schema';
@@ -757,6 +758,7 @@ function CreateTemplateModal({ visible, onClose, onSave, editingTemplate }: Crea
   const [templateExercises, setTemplateExercises] = useState<TemplateExerciseInput[]>([]);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const { userId } = useAuth();
 
   const isEditMode = !!editingTemplate;
 
@@ -875,7 +877,7 @@ function CreateTemplateModal({ visible, onClose, onSave, editingTemplate }: Crea
         await updateTemplate(editingTemplate.id, templateName.trim(), exercisesToSave);
       } else {
         // Create new template
-        await createTemplate(templateName.trim(), exercisesToSave);
+        await createTemplate(templateName.trim(), exercisesToSave, userId);
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 

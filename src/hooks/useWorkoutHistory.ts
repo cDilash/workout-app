@@ -288,14 +288,18 @@ async function buildCanonicalWorkout(
  * - Stores normalized data in relational tables
  * - Creates a JSON snapshot for reconstruction
  * - Does NOT store computed metrics (duration is computed at read time)
+ *
+ * @param activeWorkout - The workout data from the active session
+ * @param userId - The user ID (Firebase UID or guest ID) who owns this workout
  */
-export async function saveWorkout(activeWorkout: ActiveWorkout): Promise<string> {
+export async function saveWorkout(activeWorkout: ActiveWorkout, userId: string): Promise<string> {
   const workoutId = activeWorkout.id;
   const now = new Date();
 
   // Insert workout (NOTE: durationSeconds removed - computed at read time)
   await db.insert(workouts).values({
     id: workoutId,
+    userId, // Owner of this workout
     name: activeWorkout.name,
     startedAt: activeWorkout.startedAt,
     completedAt: now,

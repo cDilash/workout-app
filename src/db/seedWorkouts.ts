@@ -257,9 +257,12 @@ function randomDuration(): number {
 
 /**
  * Seed the database with test workouts using ALL exercises
+ *
+ * @param count - Number of workouts to create
+ * @param userId - User ID to associate workouts with (defaults to 'test_user' for development)
  */
-export async function seedTestWorkouts(count: number = 500): Promise<number> {
-  console.log(`Seeding ${count} test workouts with all exercises...`);
+export async function seedTestWorkouts(count: number = 500, userId: string = 'test_user'): Promise<number> {
+  console.log(`Seeding ${count} test workouts with all exercises for user: ${userId}...`);
 
   const now = new Date();
   let created = 0;
@@ -274,6 +277,7 @@ export async function seedTestWorkouts(count: number = 500): Promise<number> {
 
   await db.insert(workouts).values({
     id: recentWorkoutId,
+    userId, // Owner of this workout
     name: 'Push Day',
     startedAt: recentStartedAt,
     completedAt: recentCompletedAt,
@@ -357,6 +361,7 @@ export async function seedTestWorkouts(count: number = 500): Promise<number> {
     // Create workout
     await db.insert(workouts).values({
       id: workoutId,
+      userId, // Owner of this workout
       name: template.name,
       startedAt,
       completedAt,

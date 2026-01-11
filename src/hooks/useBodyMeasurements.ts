@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db/client';
 import { bodyMeasurements } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import * as Crypto from 'expo-crypto';
 
 export interface BodyMeasurementEntry {
@@ -27,7 +27,12 @@ export interface BodyMeasurementEntry {
 
 export type NewBodyMeasurement = Omit<BodyMeasurementEntry, 'id'>;
 
-export function useBodyMeasurements() {
+/**
+ * Hook for managing body measurements with user filtering.
+ *
+ * @param userId - The user ID (Firebase UID or guest ID) to filter measurements
+ */
+export function useBodyMeasurements(userId: string) {
   const [measurements, setMeasurements] = useState<BodyMeasurementEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -37,7 +42,10 @@ export function useBodyMeasurements() {
       const results = await db
         .select()
         .from(bodyMeasurements)
-        .where(eq(bodyMeasurements.isDeleted, false))
+        .where(and(
+          eq(bodyMeasurements.userId, userId),
+          eq(bodyMeasurements.isDeleted, false)
+        ))
         .orderBy(desc(bodyMeasurements.date));
 
       const mapped: BodyMeasurementEntry[] = results.map((r) => ({
@@ -66,7 +74,7 @@ export function useBodyMeasurements() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   const addMeasurement = useCallback(async (data: NewBodyMeasurement) => {
     const id = Crypto.randomUUID();
@@ -74,6 +82,7 @@ export function useBodyMeasurements() {
 
     await db.insert(bodyMeasurements).values({
       id,
+      userId, // Owner of this measurement
       date: data.date,
       weightKg: data.weightKg,
       bodyFatPercent: data.bodyFatPercent,
@@ -96,7 +105,7 @@ export function useBodyMeasurements() {
 
     await fetchMeasurements();
     return id;
-  }, [fetchMeasurements]);
+  }, [fetchMeasurements, userId]);
 
   const updateMeasurement = useCallback(async (id: string, data: Partial<NewBodyMeasurement>) => {
     await db

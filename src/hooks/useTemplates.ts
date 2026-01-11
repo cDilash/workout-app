@@ -133,10 +133,15 @@ export function useTemplates() {
 /**
  * Save current workout as a template.
  * Stores target weight in kg (explicit unit per DATA_HANDLING.md).
+ *
+ * @param workout - The active workout to save as a template
+ * @param templateName - Name for the new template
+ * @param userId - The user ID (Firebase UID or guest ID) who owns this template
  */
 export async function saveAsTemplate(
   workout: ActiveWorkout,
-  templateName: string
+  templateName: string,
+  userId: string
 ): Promise<string> {
   const templateId = uuid();
   const now = new Date();
@@ -144,6 +149,7 @@ export async function saveAsTemplate(
   // Insert template
   await db.insert(workoutTemplates).values({
     id: templateId,
+    userId, // Owner of this template
     name: templateName,
     createdAt: now,
     lastUsedAt: null,
@@ -234,10 +240,6 @@ export async function updateTemplate(
   }
 }
 
-/**
- * Create a template directly (without an active workout).
- * For building templates from scratch in the Templates modal.
- */
 export interface CreateTemplateExercise {
   exerciseId: string;
   sets: TemplateSetTarget[];
@@ -245,15 +247,24 @@ export interface CreateTemplateExercise {
   notes: string | null;
 }
 
+/**
+ * Create a template directly (without an active workout).
+ *
+ * @param name - Template name
+ * @param exercises - Array of exercises to include
+ * @param userId - The user ID (Firebase UID or guest ID) who owns this template
+ */
 export async function createTemplate(
   name: string,
-  exercises: CreateTemplateExercise[]
+  exercises: CreateTemplateExercise[],
+  userId: string
 ): Promise<string> {
   const templateId = uuid();
   const now = new Date();
 
   await db.insert(workoutTemplates).values({
     id: templateId,
+    userId, // Owner of this template
     name,
     createdAt: now,
     lastUsedAt: null,

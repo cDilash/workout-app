@@ -12,6 +12,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '@/src/i18n';
 
 import { DatabaseProvider } from '@/src/db/provider';
+import { AuthProvider } from '@/src/auth/AuthProvider';
 import tamaguiConfig from '@/tamagui.config';
 
 /**
@@ -64,9 +65,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <TamaguiProvider config={tamaguiConfig}>
-          <DatabaseProvider>
-            <RootLayoutNav />
-          </DatabaseProvider>
+          <AuthProvider>
+            <DatabaseProvider>
+              <RootLayoutNav />
+            </DatabaseProvider>
+          </AuthProvider>
         </TamaguiProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
@@ -107,6 +110,15 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        <Stack.Screen
+          name="(auth)"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            gestureEnabled: true,
+            gestureDirection: 'vertical',
+          }}
+        />
       </Stack>
     </ThemeProvider>
   );

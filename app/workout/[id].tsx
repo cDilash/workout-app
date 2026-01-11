@@ -18,6 +18,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 
 import { useWorkoutStore, type ActiveExercise, type ActiveSet } from '@/src/stores/workoutStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
+import { useAuth } from '@/src/auth/AuthProvider';
 import { fromKgDisplay, fromKgVolume } from '@/src/utils/unitConversion';
 import { useExercises } from '@/src/hooks/useExercises';
 import { saveWorkout } from '@/src/hooks/useWorkoutHistory';
@@ -774,6 +775,7 @@ export default function ActiveWorkoutScreen() {
   const { startTimer } = useTimerStore();
   const checkForPR = useCelebrationStore((s) => s.checkForPR);
   const keepScreenAwake = useSettingsStore((s) => s.keepScreenAwake);
+  const { userId } = useAuth();
 
   // Start workout on mount if not already active
   useEffect(() => {
@@ -848,7 +850,7 @@ export default function ActiveWorkoutScreen() {
     const workout = finishWorkout();
     if (workout) {
       try {
-        await saveWorkout(workout);
+        await saveWorkout(workout, userId);
         console.log('Workout saved successfully');
       } catch (error) {
         console.error('Failed to save workout:', error);
@@ -896,7 +898,7 @@ export default function ActiveWorkoutScreen() {
       return;
     }
     try {
-      await saveAsTemplate(activeWorkout, templateName);
+      await saveAsTemplate(activeWorkout, templateName, userId);
       Alert.alert('Success', `Template "${templateName}" saved!`);
     } catch (error) {
       console.error('Error saving template:', error);
